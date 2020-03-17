@@ -1,5 +1,6 @@
-import 'package:beatbench/simplemusic.dart';
-import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
+
+import 'simplemusic.dart';
 
 class Pitched {
   int coarsePitch;
@@ -12,7 +13,7 @@ class Note extends Pitched {
   RhythmUnit start;
   RhythmUnit length;
 
-  static getPitch(int tone, int octave) => tone + octave * 12;
+  static int getPitch(int tone, int octave) => tone + octave * 12;
 
   Note(
       {@required int tone,
@@ -35,25 +36,9 @@ class InstrumentPattern {}
 
 class PatternData {}
 
-class Layer extends StatelessWidget {
+class Layer {
   final bool active;
   final PatternData data;
 
-  const Layer({Key key, @required this.data, this.active = true})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.amber,
-      child: Column(
-        children: <Widget>[
-          Text("I'm a layer"),
-          Column(
-            children: <Widget>[],
-          )
-        ],
-      ),
-    );
-  }
+  const Layer({@required this.data, this.active = true});
 }

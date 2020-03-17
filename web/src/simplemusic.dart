@@ -1,23 +1,13 @@
-import 'package:beatbench/patterns.dart';
-import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 
-class Beat extends StatefulWidget {
+import 'patterns.dart';
+
+class Beat {
   final RhythmUnit metre;
   final double bpm;
   final List<Layer> patterns;
 
-  const Beat({Key key, this.metre, this.bpm = 120, this.patterns})
-      : super(key: key);
-
-  @override
-  _BeatState createState() => _BeatState();
-}
-
-class _BeatState extends State<Beat> {
-  @override
-  Widget build(BuildContext context) {
-    return Column(children: widget.patterns);
-  }
+  const Beat({@required this.metre, this.bpm = 120, this.patterns});
 }
 
 class RhythmUnit {

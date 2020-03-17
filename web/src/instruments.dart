@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:beatbench/audio_assembler.dart';
-import 'package:beatbench/simplemusic.dart';
-import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 
+import 'audio_assembler.dart';
 import 'patterns.dart';
+import 'simplemusic.dart';
 
 class AudioStream {
   final int start;
@@ -72,7 +72,7 @@ class PresetDrums {
   static Drums basicKit() => Drums({Note.getPitch(Note.C, 5): kick()});
 
   static DrumSample kick() {
-    return DrumSample("Kick", (length) {
+    return DrumSample('Kick', (length) {
       var frequency = 110;
       var sampleRate = 44100; // TODO make this prettier
       var samples = List<double>(length);
