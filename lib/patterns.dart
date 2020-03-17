@@ -12,12 +12,14 @@ class Note extends Pitched {
   RhythmUnit start;
   RhythmUnit length;
 
+  static getPitch(int tone, int octave) => tone + octave * 12;
+
   Note(
-      {int tone,
+      {@required int tone,
       int octave = 4,
       this.start,
       this.length = const RhythmUnit(1, 16)})
-      : super(tone + octave * 12);
+      : super(getPitch(tone, octave));
   Note.exact(int pitch) : super(pitch);
 
   static const int C = 0;

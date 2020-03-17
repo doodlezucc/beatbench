@@ -1,4 +1,4 @@
-import 'dart:collection';
+import 'dart:math';
 
 import 'package:beatbench/audio_assembler.dart';
 import 'package:beatbench/simplemusic.dart';
@@ -7,14 +7,12 @@ import 'package:flutter/material.dart';
 import 'patterns.dart';
 
 class AudioStream {
-  Queue<double> _stream = Queue();
-  Iterable<double> Function(int offset, int length) _request;
+  final int start;
+  final int length;
+  final Iterable<double> Function(int offset, int length) request;
 
-  void push(Iterable<double> add) {
-    _stream.addAll(add);
-  }
-
-  AudioStream(start, this._request);
+  AudioStream(
+      {@required this.start, @required this.length, @required this.request});
 }
 
 class NotePacket {
@@ -35,14 +33,58 @@ abstract class Instrument {
 }
 
 class Drums extends Instrument {
+  Map<int, DrumSample> drumSamples;
+
+  Drums(this.drumSamples);
+
   @override
   List<AudioStream> createStream(NotePacket packet) {
     return packet.notes
-        .where((note) => note.start.compare(packet.time) >= 0)
+        .where((note) =>
+            drumSamples.containsKey(note.coarsePitch) &&
+            note.start.compare(packet.time) >= 0)
         .map((note) => AudioStream(
-            RhythmUnit.beatsInSamples(note.start.beats - packet.time.beats,
-                packet.bpm, packet.specs.sampleRate),
-            (offset, length) {}))
+              start: RhythmUnit.beatsInSamples(
+                  note.start.beats - packet.time.beats,
+                  packet.bpm,
+                  packet.specs.sampleRate),
+              request: (offset, length) => drumSamples.entries
+                  .firstWhere((element) => element.key == note.coarsePitch)
+                  .value
+                  .request(),
+              length: 10000,
+            ))
         .toList(growable: false);
   }
 }
+
+class DrumSample {
+  String name;
+  final Iterable<double> Function(int length) _request;
+  int length;
+
+  Iterable<double> request() => _request(length);
+
+  DrumSample(this.name, this._request, this.length);
+}
+
+class PresetDrums {
+  static Drums basicKit() => Drums({Note.getPitch(Note.C, 5): kick()});
+
+  static DrumSample kick() {
+    return DrumSample("Kick", (length) {
+      var frequency = 110;
+      var sampleRate = 44100; // TODO make this prettier
+      var samples = List<double>(length);
+
+      for (var i = 0; i < length; i++) {
+        samples[i] = 0.2 *
+            (1 - i / (length - 1)) *
+            sin(2 * pi * frequency * (i / sampleRate));
+      }
+      return samples;
+    }, 10000);
+  }
+}
+
+class SineOscillator {}
