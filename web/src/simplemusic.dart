@@ -25,7 +25,7 @@ class RhythmUnit {
       equals(other) ? 0 : (beats > other.beats ? 1 : -1);
 
   static int beatsInSamples(double beats, double bpm, int sampleRate) =>
-      (beats * (bpm / 60) * sampleRate).round();
+      (sampleRate * beats / (bpm / 60)).round();
 
   int inSamples(double bpm, int sampleRate) =>
       beatsInSamples(beats, bpm, sampleRate);

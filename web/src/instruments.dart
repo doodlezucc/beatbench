@@ -9,7 +9,7 @@ import 'simplemusic.dart';
 class AudioStream {
   final int start;
   final int length;
-  final Iterable<double> Function(int offset, int length) request;
+  final Iterable<double> Function() request;
 
   AudioStream(
       {@required this.start, @required this.length, @required this.request});
@@ -48,7 +48,7 @@ class Drums extends Instrument {
                   note.start.beats - packet.time.beats,
                   packet.bpm,
                   packet.specs.sampleRate),
-              request: (offset, length) => drumSamples.entries
+              request: () => drumSamples.entries
                   .firstWhere((element) => element.key == note.coarsePitch)
                   .value
                   .request(),
@@ -73,12 +73,12 @@ class PresetDrums {
 
   static DrumSample kick() {
     return DrumSample('Kick', (length) {
-      var frequency = 110;
+      var frequency = 80;
       var sampleRate = 44100; // TODO make this prettier
       var samples = List<double>(length);
 
       for (var i = 0; i < length; i++) {
-        samples[i] = 0.2 *
+        samples[i] = 0.4 *
             (1 - i / (length - 1)) *
             sin(2 * pi * frequency * (i / sampleRate));
       }
