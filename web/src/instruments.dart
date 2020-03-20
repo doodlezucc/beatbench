@@ -1,19 +1,13 @@
+import 'dart:html';
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:web_audio';
 
 import 'package:meta/meta.dart';
 
 import 'audio_assembler.dart';
 import 'patterns.dart';
 import 'simplemusic.dart';
-
-class AudioStream {
-  final int start;
-  final int length;
-  final Iterable<double> Function() request;
-
-  AudioStream(
-      {@required this.start, @required this.length, @required this.request});
-}
 
 class NotePacket {
   final List<Note> notes;
@@ -28,63 +22,44 @@ class NotePacket {
       @required this.specs});
 }
 
-abstract class Instrument {
-  List<AudioStream> createStream(NotePacket packet);
-}
+abstract class Instrument {}
 
 class Drums extends Instrument {
   Map<int, DrumSample> drumSamples;
 
   Drums(this.drumSamples);
-
-  @override
-  List<AudioStream> createStream(NotePacket packet) {
-    return packet.notes
-        .where((note) =>
-            drumSamples.containsKey(note.coarsePitch) &&
-            note.start.compare(packet.time) >= 0)
-        .map((note) => AudioStream(
-              start: RhythmUnit.beatsInSamples(
-                  note.start.beats - packet.time.beats,
-                  packet.bpm,
-                  packet.specs.sampleRate),
-              request: () => drumSamples.entries
-                  .firstWhere((element) => element.key == note.coarsePitch)
-                  .value
-                  .request(),
-              length: 10000,
-            ))
-        .toList(growable: false);
-  }
 }
 
 class DrumSample {
   String name;
-  final Iterable<double> Function(int length) _request;
-  int length;
+  AudioBuffer buffer;
 
-  Iterable<double> request() => _request(length);
-
-  DrumSample(this.name, this._request, this.length);
+  DrumSample(this.name, this.buffer);
 }
 
 class PresetDrums {
-  static Drums basicKit() => Drums({Note.getPitch(Note.C, 5): kick()});
+  static Future<Drums> cymaticsLofiKit(AudioContext ctx) async => Drums({
+        Note.getPitch(Note.C, 5):
+            await load(name: 'Kick', path: 'lofiC.wav', ctx: ctx),
+        Note.getPitch(Note.C + 1, 5):
+            await load(name: 'Snare', path: 'lofiC#.wav', ctx: ctx),
+      });
 
-  static DrumSample kick() {
-    return DrumSample('Kick', (length) {
-      var frequency = 80;
-      var sampleRate = 44100; // TODO make this prettier
-      var samples = List<double>(length);
+  static Future<DrumSample> load(
+      {@required AudioContext ctx, String name, @required String path}) async {
+    return DrumSample(name, await loadResource(ctx: ctx, path: path));
+  }
 
-      for (var i = 0; i < length; i++) {
-        samples[i] = 0.4 *
-            (1 - i / (length - 1)) *
-            sin(2 * pi * frequency * (i / sampleRate));
-      }
-      return samples;
-    }, 10000);
+  static Future<AudioBuffer> loadResource(
+      {@required AudioContext ctx, @required String path}) async {
+    var request = await HttpRequest.request(
+      'resources/$path',
+      responseType: 'arraybuffer',
+    );
+    ByteBuffer response = request.response;
+
+    var buffer = await ctx.decodeAudioData(response);
+    print('Loaded some stuff yay');
+    return buffer;
   }
 }
-
-class SineOscillator {}
