@@ -1,8 +1,8 @@
 import 'dart:html';
 
-import 'src/audio_assembler.dart';
 import 'src/beat_grid.dart';
 import 'src/instruments.dart';
+import 'src/project.dart';
 
 void main() {
   initStuff();
@@ -11,13 +11,15 @@ void main() {
 void initStuff() async {
   querySelector('#output').text = 'Beatbench written in Dart!';
 
-  var a = AudioAssembler();
-  var grid = BeatGrid(
-      querySelector('#grid'), await PresetDrums.cymaticsLofiKit(a.ctx));
+  var project = Project(bpm: 80);
+
+  var grid = BeatGrid(querySelector('#grid'),
+      await PresetDrums.cymaticsLofiKit(project.audioAssembler.ctx));
 
   grid.swaggyBeat();
 
   querySelector('button').onClick.listen((e) {
-    a.run();
+    project.timeline.fromBeatGrid(grid);
+    project.play();
   });
 }

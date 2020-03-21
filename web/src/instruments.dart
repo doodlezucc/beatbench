@@ -1,5 +1,4 @@
 import 'dart:html';
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:web_audio';
 
@@ -22,12 +21,34 @@ class NotePacket {
       @required this.specs});
 }
 
-abstract class Instrument {}
+abstract class Instrument {
+  final GainNode node;
+
+  Instrument(AudioContext ctx)
+      : node = ctx.createGain()..connectNode(ctx.destination);
+
+  void playNote(Note note, double timeModulus, double bpm,
+      [double offset]); // TODO very unpretty... "offset"
+}
 
 class Drums extends Instrument {
   Map<int, DrumSample> drumSamples;
 
-  Drums(this.drumSamples);
+  Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx);
+
+  @override
+  void playNote(Note note, double timeModulus, double bpm,
+      [double offset = 0]) {
+    if (drumSamples.containsKey(note.coarsePitch)) {
+      node.context.createBufferSource()
+        ..connectNode(node)
+        ..buffer = drumSamples[note.coarsePitch].buffer
+        ..start(node.context.currentTime +
+            note.start.beats / (bpm / 60) -
+            timeModulus +
+            offset);
+    }
+  }
 }
 
 class DrumSample {
@@ -43,7 +64,7 @@ class PresetDrums {
             await load(name: 'Kick', path: 'lofiC.wav', ctx: ctx),
         Note.getPitch(Note.C + 1, 5):
             await load(name: 'Snare', path: 'lofiC#.wav', ctx: ctx),
-      });
+      }, ctx: ctx);
 
   static Future<DrumSample> load(
       {@required AudioContext ctx, String name, @required String path}) async {
@@ -53,7 +74,7 @@ class PresetDrums {
   static Future<AudioBuffer> loadResource(
       {@required AudioContext ctx, @required String path}) async {
     var request = await HttpRequest.request(
-      'resources/$path',
+      Uri.file('resources/$path').toString(),
       responseType: 'arraybuffer',
     );
     ByteBuffer response = request.response;

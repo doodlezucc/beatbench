@@ -1,6 +1,8 @@
 import 'dart:html';
 
 import 'instruments.dart';
+import 'patterns.dart';
+import 'simplemusic.dart';
 
 class BeatGrid {
   final Element _e;
@@ -30,7 +32,7 @@ class BeatGrid {
       return row;
     }
 
-    for (var i = _height; i > 0; --i) {
+    for (var i = _height - 1; i >= 0; i--) {
       _e.append(createRow(16, i));
     }
   }
@@ -47,5 +49,15 @@ class BeatGrid {
 
     setField(4, 1, true);
     setField(12, 1, true);
+  }
+
+  List<Note> getNotes() {
+    return _e
+        .querySelectorAll('.filled')
+        .map((el) => Note(
+            tone: int.tryParse(el.attributes['y']),
+            octave: 5,
+            start: RhythmUnit(int.tryParse(el.attributes['x']), 16)))
+        .toList();
   }
 }

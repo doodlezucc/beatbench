@@ -1,15 +1,3 @@
-import 'package:meta/meta.dart';
-
-import 'patterns.dart';
-
-class Beat {
-  final RhythmUnit metre;
-  final double bpm;
-  final List<Layer> patterns;
-
-  const Beat({@required this.metre, this.bpm = 120, this.patterns});
-}
-
 class RhythmUnit {
   final int numerator;
   final int denominator;
@@ -17,6 +5,10 @@ class RhythmUnit {
 
   const RhythmUnit(this.numerator, this.denominator)
       : beats = 4 * numerator / denominator;
+
+  const RhythmUnit.washy(this.beats)
+      : numerator = -1,
+        denominator = -1;
 
   bool equals(RhythmUnit other) =>
       numerator == other.numerator && denominator == other.denominator;
