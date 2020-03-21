@@ -11,4 +11,9 @@ class Project {
   void play() {
     audioAssembler.run(bpm: bpm, timeline: timeline);
   }
+
+  void pause() {
+    audioAssembler.stopPlayback();
+    print('suspended');
+  }
 }

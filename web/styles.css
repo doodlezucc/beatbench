@@ -6,6 +6,7 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: 'Roboto', sans-serif;
+  --cell-size: 30px;
 }
 
 #output {
@@ -21,10 +22,10 @@ html, body {
 
 td, th {
 	border: 1px solid #444;
-	min-width: 50px;
-	width: 50px;
-	min-height: 50px;
-	height: 50px;
+	min-width: var(--cell-size);
+	width: var(--cell-size);
+	min-height: var(--cell-size);
+	height: var(--cell-size);
 	box-sizing: border-box;
 	background-color: white;
 	transition: 0.15s;

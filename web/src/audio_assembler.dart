@@ -14,11 +14,13 @@ class AudioAssembler {
   var specs = Specs();
   var ctx = AudioContext();
   Timer updateTimer;
+  bool isRunning;
 
   AudioAssembler();
 
   void run({@required double bpm, @required Timeline timeline}) async {
     await ctx.resume();
+    isRunning = true;
 
     var startTime = ctx.currentTime;
     var oldCtxTime = startTime;
@@ -49,5 +51,9 @@ class AudioAssembler {
 
       oldCtxTime = ctx.currentTime;
     });
+  }
+
+  void stopPlayback() {
+    updateTimer.cancel();
   }
 }

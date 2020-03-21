@@ -18,8 +18,11 @@ void initStuff() async {
 
   grid.swaggyBeat();
 
-  querySelector('button').onClick.listen((e) {
+  querySelector('#play').onClick.listen((e) {
     project.timeline.fromBeatGrid(grid);
     project.play();
+  });
+  querySelector('#pause').onClick.listen((e) {
+    project.pause();
   });
 }

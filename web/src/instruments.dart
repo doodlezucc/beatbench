@@ -28,7 +28,7 @@ abstract class Instrument {
       : node = ctx.createGain()..connectNode(ctx.destination);
 
   void playNote(Note note, double timeModulus, double bpm,
-      [double offset]); // TODO very unpretty... "offset"
+      [double offset]); // very unpretty... "offset"
 }
 
 class Drums extends Instrument {
