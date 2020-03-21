@@ -27,7 +27,7 @@ abstract class Instrument {
   Instrument(AudioContext ctx)
       : node = ctx.createGain()..connectNode(ctx.destination);
 
-  void playNote(Note note, double timeModulus, double bpm,
+  void playNote(Note note, double timeModulus, double bps,
       [double offset]); // very unpretty... "offset"
 }
 
@@ -37,14 +37,14 @@ class Drums extends Instrument {
   Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx);
 
   @override
-  void playNote(Note note, double timeModulus, double bpm,
+  void playNote(Note note, double timeModulus, double bps,
       [double offset = 0]) {
     if (drumSamples.containsKey(note.coarsePitch)) {
       node.context.createBufferSource()
         ..connectNode(node)
         ..buffer = drumSamples[note.coarsePitch].buffer
         ..start(node.context.currentTime +
-            note.start.beats / (bpm / 60) -
+            note.start.beats / bps -
             timeModulus +
             offset);
     }
