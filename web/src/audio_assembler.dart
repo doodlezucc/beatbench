@@ -15,12 +15,20 @@ class AudioAssembler {
   var ctx = AudioContext();
   Timer updateTimer;
   bool isRunning;
+  int bufferedIndex;
+  double regionLength; // duration of a single region (in seconds)
 
-  AudioAssembler();
+  AudioAssembler() {
+    regionLength = specs.schedulingMs / 1000;
+  }
 
-  void run({@required double bpm, @required Timeline timeline}) async {
+  void run({
+    @required double bpm,
+    @required Timeline timeline,
+  }) async {
     await ctx.resume();
     isRunning = true;
+    bufferedIndex = -1;
 
     var startTime = ctx.currentTime;
 
@@ -29,7 +37,7 @@ class AudioAssembler {
     }
     updateTimer = Timer.periodic(
       Duration(
-        milliseconds: specs.schedulingMs,
+        milliseconds: (specs.schedulingMs * 0.8).round(),
       ),
       (timerInstance) {
         _bufferNotes(
@@ -40,27 +48,59 @@ class AudioAssembler {
         bps: bpm / 60, timeline: timeline, contextStartTime: startTime);
   }
 
-  void _bufferNotes(
-      {@required double bps,
-      @required Timeline timeline,
-      @required double contextStartTime}) {
-    var time =
-        (ctx.currentTime - contextStartTime) % (timeline.lengthInBeats / bps);
-    var inBeats = (time * bps);
-    var nextInBeats = inBeats + (bps * specs.schedulingMs / 1000);
+  void _bufferNotes({
+    @required double bps,
+    @required Timeline timeline,
+    @required double contextStartTime,
+  }) {
+    // time since playback was started (in seconds)
+    var timeAbsolute = ctx.currentTime - contextStartTime;
 
-    print(inBeats.toStringAsFixed(0));
+    var floor = (timeAbsolute / regionLength).floor();
+    var ceil = floor + 1;
 
-    timeline.notes.forEach((n) {
-      if (n.start.beats >= inBeats && n.start.beats <= nextInBeats) {
-        print('${n.coarsePitch} at ${n.start.beats} beats');
-        timeline.instruments[0].playNote(n, time, bps);
-      } else if (inBeats <= n.start.beats + timeline.lengthInBeats &&
-          n.start.beats + timeline.lengthInBeats < nextInBeats) {
-        print('${n.coarsePitch} at ${n.start.beats} beats');
-        timeline.instruments[0]
-            .playNote(n, time, bps, timeline.lengthInBeats / bps);
-      }
+    // in the rare case of "floor" not having been buffered in the previous run, buffer it now
+    if (bufferedIndex < floor) {
+      print('lulwat');
+      _bufferRegion(
+        bps: bps,
+        timeline: timeline,
+        contextStartTime: contextStartTime,
+        regionIndex: floor,
+      );
+    }
+    // buffer "ceil" (if it wasn't already)
+    if (bufferedIndex < ceil) {
+      _bufferRegion(
+        bps: bps,
+        timeline: timeline,
+        contextStartTime: contextStartTime,
+        regionIndex: ceil,
+      );
+      bufferedIndex = ceil;
+    }
+  }
+
+  void _bufferRegion({
+    @required double bps,
+    @required Timeline timeline,
+    @required double contextStartTime,
+    @required int regionIndex,
+  }) {
+    var regionStartSec = regionIndex * regionLength;
+    var regionEndSec = (regionIndex + 1) * regionLength;
+
+    var regionStartBeats = regionStartSec * bps;
+    var regionEndBeats = regionEndSec * bps;
+
+    timeline
+        .getNotes(regionStartBeats, regionEndBeats - regionStartBeats)
+        .forEach((noteShift) {
+      var n = noteShift.note;
+      print(
+          '${n.coarsePitch} at ${n.start.beats + noteShift.shift.beats} beats (shift: ${noteShift.shift.beats})');
+      timeline.instruments[0].playNote(
+          n, contextStartTime + (n.start.beats + noteShift.shift.beats) / bps);
     });
   }
 
