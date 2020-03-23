@@ -5,6 +5,10 @@ import 'beat_fraction.dart';
 import 'patterns.dart';
 
 class Timeline {
+  // UI stuff
+  static const String pixelsPerBeat = 'timeline-ppb';
+  static const String pixelsPerTrack = 'timeline-ppt';
+
   BeatFraction songLength = BeatFraction(4, 4);
   double get lengthInBeats => songLength.beats;
 
@@ -65,19 +69,25 @@ class Timeline {
 
   void fromBeatGrid(BeatGrid grid) {
     instruments = [grid.drums];
-    var gridPatternData = PatternData()
-      ..instrumentNotes = {0: PatternNotesComponent(grid.getNotes())};
-    var crashPatternData = PatternData()
-      ..instrumentNotes = {
-        0: PatternNotesComponent([Note(tone: Note.C + 3, octave: 5)])
-      };
+    var gridPatternData = PatternData(
+      'My awesome beat',
+      {0: PatternNotesComponent(grid.getNotes())},
+    );
+    var crashPatternData = PatternData(
+      'Crash!',
+      {
+        0: PatternNotesComponent([
+          Note(tone: Note.D + 1, octave: 5),
+        ])
+      },
+    );
     patterns = [
       PatternInstance(gridPatternData),
       PatternInstance(gridPatternData, start: const BeatFraction(1, 1)),
       PatternInstance(gridPatternData, start: const BeatFraction(2, 1)),
       PatternInstance(gridPatternData, start: const BeatFraction(3, 1)),
       // open hihat only on the first of 4 bars -> proof-of-concept: timeline & patterns
-      PatternInstance(crashPatternData)
+      PatternInstance(crashPatternData, track: 1)
     ];
     updateSongLength();
     updateNoteShiftBuffer();

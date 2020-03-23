@@ -5,10 +5,14 @@ import 'src/instruments.dart';
 import 'src/project.dart';
 
 void main() {
-  initStuff();
+  var styleWorkbench = false;
+  if (!styleWorkbench) {
+    initStuff();
+  }
 }
 
 void initStuff() async {
+  var time = DateTime.now().millisecondsSinceEpoch;
   querySelector('#output').text = 'Beatbench written in Dart!';
 
   var project = Project(bpm: 130);
@@ -18,6 +22,8 @@ void initStuff() async {
 
   grid.swaggyBeat();
 
+  project.timeline.fromBeatGrid(grid);
+
   querySelector('#play').onClick.listen((e) {
     project.timeline.fromBeatGrid(grid);
     project.play();
@@ -25,4 +31,8 @@ void initStuff() async {
   querySelector('#pause').onClick.listen((e) {
     project.pause();
   });
+
+  print('init stuff done in ' +
+      (DateTime.now().millisecondsSinceEpoch - time).toString() +
+      'ms');
 }
