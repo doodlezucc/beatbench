@@ -1,8 +1,8 @@
 import 'dart:html';
 
 import 'instruments.dart';
-import 'patterns.dart';
-import 'simplemusic.dart';
+import 'notes.dart';
+import 'beat_fraction.dart';
 
 class BeatGrid {
   final Element _e;
@@ -57,7 +57,7 @@ class BeatGrid {
         .map((el) => Note(
             tone: int.tryParse(el.attributes['y']),
             octave: 5,
-            start: RhythmUnit(int.tryParse(el.attributes['x']), 16)))
+            start: BeatFraction(int.tryParse(el.attributes['x']), 16)))
         .toList();
   }
 }

@@ -11,7 +11,7 @@ void main() {
 void initStuff() async {
   querySelector('#output').text = 'Beatbench written in Dart!';
 
-  var project = Project(bpm: 80);
+  var project = Project(bpm: 130);
 
   var grid = BeatGrid(querySelector('#grid'),
       await PresetDrums.cymaticsLofiKit(project.audioAssembler.ctx));

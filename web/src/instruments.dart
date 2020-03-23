@@ -4,22 +4,7 @@ import 'dart:web_audio';
 
 import 'package:meta/meta.dart';
 
-import 'audio_assembler.dart';
-import 'patterns.dart';
-import 'simplemusic.dart';
-
-class NotePacket {
-  final List<Note> notes;
-  final double bpm;
-  final RhythmUnit time;
-  final Specs specs;
-
-  NotePacket(
-      {@required this.notes,
-      @required this.bpm,
-      @required this.time,
-      @required this.specs});
-}
+import 'notes.dart';
 
 abstract class Instrument {
   final GainNode node;

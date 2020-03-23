@@ -1,44 +1,38 @@
-import 'package:meta/meta.dart';
+import 'notes.dart';
+import 'beat_fraction.dart';
 
-import 'simplemusic.dart';
-
-class Pitched {
-  int coarsePitch;
-
-  Pitched(this.coarsePitch);
+abstract class PatternDataComponent {
+  BeatFraction length();
 }
 
-class Note extends Pitched {
-  double velocity;
-  RhythmUnit start;
-  RhythmUnit length;
+class PatternNotesComponent extends PatternDataComponent {
+  List<Note> notes;
 
-  static int getPitch(int tone, int octave) => tone + octave * 12;
-
-  Note(
-      {@required int tone,
-      int octave = 4,
-      this.start,
-      this.length = const RhythmUnit(1, 16)})
-      : super(getPitch(tone, octave));
-  Note.exact(int pitch) : super(pitch);
-
-  static const int C = 0;
-  static const int D = 2;
-  static const int E = 4;
-  static const int F = 5;
-  static const int G = 7;
-  static const int A = 9;
-  static const int B = 11;
+  @override
+  BeatFraction length() {
+    return notes.fold(
+        BeatFraction.washy(0), (v, n) => n.end.beats > v.beats ? n.end : v);
+  }
 }
 
-class InstrumentPattern {}
+class PatternData {
+  BeatFraction length() {
+    return const BeatFraction(4, 4);
+  }
+}
 
-class PatternData {}
+class PatternInstance {
+  BeatFraction start;
+  BeatFraction length;
+  int track;
+  PatternData data;
 
-class Layer {
-  final bool active;
-  final PatternData data;
-
-  const Layer({@required this.data, this.active = true});
+  PatternInstance(
+    this.data, {
+    this.start = const BeatFraction(0, 1),
+    this.length,
+    this.track = 0,
+  }) {
+    length = length ?? data.length();
+  }
 }

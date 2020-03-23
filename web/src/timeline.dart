@@ -1,10 +1,10 @@
 import 'beat_grid.dart';
 import 'instruments.dart';
-import 'patterns.dart';
-import 'simplemusic.dart';
+import 'notes.dart';
+import 'beat_fraction.dart';
 
 class Timeline {
-  RhythmUnit songLength = RhythmUnit(4, 4);
+  BeatFraction songLength = BeatFraction(4, 4);
   double get lengthInBeats => songLength.beats;
 
   List<Instrument> instruments;
@@ -44,7 +44,7 @@ class Timeline {
 
 class NoteShift {
   final Note note;
-  final RhythmUnit shift;
+  final BeatFraction shift;
 
   const NoteShift(this.note, this.shift);
 }
