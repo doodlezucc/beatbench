@@ -31,15 +31,16 @@ class BeatFraction {
     return BeatFraction(numerator * m, denominator);
   }
 
+  BeatFraction ceilToBeat() {
+    // 5/8 ||| (4*5/8)^ * 8/4 ---> (2.5)^ * 2 ---> 3*2 ---> 6
+    return BeatFraction(
+        ((4 * numerator / denominator).ceil() * denominator / 4).ceil(),
+        denominator);
+  }
+
   bool equals(BeatFraction other) =>
       numerator == other.numerator && denominator == other.denominator;
 
   int compare(BeatFraction other) =>
       equals(other) ? 0 : (beats > other.beats ? 1 : -1);
-
-  static int beatsInSamples(double beats, double bpm, int sampleRate) =>
-      (sampleRate * beats / (bpm / 60)).round();
-
-  int inSamples(double bpm, int sampleRate) =>
-      beatsInSamples(beats, bpm, sampleRate);
 }

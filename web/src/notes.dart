@@ -20,7 +20,7 @@ class Note extends Pitched {
   Note(
       {@required int tone,
       int octave = 4,
-      this.start,
+      this.start = const BeatFraction(0, 4),
       this.length = const BeatFraction(1, 16)})
       : super(getPitch(tone, octave));
   Note.exact(int pitch) : super(pitch);

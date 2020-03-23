@@ -93,15 +93,17 @@ class AudioAssembler {
     var regionStartBeats = regionStartSec * bps;
     var regionEndBeats = regionEndSec * bps;
 
-    timeline
-        .getNotes(regionStartBeats, regionEndBeats - regionStartBeats)
-        .forEach((noteShift) {
-      var n = noteShift.note;
-      print(
-          '${n.coarsePitch} at ${n.start.beats + noteShift.shift.beats} beats (shift: ${noteShift.shift.beats})');
-      timeline.instruments[0].playNote(
-          n, contextStartTime + (n.start.beats + noteShift.shift.beats) / bps);
-    });
+    var instrumentNotes =
+        timeline.getNotes(regionStartBeats, regionEndBeats - regionStartBeats);
+    for (var i = 0; i < instrumentNotes.length; i++) {
+      instrumentNotes.elementAt(i).forEach((noteShift) {
+        var n = noteShift.note;
+        print(
+            '${n.coarsePitch} at ${n.start.beats + noteShift.shift.beats} beats (shift: ${noteShift.shift.beats})');
+        timeline.instruments[0].playNote(n,
+            contextStartTime + (n.start.beats + noteShift.shift.beats) / bps);
+      });
+    }
   }
 
   void stopPlayback() {

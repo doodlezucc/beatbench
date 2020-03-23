@@ -2,13 +2,15 @@ import 'beat_grid.dart';
 import 'instruments.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
+import 'patterns.dart';
 
 class Timeline {
   BeatFraction songLength = BeatFraction(4, 4);
   double get lengthInBeats => songLength.beats;
 
   List<Instrument> instruments;
-  List<Note> notes; // TODO this is, of course, massively simplified...
+  List<PatternInstance> patterns;
+  List<List<NoteShift>> _noteShiftBuffer;
 
   Timeline();
 
@@ -20,25 +22,65 @@ class Timeline {
     return beats % lengthInBeats;
   }
 
+  void updateNoteShiftBuffer() {
+    _noteShiftBuffer =
+        List<List<NoteShift>>.filled(instruments.length, <NoteShift>[]);
+    patterns.forEach((pat) {
+      var notes = pat.data.instrumentNotes;
+      for (var i = 0; i < _noteShiftBuffer.length; i++) {
+        _noteShiftBuffer[i]
+            .addAll(notes[i].notes.map((note) => NoteShift(note, pat.start)));
+      }
+    });
+  }
+
   // WARNING: doesn't do more than one wrap!
-  Iterable<NoteShift> getNotes(double startInBeats, double lengthInBeats) {
+  Iterable<Iterable<NoteShift>> getNotes(
+      double startInBeats, double lengthInBeats) {
     var endInBeats = startInBeats + lengthInBeats;
     var loopCount = (startInBeats / this.lengthInBeats).floor();
     var shiftBeats = songLength.beats * loopCount;
-    return notes
-        .where((n) =>
-            n.start.beats + shiftBeats >= startInBeats &&
-            n.start.beats + shiftBeats < endInBeats)
-        .map((n) => NoteShift(n, songLength * loopCount))
-        .followedBy(notes // wrapping condition
-            .where((n) =>
-                n.start.beats + shiftBeats < endInBeats - this.lengthInBeats)
-            .map((n) => NoteShift(n, songLength * (loopCount + 1))));
+
+    return _noteShiftBuffer.map((patShiftedNotesOfAnInstr) =>
+        patShiftedNotesOfAnInstr
+            .where((n) {
+              var shiftedStart =
+                  n.note.start.beats + n.shift.beats + shiftBeats;
+              return shiftedStart >= startInBeats && shiftedStart < endInBeats;
+            })
+            .map((n) => NoteShift(n.note, n.shift + songLength * loopCount))
+            // wrapping
+            .followedBy(patShiftedNotesOfAnInstr
+                .where((n) =>
+                    n.note.start.beats + n.shift.beats + shiftBeats <
+                    endInBeats - this.lengthInBeats)
+                .map((n) => NoteShift(
+                    n.note, n.shift + songLength * (loopCount + 1)))));
+  }
+
+  void updateSongLength() {
+    songLength = patterns.fold(BeatFraction.washy(0),
+        (v, pat) => pat.end.beats > v.beats ? pat.end.ceilToBeat() : v);
   }
 
   void fromBeatGrid(BeatGrid grid) {
     instruments = [grid.drums];
-    notes = grid.getNotes();
+    var gridPatternData = PatternData()
+      ..instrumentNotes = {0: PatternNotesComponent(grid.getNotes())};
+    var crashPatternData = PatternData()
+      ..instrumentNotes = {
+        0: PatternNotesComponent([Note(tone: Note.C + 3, octave: 5)])
+      };
+    patterns = [
+      PatternInstance(gridPatternData),
+      PatternInstance(gridPatternData, start: const BeatFraction(1, 1)),
+      PatternInstance(gridPatternData, start: const BeatFraction(2, 1)),
+      PatternInstance(gridPatternData, start: const BeatFraction(3, 1)),
+      // open hihat only on the first of 4 bars -> proof-of-concept: timeline & patterns
+      PatternInstance(crashPatternData)
+    ];
+    updateSongLength();
+    updateNoteShiftBuffer();
   }
 }
 

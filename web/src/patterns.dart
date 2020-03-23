@@ -8,6 +8,8 @@ abstract class PatternDataComponent {
 class PatternNotesComponent extends PatternDataComponent {
   List<Note> notes;
 
+  PatternNotesComponent(this.notes);
+
   @override
   BeatFraction length() {
     return notes.fold(
@@ -16,6 +18,8 @@ class PatternNotesComponent extends PatternDataComponent {
 }
 
 class PatternData {
+  Map<int, PatternNotesComponent> instrumentNotes;
+
   BeatFraction length() {
     return const BeatFraction(4, 4);
   }
@@ -26,6 +30,8 @@ class PatternInstance {
   BeatFraction length;
   int track;
   PatternData data;
+
+  BeatFraction get end => start + length;
 
   PatternInstance(
     this.data, {
