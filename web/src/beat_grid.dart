@@ -42,13 +42,17 @@ class BeatGrid {
   }
 
   void swaggyBeat() {
+    // KICK
     setField(0, 0, true);
-    setField(2, 0, true);
-    setField(7, 0, true);
-    setField(9, 0, true);
+    setField(4, 0, true);
+    //SNARE
+    setField(8, 1, true);
+    //HI-HAT
+    setField(2, 2, true);
+    setField(3, 2, true);
 
-    setField(4, 1, true);
-    setField(12, 1, true);
+    setField(6, 2, true);
+    setField(7, 2, true);
   }
 
   List<Note> getNotes() {

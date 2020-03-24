@@ -3,11 +3,12 @@ import 'instruments.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
 import 'patterns.dart';
+import 'utils.dart';
 
 class Timeline {
   // UI stuff
-  static const String pixelsPerBeat = 'timeline-ppb';
-  static const String pixelsPerTrack = 'timeline-ppt';
+  static final pixelsPerBeat = CssPxVar('timeline-ppb', 20);
+  static final pixelsPerTrack = CssPxVar('timeline-ppt', 70);
 
   BeatFraction songLength = BeatFraction(4, 4);
   double get lengthInBeats => songLength.beats;

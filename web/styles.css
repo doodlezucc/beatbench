@@ -6,8 +6,8 @@ html, body {
 	padding: 0;
 	font-family: 'Roboto', sans-serif;
 	--cell-size: 30px;
-	--timeline-ppt: 70px;
-	--timeline-ppb: 20px;
+	--timeline-ppt: 0;
+	--timeline-ppb: 0;
 }
 
 #output {

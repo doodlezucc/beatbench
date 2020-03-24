@@ -1,11 +1,24 @@
 import 'dart:html';
 
-void setVar(String name, double value) =>
-    querySelector('body').style.setProperty('--$name', '${value}px');
+class CssPxVar {
+  final String name;
+  double _value;
+  double get value => _value;
+  set value(double v) {
+    _value = v;
 
-double getVar(String name) => double.tryParse(querySelector('body')
-    .style
-    .getPropertyValue('--$name')
-    .replaceFirst('px', ''));
+    var css = querySelector('body').style.cssText;
+    var valueStart = css.indexOf(name) + name.length + 2;
 
-String cssCalc(num m, String varKey) => 'calc($m * var(--$varKey))';
+    css = css.substring(0, valueStart) +
+        '${v}px' +
+        css.substring(css.indexOf('px', valueStart) + 2);
+    print(css);
+  }
+
+  CssPxVar(String name, double defaultValue)
+      : name = '--$name',
+        _value = defaultValue;
+}
+
+String cssCalc(num m, CssPxVar v) => 'calc($m * var(${v.name}))';

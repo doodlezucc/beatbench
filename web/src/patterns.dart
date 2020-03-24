@@ -1,4 +1,5 @@
 import 'dart:html';
+import 'dart:math';
 
 import 'notes.dart';
 import 'beat_fraction.dart';
@@ -45,6 +46,7 @@ class PatternInstance {
   set length(BeatFraction length) {
     _length = length;
     _e.style.width = cssCalc(length.beats, Timeline.pixelsPerBeat);
+    _canvas.width = (length.beats * Timeline.pixelsPerBeat.value).ceil();
   }
 
   int _track;
@@ -59,10 +61,12 @@ class PatternInstance {
   set data(PatternData data) {
     _data = data;
     (_e.querySelector('input') as InputElement).value = data.name;
-    // TODO bob ross stuff
+    _draw();
   }
 
   HtmlElement _e;
+  InputElement _input;
+  CanvasElement _canvas;
 
   BeatFraction get end => start + length;
 
@@ -72,17 +76,48 @@ class PatternInstance {
     BeatFraction length,
     int track = 0,
   }) {
-    var nameInput = InputElement(type: 'text')
+    _input = InputElement(type: 'text')
       ..className = 'shy'
       ..value = data.name;
 
     _e = querySelector('#patterns').append(DivElement()
       ..className = 'pattern'
-      ..append(nameInput));
+      ..append(_input))
+      ..append(_canvas =
+          CanvasElement(height: Timeline.pixelsPerTrack.value.ceil()));
 
     this.data = data;
     this.start = start;
     this.length = length ?? data.length();
     this.track = track;
+    _draw();
+  }
+
+  void _draw() {
+    var ctx = _canvas.context2D;
+    var minPitch = 1000;
+    var maxPitch = 0;
+    data.instrumentNotes.forEach((instrument, component) {
+      component.notes.forEach((n) {
+        if (n.coarsePitch > maxPitch) maxPitch = n.coarsePitch;
+        if (n.coarsePitch < minPitch) minPitch = n.coarsePitch;
+      });
+    });
+
+    var diff = maxPitch - minPitch;
+    var noteHeight = Timeline.pixelsPerTrack.value / max(diff + 1, 8);
+
+    ctx.fillStyle = '#fff';
+
+    data.instrumentNotes.forEach((instrument, component) {
+      component.notes.forEach((n) {
+        ctx.fillRect(
+            Timeline.pixelsPerBeat.value * n.start.beats,
+            Timeline.pixelsPerTrack.value -
+                (n.coarsePitch - minPitch + 1) * noteHeight,
+            Timeline.pixelsPerBeat.value * n.length.beats - 1,
+            noteHeight);
+      });
+    });
   }
 }
