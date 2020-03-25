@@ -38,8 +38,8 @@ class PatternInstance {
   BeatFraction _start;
   BeatFraction get start => _start;
   set start(BeatFraction start) {
-    _start = start;
-    _e.style.left = cssCalc(start.beats, Timeline.pixelsPerBeat);
+    _start = start.beats >= 0 ? start : BeatFraction(0, 1);
+    _e.style.left = cssCalc(_start.beats, Timeline.pixelsPerBeat);
   }
 
   BeatFraction _length;
@@ -53,8 +53,8 @@ class PatternInstance {
   int _track;
   int get track => _track;
   set track(int track) {
-    _track = track;
-    _e.style.top = cssCalc(track, Timeline.pixelsPerTrack);
+    _track = max(0, track);
+    _e.style.top = cssCalc(_track, Timeline.pixelsPerTrack);
   }
 
   PatternData _data;
@@ -92,7 +92,7 @@ class PatternInstance {
     Draggable(_e, () => this.start, () => this.track,
         (firstStart, firstTrack, pixelOff) {
       this.start = (firstStart as BeatFraction) +
-          BeatFraction.washy(pixelOff.x / Timeline.pixelsPerBeat.value);
+          BeatFraction((pixelOff.x / Timeline.pixelsPerBeat.value).round(), 4);
       this.track = (firstTrack as int) +
           (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
     });
