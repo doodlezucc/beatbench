@@ -8,6 +8,7 @@ html, body {
 	--cell-size: 30px;
 	--timeline-ppt: 0;
 	--timeline-ppb: 0;
+	user-select: contain;
 }
 
 #output {
@@ -86,7 +87,6 @@ td.filled {
 	display: inline-block;
 	cursor: pointer;
 	position: absolute;
-	transition: 0.1s;
 	border-right: 1px dotted white;
 	box-sizing: border-box;
 }
@@ -108,6 +108,28 @@ td.filled {
 	top: 0;
 	left: 0;
 	transition: 0.1s;
+}
+
+.stretch {
+	width: 10px;
+	position: absolute;
+	height: 100%;
+	top: 0;
+	transition: 0.1s;
+}
+
+.stretch:hover {
+	background-color: #fffa;
+}
+
+.stretch.left {
+	cursor: w-resize;
+	left: 0;
+}
+
+.stretch.right {
+	cursor: e-resize;
+	right: 0;
 }
 
 input {

@@ -1,6 +1,7 @@
 import 'dart:html';
 import 'dart:math';
 
+import 'drag.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
 import 'timeline.dart';
@@ -60,7 +61,7 @@ class PatternInstance {
   PatternData get data => _data;
   set data(PatternData data) {
     _data = data;
-    (_e.querySelector('input') as InputElement).value = data.name;
+    _input.value = data.name;
     _draw();
   }
 
@@ -72,7 +73,7 @@ class PatternInstance {
 
   PatternInstance(
     PatternData data, {
-    start = const BeatFraction(0, 1),
+    BeatFraction start = const BeatFraction(0, 1),
     BeatFraction length,
     int track = 0,
   }) {
@@ -82,15 +83,29 @@ class PatternInstance {
 
     _e = querySelector('#patterns').append(DivElement()
       ..className = 'pattern'
-      ..append(_input))
-      ..append(_canvas =
-          CanvasElement(height: Timeline.pixelsPerTrack.value.ceil()));
+      ..append(_input)
+      ..append(
+          _canvas = CanvasElement(height: Timeline.pixelsPerTrack.value.ceil()))
+      ..append(stretchElem('left'))
+      ..append(stretchElem('right')));
+
+    Draggable(_e, () => this.start, () => this.track,
+        (firstStart, firstTrack, pixelOff) {
+      this.start = (firstStart as BeatFraction) +
+          BeatFraction.washy(pixelOff.x / Timeline.pixelsPerBeat.value);
+      this.track = (firstTrack as int) +
+          (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
+    });
 
     this.data = data;
     this.start = start;
     this.length = length ?? data.length();
     this.track = track;
     _draw();
+  }
+
+  DivElement stretchElem(String side) {
+    return DivElement()..className = 'stretch $side';
   }
 
   void _draw() {
