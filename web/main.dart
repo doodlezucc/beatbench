@@ -25,7 +25,6 @@ void initStuff() async {
   project.timeline.fromBeatGrid(grid);
 
   querySelector('#play').onClick.listen((e) {
-    project.timeline.fromBeatGrid(grid);
     project.play();
   });
   querySelector('#pause').onClick.listen((e) {

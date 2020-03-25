@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:html';
 import 'dart:math';
 
@@ -8,29 +9,61 @@ import 'timeline.dart';
 import 'utils.dart';
 
 abstract class PatternDataComponent {
+  final StreamController _streamController = StreamController.broadcast(
+    sync: true,
+    onListen: () => print('hello there?'),
+  );
+  Stream get stream => _streamController.stream;
+
   BeatFraction length();
 }
 
 class PatternNotesComponent extends PatternDataComponent {
-  List<Note> notes;
+  final List<Note> _notes;
+  Iterable<Note> get notes => Iterable.castFrom(_notes);
 
-  PatternNotesComponent(this.notes);
+  PatternNotesComponent(Iterable<Note> notes) : _notes = notes.toList();
 
   @override
   BeatFraction length() {
     return notes.fold(
         BeatFraction.washy(0), (v, n) => n.end.beats > v.beats ? n.end : v);
   }
+
+  void add(Note note) {
+    _notes.add(note);
+    _streamController.add('add');
+  }
+
+  void remove(Note note) {
+    _notes.remove(note);
+    _streamController.add('remoof');
+  }
 }
 
 class PatternData {
-  Map<int, PatternNotesComponent> instrumentNotes;
+  final Map<int, PatternNotesComponent> _instrumentNotes = {};
   String name;
 
-  PatternData(this.name, this.instrumentNotes);
+  PatternData(this.name, Map<int, PatternNotesComponent> instrumentNotes) {
+    _instrumentNotes.addAll(instrumentNotes);
+  }
+
+  PatternNotesComponent component(int instrument) {
+    return _instrumentNotes[instrument];
+  }
+
+  Map<int, PatternNotesComponent> notes() => Map.unmodifiable(_instrumentNotes);
 
   BeatFraction length() {
-    return const BeatFraction(4, 4);
+    return _instrumentNotes.values.fold(BeatFraction.washy(0), (v, n) {
+      var l = n.length();
+      return l.beats > v.beats ? l : v;
+    });
+  }
+
+  void listenToEdits(void Function(dynamic) handler) {
+    _instrumentNotes.values.forEach((comp) => comp.stream.listen(handler));
   }
 }
 
@@ -57,13 +90,7 @@ class PatternInstance {
     _e.style.top = cssCalc(_track, Timeline.pixelsPerTrack);
   }
 
-  PatternData _data;
-  PatternData get data => _data;
-  set data(PatternData data) {
-    _data = data;
-    _input.value = data.name;
-    _draw();
-  }
+  final PatternData data;
 
   HtmlElement _e;
   InputElement _input;
@@ -72,7 +99,7 @@ class PatternInstance {
   BeatFraction get end => start + length;
 
   PatternInstance(
-    PatternData data, {
+    this.data, {
     BeatFraction start = const BeatFraction(0, 1),
     BeatFraction length,
     int track = 0,
@@ -97,11 +124,15 @@ class PatternInstance {
           (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
     });
 
-    this.data = data;
     this.start = start;
-    this.length = length ?? data.length();
+    this.length = length ?? data.length().ceilTo(2);
     this.track = track;
     _draw();
+
+    data.listenToEdits((ev) {
+      print('RECEIVED $ev');
+      _draw();
+    });
   }
 
   DivElement stretchElem(String side) {
@@ -110,9 +141,10 @@ class PatternInstance {
 
   void _draw() {
     var ctx = _canvas.context2D;
+    ctx.clearRect(0, 0, _canvas.width, _canvas.height);
     var minPitch = 1000;
     var maxPitch = 0;
-    data.instrumentNotes.forEach((instrument, component) {
+    data._instrumentNotes.forEach((instrument, component) {
       component.notes.forEach((n) {
         if (n.coarsePitch > maxPitch) maxPitch = n.coarsePitch;
         if (n.coarsePitch < minPitch) minPitch = n.coarsePitch;
@@ -124,7 +156,7 @@ class PatternInstance {
 
     ctx.fillStyle = '#fff';
 
-    data.instrumentNotes.forEach((instrument, component) {
+    data._instrumentNotes.forEach((instrument, component) {
       component.notes.forEach((n) {
         ctx.fillRect(
             Timeline.pixelsPerBeat.value * n.start.beats,

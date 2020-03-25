@@ -22,10 +22,7 @@ class AudioAssembler {
     regionLength = specs.schedulingMs / 1000;
   }
 
-  void run({
-    @required double bpm,
-    @required Timeline timeline,
-  }) async {
+  void run({@required double bpm, @required Timeline timeline}) async {
     await ctx.resume();
     isRunning = true;
     bufferedIndex = -1;
@@ -35,6 +32,7 @@ class AudioAssembler {
     if (updateTimer != null) {
       updateTimer.cancel();
     }
+    timeline.updateNoteShiftBuffer();
     updateTimer = Timer.periodic(
       Duration(
         milliseconds: (specs.schedulingMs * 0.8).round(),

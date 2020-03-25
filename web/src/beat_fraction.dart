@@ -31,10 +31,9 @@ class BeatFraction {
     return BeatFraction(numerator * m, denominator);
   }
 
-  BeatFraction ceilToBeat() {
-    // 5/8 ||| (4*5/8)^ * 8/4 ---> (2.5)^ * 2 ---> 3*2 ---> 6
+  BeatFraction ceilTo(int denom) {
     return BeatFraction(
-        ((4 * numerator / denominator).ceil() * denominator / 4).ceil(),
+        ((denom * numerator / denominator).ceil() * denominator / denom).ceil(),
         denominator);
   }
 

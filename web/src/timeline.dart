@@ -31,7 +31,7 @@ class Timeline {
     _noteShiftBuffer =
         List<List<NoteShift>>.filled(instruments.length, <NoteShift>[]);
     patterns.forEach((pat) {
-      var notes = pat.data.instrumentNotes;
+      var notes = pat.data.notes();
       for (var i = 0; i < _noteShiftBuffer.length; i++) {
         _noteShiftBuffer[i]
             .addAll(notes[i].notes.map((note) => NoteShift(note, pat.start)));
@@ -65,15 +65,12 @@ class Timeline {
 
   void updateSongLength() {
     songLength = patterns.fold(BeatFraction.washy(0),
-        (v, pat) => pat.end.beats > v.beats ? pat.end.ceilToBeat() : v);
+        (v, pat) => pat.end.beats > v.beats ? pat.end.ceilTo(4) : v);
   }
 
   void fromBeatGrid(BeatGrid grid) {
     instruments = [grid.drums];
-    var gridPatternData = PatternData(
-      'My awesome beat',
-      {0: PatternNotesComponent(grid.getNotes())},
-    );
+    var gridPatternData = grid.data;
     var crashPatternData = PatternData(
       'Crash!',
       {
