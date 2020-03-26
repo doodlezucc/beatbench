@@ -9,7 +9,6 @@ html, body {
 	--timeline-ppt: 0;
 	--timeline-ppb: 0;
 	user-select: none;
-	pointer-events: all;
 }
 
 #output {
@@ -147,4 +146,13 @@ input:focus {
 
 input.shy {
 	background: none;
+}
+
+#timeline canvas {
+	position: absolute;
+	pointer-events: none;
+}
+
+#timeline #foreground {
+	z-index: 10;
 }

@@ -3,17 +3,20 @@ import 'dart:web_audio';
 
 import 'package:meta/meta.dart';
 
+import 'beat_fraction.dart';
 import 'timeline.dart';
 
 class Specs {
   final int sampleRate = 44100;
   final int schedulingMs = 100;
+  final int frameDuration = 20; // 50fps
 }
 
 class AudioAssembler {
   var specs = Specs();
   var ctx = AudioContext();
-  Timer updateTimer;
+  Timer audioTimer;
+  Timer videoTimer;
   bool isRunning;
   int bufferedIndex;
   double regionLength; // duration of a single region (in seconds)
@@ -29,21 +32,30 @@ class AudioAssembler {
 
     var startTime = ctx.currentTime;
 
-    if (updateTimer != null) {
-      updateTimer.cancel();
+    if (audioTimer != null) {
+      audioTimer.cancel();
+      videoTimer.cancel();
     }
 
-    updateTimer = Timer.periodic(
+    var bps = bpm / 60;
+
+    videoTimer = Timer.periodic(
+      Duration(milliseconds: specs.frameDuration),
+      (timerInstance) {
+        var timeAbsolute = ctx.currentTime - startTime;
+        var beats = timeAbsolute * bps;
+        timeline.songPosition = BeatFraction.washy(beats);
+      },
+    );
+    audioTimer = Timer.periodic(
       Duration(
         milliseconds: (specs.schedulingMs * 0.8).round(),
       ),
       (timerInstance) {
-        _bufferNotes(
-            bps: bpm / 60, timeline: timeline, contextStartTime: startTime);
+        _bufferNotes(bps: bps, timeline: timeline, contextStartTime: startTime);
       },
     );
-    _bufferNotes(
-        bps: bpm / 60, timeline: timeline, contextStartTime: startTime);
+    _bufferNotes(bps: bps, timeline: timeline, contextStartTime: startTime);
   }
 
   void _bufferNotes({
@@ -107,8 +119,10 @@ class AudioAssembler {
     }
   }
 
-  void stopPlayback() {
-    updateTimer.cancel();
+  void stopPlayback({@required Timeline timeline}) {
+    audioTimer.cancel();
+    videoTimer.cancel();
+    timeline.songPosition = BeatFraction(0, 1);
     isRunning = false;
   }
 }

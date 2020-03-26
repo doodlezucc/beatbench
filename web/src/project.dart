@@ -13,7 +13,7 @@ class Project {
   }
 
   void pause() {
-    audioAssembler.stopPlayback();
+    audioAssembler.stopPlayback(timeline: timeline);
     print('suspended');
   }
 }

@@ -15,17 +15,26 @@ class Timeline {
   BeatFraction _songLength = BeatFraction(4, 4);
   double get lengthInBeats => _songLength.beats;
 
+  BeatFraction _songPosition;
+  BeatFraction get songPosition => _songPosition;
+  set songPosition(BeatFraction songPosition) {
+    _songPosition = songPosition;
+    _drawForeground();
+  }
+
   List<Instrument> instruments;
   final List<PatternInstance> _patterns = [];
   List<List<NoteShift>> _noteShiftBuffer;
   final HtmlElement _e;
-  CanvasElement _canvas;
+  CanvasElement _canvasBg;
+  CanvasElement _canvasFg;
 
   bool _hasChanges = false;
   bool get hasChanges => _hasChanges;
 
   Timeline() : _e = querySelector('#timeline') {
-    _canvas = _e.querySelector('#timelineCanvas');
+    _canvasBg = _e.querySelector('#background');
+    _canvasFg = _e.querySelector('#foreground');
     _drawOrientation();
   }
 
@@ -52,19 +61,35 @@ class Timeline {
     });
   }
 
+  void _drawForeground() {
+    var l = _songLength;
+    _canvasFg.width = (l.beats * pixelsPerBeat.value).round();
+    _canvasFg.height = 200;
+
+    var ctx = _canvasFg.context2D;
+    ctx.clearRect(0, 0, _canvasFg.width, _canvasFg.height);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+
+    var x = songPosition.beats * pixelsPerBeat.value;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, _canvasFg.height);
+
+    ctx.stroke();
+  }
+
   void _drawOrientation() {
     var l = _songLength;
-    _canvas.width = (l.beats * pixelsPerBeat.value).round();
-    _canvas.height = 250;
+    _canvasBg.width = (l.beats * pixelsPerBeat.value).round();
+    _canvasBg.height = 200;
 
-    var ctx = _canvas.context2D;
-    ctx.clearRect(0, 0, _canvas.width, _canvas.height);
-    ctx.strokeStyle = '#fff7';
-    ctx.lineWidth = 0.5;
+    var ctx = _canvasBg.context2D;
+    ctx.clearRect(0, 0, _canvasBg.width, _canvasBg.height);
+    ctx.strokeStyle = '#fff4';
     for (var b = 0; b <= l.beats; b++) {
       var x = (b * pixelsPerBeat.value).round() - 0.5;
       ctx.moveTo(x, 0);
-      ctx.lineTo(x, _canvas.height);
+      ctx.lineTo(x, _canvasBg.height);
     }
     ctx.stroke();
   }
