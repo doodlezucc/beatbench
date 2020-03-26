@@ -76,7 +76,7 @@ class PatternInstance {
   }
 
   void _silentStart(BeatFraction start) {
-    _start = start.numerator >= 0 ? start : BeatFraction(0, 1);
+    _start = start.beats >= 0 ? start : BeatFraction(0, 1);
     _e.style.left = cssCalc(_start.beats, Timeline.pixelsPerBeat);
   }
 
@@ -84,11 +84,12 @@ class PatternInstance {
   BeatFraction get length => _length;
   set length(BeatFraction length) {
     _silentLength(length);
+    _draw();
     _onMove();
   }
 
   void _silentLength(BeatFraction length) {
-    _length = length;
+    _length = length.beats >= 1 ? length : BeatFraction(1, 4);
     _e.style.width = cssCalc(_length.beats, Timeline.pixelsPerBeat);
     _canvas.width = (_length.beats * Timeline.pixelsPerBeat.value).ceil();
   }
@@ -125,8 +126,8 @@ class PatternInstance {
       ..append(_input)
       ..append(
           _canvas = CanvasElement(height: Timeline.pixelsPerTrack.value.ceil()))
-      ..append(stretchElem('left'))
-      ..append(stretchElem('right')));
+      ..append(stretchElem(false))
+      ..append(stretchElem(true)));
 
     Draggable(_e, () => this.start, () => this.track,
         (firstStart, firstTrack, pixelOff) {
@@ -142,13 +143,18 @@ class PatternInstance {
     _draw();
 
     data.listenToEdits((ev) {
-      print('RECEIVED $ev');
       _draw();
     });
   }
 
-  DivElement stretchElem(String side) {
-    return DivElement()..className = 'stretch $side';
+  DivElement stretchElem(bool right) {
+    var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
+    Draggable(out, right ? () => length : () => null, () => null,
+        (srcLength, y, off) {
+      length = (srcLength as BeatFraction) +
+          BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
+    });
+    return out;
   }
 
   void _draw() {

@@ -37,11 +37,26 @@ class BeatFraction {
         denominator);
   }
 
-  bool equals(BeatFraction other) =>
-      numerator == other.numerator && denominator == other.denominator;
+  @override
+  bool operator ==(dynamic other) => (other is BeatFraction)
+      ? (numerator == other.numerator && denominator == other.denominator)
+      : false;
 
-  int compare(BeatFraction other) =>
-      equals(other) ? 0 : (beats > other.beats ? 1 : -1);
+  bool operator >(BeatFraction other) {
+    return beats > other.beats;
+  }
+
+  bool operator >=(BeatFraction other) {
+    return beats >= other.beats;
+  }
+
+  bool operator <(BeatFraction other) {
+    return beats < other.beats;
+  }
+
+  bool operator <=(BeatFraction other) {
+    return beats <= other.beats;
+  }
 
   @override
   String toString() => '$numerator/$denominator';

@@ -40,8 +40,9 @@ class Timeline {
     _patterns.forEach((pat) {
       var notes = pat.data.notes();
       for (var i = 0; i < _noteShiftBuffer.length; i++) {
-        _noteShiftBuffer[i]
-            .addAll(notes[i].notes.map((note) => NoteShift(note, pat.start)));
+        _noteShiftBuffer[i].addAll(notes[i].notes.where((note) {
+          return note.start.beats < pat.length.beats;
+        }).map((note) => NoteShift(note, pat.start)));
       }
     });
   }
@@ -88,9 +89,8 @@ class Timeline {
   }
 
   void calculateSongLength() {
-    _songLength = _patterns.fold(BeatFraction.washy(0),
-        (v, pat) => pat.end.compare(v) > 0 ? pat.end : v);
-    print(_songLength.beats.toString() + ' beats');
+    _songLength = _patterns.fold(
+        BeatFraction.washy(0), (v, pat) => pat.end > v ? pat.end : v);
     _drawOrientation();
   }
 
@@ -98,17 +98,14 @@ class Timeline {
       {BeatFraction start = const BeatFraction(0, 1), int track = 0}) {
     PatternInstance instance;
     instance = PatternInstance(data, start, null, track, () {
-      var compare = instance.end.compare(_songLength);
-      print(
-          'compared: $compare | my end: ${instance.end} | the end: $_songLength');
-      if (compare > 0) {
+      if (instance.end > _songLength) {
         _songLength = instance.end;
         _drawOrientation();
-      } else if (compare < 0) {
+      } else if (instance.end < _songLength) {
         calculateSongLength();
       }
     });
-    if (instance.end.compare(_songLength) > 0) {
+    if (instance.end > _songLength) {
       _songLength = instance.end;
       _drawOrientation();
     }

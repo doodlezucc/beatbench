@@ -19,10 +19,12 @@ class Draggable {
       _initializeSystem();
     }
     e.onMouseDown.listen((ev) {
-      _offset1 = ev.client;
-      _x1 = xVariable();
-      _y1 = yVariable();
-      _dragged.add(this);
+      if (ev.target == e) {
+        _offset1 = ev.client;
+        _x1 = xVariable();
+        _y1 = yVariable();
+        _dragged.add(this);
+      }
     });
   }
 
