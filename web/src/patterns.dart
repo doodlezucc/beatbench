@@ -68,6 +68,13 @@ class PatternData {
 }
 
 class PatternInstance {
+  BeatFraction _contentShift = BeatFraction(0, 1);
+  BeatFraction get contentShift => _contentShift;
+  set contentShift(BeatFraction contentShift) {
+    _contentShift = contentShift;
+    _draw();
+  }
+
   BeatFraction _start;
   BeatFraction get start => _start;
   set start(BeatFraction start) {
@@ -149,11 +156,32 @@ class PatternInstance {
 
   DivElement stretchElem(bool right) {
     var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
-    Draggable(out, right ? () => length : () => null, () => null,
-        (srcLength, y, off) {
-      length = (srcLength as BeatFraction) +
-          BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
-    });
+    Draggable(
+      out,
+      right ? () => length : () => [start, contentShift, length],
+      () => null,
+      right
+          ? (srcLength, y, off) {
+              length = (srcLength as BeatFraction) +
+                  BeatFraction(
+                      (off.x / Timeline.pixelsPerBeat.value).round(), 4);
+            }
+          : (sources, y, off) {
+              var diff = BeatFraction(
+                  (off.x / Timeline.pixelsPerBeat.value).round(), 4);
+              // diff maximum: lengthOld - 1
+              var maxDiff = sources[2].beats - 1;
+              if (diff.beats > maxDiff) diff = BeatFraction.washy(maxDiff);
+              // diff minimum: -contentShiftOld
+              var minDiff = (sources[1] as BeatFraction) * -1;
+              if (diff < minDiff) diff = minDiff;
+
+              _silentStart((sources[0] as BeatFraction) + diff);
+              _silentLength(sources[2] - diff);
+              contentShift = (sources[1] as BeatFraction) + diff;
+              _draw();
+            },
+    );
     return out;
   }
 
@@ -177,7 +205,7 @@ class PatternInstance {
     data._instrumentNotes.forEach((instrument, component) {
       component.notes.forEach((n) {
         ctx.fillRect(
-            Timeline.pixelsPerBeat.value * n.start.beats,
+            Timeline.pixelsPerBeat.value * (n.start - contentShift).beats,
             Timeline.pixelsPerTrack.value -
                 (n.coarsePitch - minPitch + 1) * noteHeight,
             Timeline.pixelsPerBeat.value * n.length.beats - 1,

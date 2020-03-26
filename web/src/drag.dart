@@ -7,29 +7,38 @@ class Draggable {
   final void Function(dynamic startXVar, dynamic startYVar, Point<num> diff)
       applyTransform;
 
-  static final List<Draggable> _dragged = [];
+  static final List<Draggable> _draggables = [];
+  static Iterable<Draggable> get _dragged =>
+      _draggables.where((d) => d._isDragged);
   static bool _isSetUp = false;
 
   static Point<num> _offset1;
   dynamic _x1;
   dynamic _y1;
+  bool _isDragged = false;
 
   Draggable(this.e, this.xVariable, this.yVariable, this.applyTransform) {
     if (!_isSetUp) {
       _initializeSystem();
     }
+    _draggables.add(this);
     e.onMouseDown.listen((ev) {
-      if (ev.target == e) {
+      e.classes.toggle('dragged', true);
+      if (ev.target == e ||
+          !_draggables.any((draggable) => draggable.e == ev.target)) {
         _offset1 = ev.client;
         _x1 = xVariable();
         _y1 = yVariable();
-        _dragged.add(this);
+        _isDragged = true;
       }
     });
   }
 
   static void _stopTheDragging() {
-    _dragged.clear();
+    _draggables.forEach((draggable) {
+      draggable.e.classes.toggle('dragged', false);
+      draggable._isDragged = false;
+    });
   }
 
   static void _initializeSystem() {

@@ -24,6 +24,10 @@ class BeatFraction {
     // 1/2 + 1/8 = (8+2)/(16) = 10/16 = 5/8 !!!
   }
 
+  BeatFraction operator -(BeatFraction other) {
+    return this + other * -1;
+  }
+
   BeatFraction operator *(num m) {
     if (isWashy) {
       return BeatFraction.washy(beats * m);

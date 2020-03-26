@@ -41,8 +41,9 @@ class Timeline {
       var notes = pat.data.notes();
       for (var i = 0; i < _noteShiftBuffer.length; i++) {
         _noteShiftBuffer[i].addAll(notes[i].notes.where((note) {
-          return note.start.beats < pat.length.beats;
-        }).map((note) => NoteShift(note, pat.start)));
+          return note.start >= pat.contentShift &&
+              note.start < pat.length + pat.contentShift;
+        }).map((note) => NoteShift(note, pat.start - pat.contentShift)));
       }
     });
   }
