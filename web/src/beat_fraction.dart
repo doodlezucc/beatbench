@@ -42,9 +42,8 @@ class BeatFraction {
   }
 
   @override
-  bool operator ==(dynamic other) => (other is BeatFraction)
-      ? (numerator == other.numerator && denominator == other.denominator)
-      : false;
+  bool operator ==(dynamic other) =>
+      (other is BeatFraction) ? beats == other.beats : false;
 
   bool operator >(BeatFraction other) {
     return beats > other.beats;

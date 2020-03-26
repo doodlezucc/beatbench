@@ -21,6 +21,9 @@ class Timeline {
   final HtmlElement _e;
   CanvasElement _canvas;
 
+  bool _hasChanges = false;
+  bool get hasChanges => _hasChanges;
+
   Timeline() : _e = querySelector('#timeline') {
     _canvas = _e.querySelector('#timelineCanvas');
     _drawOrientation();
@@ -35,6 +38,7 @@ class Timeline {
   }
 
   void updateNoteShiftBuffer() {
+    _hasChanges = false;
     _noteShiftBuffer =
         List<List<NoteShift>>.filled(instruments.length, <NoteShift>[]);
     _patterns.forEach((pat) {
@@ -89,6 +93,11 @@ class Timeline {
                     n.note, n.shift + _songLength * (loopCount + 1)))));
   }
 
+  void thereAreChanges() {
+    print('bruv there are changes');
+    _hasChanges = true;
+  }
+
   void calculateSongLength() {
     _songLength = _patterns.fold(
         BeatFraction.washy(0), (v, pat) => pat.end > v ? pat.end : v);
@@ -105,12 +114,14 @@ class Timeline {
       } else if (instance.end < _songLength) {
         calculateSongLength();
       }
+      thereAreChanges();
     });
     if (instance.end > _songLength) {
       _songLength = instance.end;
       _drawOrientation();
     }
     _patterns.add(instance);
+    thereAreChanges();
     return instance;
   }
 
@@ -130,7 +141,7 @@ class Timeline {
     }
     insertPattern(crashPatternData, track: 1);
     calculateSongLength();
-    updateNoteShiftBuffer();
+    thereAreChanges();
   }
 }
 

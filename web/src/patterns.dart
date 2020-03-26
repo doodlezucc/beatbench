@@ -71,34 +71,44 @@ class PatternInstance {
   BeatFraction _contentShift = BeatFraction(0, 1);
   BeatFraction get contentShift => _contentShift;
   set contentShift(BeatFraction contentShift) {
-    _contentShift = contentShift;
-    _draw();
+    if (_contentShift != contentShift) {
+      _contentShift = contentShift;
+      _draw();
+      _onUpdate();
+    }
   }
 
   BeatFraction _start;
   BeatFraction get start => _start;
   set start(BeatFraction start) {
-    _silentStart(start);
-    _onMove();
+    if (_silentStart(start)) _onUpdate();
   }
 
-  void _silentStart(BeatFraction start) {
+  bool _silentStart(BeatFraction start) {
+    var oldStart = _start;
     _start = start.beats >= 0 ? start : BeatFraction(0, 1);
     _e.style.left = cssCalc(_start.beats, Timeline.pixelsPerBeat);
+    return _start != oldStart;
   }
 
   BeatFraction _length;
   BeatFraction get length => _length;
   set length(BeatFraction length) {
-    _silentLength(length);
-    _draw();
-    _onMove();
+    if (_silentLength(length)) {
+      _draw();
+      _onUpdate();
+    }
   }
 
-  void _silentLength(BeatFraction length) {
+  bool _silentLength(BeatFraction length) {
+    var oldLength = _length;
     _length = length.beats >= 1 ? length : BeatFraction(1, 4);
     _e.style.width = cssCalc(_length.beats, Timeline.pixelsPerBeat);
-    _canvas.width = (_length.beats * Timeline.pixelsPerBeat.value).ceil();
+    if (_length != oldLength) {
+      _canvas.width = (_length.beats * Timeline.pixelsPerBeat.value).ceil();
+      return true;
+    }
+    return false;
   }
 
   int _track;
@@ -108,7 +118,7 @@ class PatternInstance {
     _e.style.top = cssCalc(_track, Timeline.pixelsPerTrack);
   }
 
-  final void Function() _onMove;
+  final void Function() _onUpdate;
   final PatternData data;
 
   HtmlElement _e;
@@ -122,8 +132,8 @@ class PatternInstance {
     BeatFraction start,
     BeatFraction length,
     int track,
-    void Function() onMove,
-  ) : _onMove = onMove {
+    void Function() onUpdate,
+  ) : _onUpdate = onUpdate {
     _input = InputElement(type: 'text')
       ..className = 'shy'
       ..value = data.name;
@@ -151,6 +161,7 @@ class PatternInstance {
 
     data.listenToEdits((ev) {
       _draw();
+      _onUpdate();
     });
   }
 

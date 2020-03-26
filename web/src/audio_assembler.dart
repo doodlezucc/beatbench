@@ -32,7 +32,7 @@ class AudioAssembler {
     if (updateTimer != null) {
       updateTimer.cancel();
     }
-    timeline.updateNoteShiftBuffer();
+
     updateTimer = Timer.periodic(
       Duration(
         milliseconds: (specs.schedulingMs * 0.8).round(),
@@ -51,6 +51,10 @@ class AudioAssembler {
     @required Timeline timeline,
     @required double contextStartTime,
   }) {
+    if (timeline.hasChanges) {
+      timeline.updateNoteShiftBuffer();
+    }
+
     // time since playback was started (in seconds)
     var timeAbsolute = ctx.currentTime - contextStartTime;
 
@@ -59,7 +63,6 @@ class AudioAssembler {
 
     // in the rare case of "floor" not having been buffered in the previous run, buffer it now
     if (bufferedIndex < floor) {
-      print('lulwat');
       _bufferRegion(
         bps: bps,
         timeline: timeline,

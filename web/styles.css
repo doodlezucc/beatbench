@@ -107,7 +107,6 @@ td.filled {
 	position: absolute;
 	top: 0;
 	left: 0;
-	transition: 0.1s;
 }
 
 .stretch {
@@ -115,7 +114,6 @@ td.filled {
 	position: absolute;
 	height: 100%;
 	top: 0;
-	transition: 0.1s;
 }
 
 .stretch:hover {
