@@ -76,8 +76,8 @@ class PatternInstance {
   }
 
   void _silentStart(BeatFraction start) {
-    _start = start.beats >= 0 ? start : BeatFraction(0, 1);
-    _e.style.left = cssCalc(start.beats, Timeline.pixelsPerBeat);
+    _start = start.numerator >= 0 ? start : BeatFraction(0, 1);
+    _e.style.left = cssCalc(_start.beats, Timeline.pixelsPerBeat);
   }
 
   BeatFraction _length;
@@ -89,8 +89,8 @@ class PatternInstance {
 
   void _silentLength(BeatFraction length) {
     _length = length;
-    _e.style.width = cssCalc(length.beats, Timeline.pixelsPerBeat);
-    _canvas.width = (length.beats * Timeline.pixelsPerBeat.value).ceil();
+    _e.style.width = cssCalc(_length.beats, Timeline.pixelsPerBeat);
+    _canvas.width = (_length.beats * Timeline.pixelsPerBeat.value).ceil();
   }
 
   int _track;
