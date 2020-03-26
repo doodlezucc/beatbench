@@ -1,3 +1,5 @@
+import 'dart:html';
+
 import 'beat_grid.dart';
 import 'instruments.dart';
 import 'notes.dart';
@@ -10,14 +12,19 @@ class Timeline {
   static final pixelsPerBeat = CssPxVar('timeline-ppb', 20);
   static final pixelsPerTrack = CssPxVar('timeline-ppt', 70);
 
-  BeatFraction songLength = BeatFraction(4, 4);
-  double get lengthInBeats => songLength.beats;
+  BeatFraction _songLength = BeatFraction(4, 4);
+  double get lengthInBeats => _songLength.beats;
 
   List<Instrument> instruments;
   List<PatternInstance> patterns;
   List<List<NoteShift>> _noteShiftBuffer;
+  final HtmlElement _e;
+  CanvasElement _canvas;
 
-  Timeline();
+  Timeline() : _e = querySelector('#timeline') {
+    _canvas = _e.querySelector('#timelineCanvas');
+    _drawOrientation();
+  }
 
   double beatsAt(double seconds, double bps) {
     return wrappedBeats(seconds * bps);
@@ -39,12 +46,29 @@ class Timeline {
     });
   }
 
+  void _drawOrientation() {
+    var l = _songLength.ceilTo(1) + BeatFraction(8, 1);
+    _canvas.width = (l.beats * pixelsPerBeat.value).round();
+    _canvas.height = 250;
+
+    var ctx = _canvas.context2D;
+    ctx.clearRect(0, 0, _canvas.width, _canvas.height);
+    ctx.strokeStyle = '#fff7';
+    ctx.lineWidth = 0.5;
+    for (var b = 0; b < l.beats; b++) {
+      var x = (b * pixelsPerBeat.value).round() - 0.5;
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, _canvas.height);
+    }
+    ctx.stroke();
+  }
+
   // WARNING: doesn't do more than one wrap!
   Iterable<Iterable<NoteShift>> getNotes(
       double startInBeats, double lengthInBeats) {
     var endInBeats = startInBeats + lengthInBeats;
     var loopCount = (startInBeats / this.lengthInBeats).floor();
-    var shiftBeats = songLength.beats * loopCount;
+    var shiftBeats = _songLength.beats * loopCount;
 
     return _noteShiftBuffer.map((patShiftedNotesOfAnInstr) =>
         patShiftedNotesOfAnInstr
@@ -53,18 +77,18 @@ class Timeline {
                   n.note.start.beats + n.shift.beats + shiftBeats;
               return shiftedStart >= startInBeats && shiftedStart < endInBeats;
             })
-            .map((n) => NoteShift(n.note, n.shift + songLength * loopCount))
+            .map((n) => NoteShift(n.note, n.shift + _songLength * loopCount))
             // wrapping
             .followedBy(patShiftedNotesOfAnInstr
                 .where((n) =>
                     n.note.start.beats + n.shift.beats + shiftBeats <
                     endInBeats - this.lengthInBeats)
                 .map((n) => NoteShift(
-                    n.note, n.shift + songLength * (loopCount + 1)))));
+                    n.note, n.shift + _songLength * (loopCount + 1)))));
   }
 
   void updateSongLength() {
-    songLength = patterns.fold(BeatFraction.washy(0),
+    _songLength = patterns.fold(BeatFraction.washy(0),
         (v, pat) => pat.end.beats > v.beats ? pat.end.ceilTo(4) : v);
   }
 
