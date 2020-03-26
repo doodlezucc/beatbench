@@ -16,7 +16,7 @@ class Timeline {
   double get lengthInBeats => _songLength.beats;
 
   List<Instrument> instruments;
-  List<PatternInstance> patterns;
+  final List<PatternInstance> _patterns = [];
   List<List<NoteShift>> _noteShiftBuffer;
   final HtmlElement _e;
   CanvasElement _canvas;
@@ -37,7 +37,7 @@ class Timeline {
   void updateNoteShiftBuffer() {
     _noteShiftBuffer =
         List<List<NoteShift>>.filled(instruments.length, <NoteShift>[]);
-    patterns.forEach((pat) {
+    _patterns.forEach((pat) {
       var notes = pat.data.notes();
       for (var i = 0; i < _noteShiftBuffer.length; i++) {
         _noteShiftBuffer[i]
@@ -47,7 +47,7 @@ class Timeline {
   }
 
   void _drawOrientation() {
-    var l = _songLength.ceilTo(1) + BeatFraction(8, 1);
+    var l = _songLength;
     _canvas.width = (l.beats * pixelsPerBeat.value).round();
     _canvas.height = 250;
 
@@ -55,7 +55,7 @@ class Timeline {
     ctx.clearRect(0, 0, _canvas.width, _canvas.height);
     ctx.strokeStyle = '#fff7';
     ctx.lineWidth = 0.5;
-    for (var b = 0; b < l.beats; b++) {
+    for (var b = 0; b <= l.beats; b++) {
       var x = (b * pixelsPerBeat.value).round() - 0.5;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, _canvas.height);
@@ -87,9 +87,33 @@ class Timeline {
                     n.note, n.shift + _songLength * (loopCount + 1)))));
   }
 
-  void updateSongLength() {
-    _songLength = patterns.fold(BeatFraction.washy(0),
-        (v, pat) => pat.end.beats > v.beats ? pat.end.ceilTo(4) : v);
+  void calculateSongLength() {
+    _songLength = _patterns.fold(BeatFraction.washy(0),
+        (v, pat) => pat.end.compare(v) > 0 ? pat.end : v);
+    print(_songLength.beats.toString() + ' beats');
+    _drawOrientation();
+  }
+
+  PatternInstance insertPattern(PatternData data,
+      {BeatFraction start = const BeatFraction(0, 1), int track = 0}) {
+    PatternInstance instance;
+    instance = PatternInstance(data, start, null, track, () {
+      var compare = instance.end.compare(_songLength);
+      print(
+          'compared: $compare | my end: ${instance.end} | the end: $_songLength');
+      if (compare > 0) {
+        _songLength = instance.end;
+        _drawOrientation();
+      } else if (compare < 0) {
+        calculateSongLength();
+      }
+    });
+    if (instance.end.compare(_songLength) > 0) {
+      _songLength = instance.end;
+      _drawOrientation();
+    }
+    _patterns.add(instance);
+    return instance;
   }
 
   void fromBeatGrid(BeatGrid grid) {
@@ -103,15 +127,11 @@ class Timeline {
         ])
       },
     );
-    patterns = [
-      PatternInstance(gridPatternData),
-      PatternInstance(gridPatternData, start: const BeatFraction(1, 1)),
-      PatternInstance(gridPatternData, start: const BeatFraction(2, 1)),
-      PatternInstance(gridPatternData, start: const BeatFraction(3, 1)),
-      // open hihat only on the first of 4 bars -> proof-of-concept: timeline & patterns
-      PatternInstance(crashPatternData, track: 1)
-    ];
-    updateSongLength();
+    for (var i = 0; i < 4; i++) {
+      insertPattern(gridPatternData, start: BeatFraction(i, 1));
+    }
+    insertPattern(crashPatternData, track: 1);
+    calculateSongLength();
     updateNoteShiftBuffer();
   }
 }

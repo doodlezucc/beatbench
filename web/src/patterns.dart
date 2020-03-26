@@ -71,13 +71,23 @@ class PatternInstance {
   BeatFraction _start;
   BeatFraction get start => _start;
   set start(BeatFraction start) {
+    _silentStart(start);
+    _onMove();
+  }
+
+  void _silentStart(BeatFraction start) {
     _start = start.beats >= 0 ? start : BeatFraction(0, 1);
-    _e.style.left = cssCalc(_start.beats, Timeline.pixelsPerBeat);
+    _e.style.left = cssCalc(start.beats, Timeline.pixelsPerBeat);
   }
 
   BeatFraction _length;
   BeatFraction get length => _length;
   set length(BeatFraction length) {
+    _silentLength(length);
+    _onMove();
+  }
+
+  void _silentLength(BeatFraction length) {
     _length = length;
     _e.style.width = cssCalc(length.beats, Timeline.pixelsPerBeat);
     _canvas.width = (length.beats * Timeline.pixelsPerBeat.value).ceil();
@@ -90,6 +100,7 @@ class PatternInstance {
     _e.style.top = cssCalc(_track, Timeline.pixelsPerTrack);
   }
 
+  final void Function() _onMove;
   final PatternData data;
 
   HtmlElement _e;
@@ -99,11 +110,12 @@ class PatternInstance {
   BeatFraction get end => start + length;
 
   PatternInstance(
-    this.data, {
-    BeatFraction start = const BeatFraction(0, 1),
+    this.data,
+    BeatFraction start,
     BeatFraction length,
-    int track = 0,
-  }) {
+    int track,
+    void Function() onMove,
+  ) : _onMove = onMove {
     _input = InputElement(type: 'text')
       ..className = 'shy'
       ..value = data.name;
@@ -124,8 +136,8 @@ class PatternInstance {
           (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
     });
 
-    this.start = start;
-    this.length = length ?? data.length().ceilTo(2);
+    _silentStart(start);
+    _silentLength(length ?? data.length().ceilTo(2));
     this.track = track;
     _draw();
 

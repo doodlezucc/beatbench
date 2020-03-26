@@ -2,14 +2,14 @@ class BeatFraction {
   final int numerator;
   final int denominator;
   final double beats;
-  bool get isWashy => numerator < 0 || denominator < 0;
+  bool get isWashy => denominator == 0;
 
   const BeatFraction(this.numerator, this.denominator)
       : beats = 4 * numerator / denominator;
 
   const BeatFraction.washy(this.beats)
-      : numerator = -1,
-        denominator = -1;
+      : numerator = 0,
+        denominator = 0;
 
   BeatFraction operator +(BeatFraction other) {
     if (isWashy || other.isWashy) {
@@ -42,4 +42,7 @@ class BeatFraction {
 
   int compare(BeatFraction other) =>
       equals(other) ? 0 : (beats > other.beats ? 1 : -1);
+
+  @override
+  String toString() => '$numerator/$denominator';
 }
