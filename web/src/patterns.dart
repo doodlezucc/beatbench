@@ -20,6 +20,10 @@ abstract class PatternDataComponent {
 
 class PatternNotesComponent extends PatternDataComponent {
   final List<Note> _notes;
+  final double _swing = 0.5;
+  Iterable<Note> get notesWithSwing =>
+      _notes.map((n) => n.clone(start: n.start.swingify(_swing)));
+
   Iterable<Note> get notes => Iterable.castFrom(_notes);
 
   PatternNotesComponent(Iterable<Note> notes) : _notes = notes.toList();

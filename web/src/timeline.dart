@@ -59,7 +59,7 @@ class Timeline {
     _patterns.forEach((pat) {
       var notes = pat.data.notes();
       notes.forEach((i, patNotesComp) {
-        _cache.addAll(patNotesComp.notes.where((note) {
+        _cache.addAll(patNotesComp.notesWithSwing.where((note) {
           return note.start >= pat.contentShift &&
               note.start < pat.length + pat.contentShift;
         }).map((note) {

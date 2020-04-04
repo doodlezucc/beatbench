@@ -41,6 +41,15 @@ class BeatFraction {
         denominator);
   }
 
+  BeatFraction swingify(double amount) {
+    if (amount > 0 && beats % 0.5 >= 0.25) {
+      var source = beats % 0.25;
+      var off = amount / 8 + source / (1 + amount);
+      return BeatFraction.washy(((beats * 4).floor() / 4) + off);
+    }
+    return this;
+  }
+
   @override
   bool operator ==(dynamic other) =>
       (other is BeatFraction) ? beats == other.beats : false;

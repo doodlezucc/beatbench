@@ -31,8 +31,10 @@ void initStuff() async {
     project.pause();
   });
   querySelector('#tempo').onInput.listen((e) {
-    var v = (e.target as InputElement).value;
-    project.bpm = double.parse(v);
+    var bpm = double.tryParse((e.target as InputElement).value);
+    if (bpm != null) {
+      project.bpm = bpm;
+    }
   });
 
   print('init stuff done in ' +

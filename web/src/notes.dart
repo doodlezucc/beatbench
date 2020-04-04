@@ -25,6 +25,14 @@ class Note extends Pitched {
       : super(getPitch(tone, octave));
   Note.exact(int pitch) : super(pitch);
 
+  Note clone({int pitch, BeatFraction start, BeatFraction length}) {
+    return Note(
+        tone: pitch ?? coarsePitch,
+        octave: 0,
+        start: start ?? this.start,
+        length: length ?? this.length);
+  }
+
   static const int C = 0;
   static const int D = 2;
   static const int E = 4;
