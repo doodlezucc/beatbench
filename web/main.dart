@@ -15,7 +15,7 @@ void initStuff() async {
   var time = DateTime.now().millisecondsSinceEpoch;
   querySelector('#output').text = 'Beatbench written in Dart!';
 
-  var project = Project(bpm: 130);
+  var project = Project();
 
   var grid = BeatGrid(querySelector('#grid'),
       await PresetDrums.cymaticsLofiKit(project.audioAssembler.ctx));

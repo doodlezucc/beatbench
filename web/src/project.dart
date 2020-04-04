@@ -9,7 +9,7 @@ class Project {
   static Project _instance;
   static Project get instance => _instance;
 
-  Project({this.bpm = 120}) {
+  Project({this.bpm = 150}) {
     _instance = this;
   }
 

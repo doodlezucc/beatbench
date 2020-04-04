@@ -12,40 +12,22 @@ class Specs {
 class AudioAssembler {
   var specs = Specs();
   var ctx = AudioContext();
-  Timer _audioTimer;
-  Timer _videoTimer;
   PlaybackBox _box;
   PlaybackBox get box => _box;
   bool get isRunning => _box != null;
-  double get scheduleAhead => specs.schedulingMs / 1000;
 
   void run(PlaybackBox box) async {
+    stopPlayback();
+    _box = box;
     await ctx.resume();
-
-    if (_audioTimer != null) {
-      _audioTimer.cancel();
-      _videoTimer.cancel();
-    }
-
-    _videoTimer = Timer.periodic(
-      Duration(milliseconds: specs.frameDuration),
-      (timerInstance) {},
-    );
-    _audioTimer = Timer.periodic(
-      Duration(
-        milliseconds: (specs.schedulingMs * 0.8).round(),
-      ),
-      (timerInstance) {
-        box._bufferTo(ctx.currentTime + scheduleAhead, ctx);
-      },
-    );
-    box._bufferTo(scheduleAhead, ctx);
+    _box._run(ctx, specs);
   }
 
   void stopPlayback() {
-    _audioTimer.cancel();
-    _videoTimer.cancel();
-    _box = null;
+    if (isRunning) {
+      _box.stopPlayback();
+      _box = null;
+    }
   }
 }
 
@@ -55,51 +37,108 @@ class PlaybackBox {
     _cache = l.toList(growable: false);
   }
 
-  double bufferedSeconds = 0;
+  double _bufferedSeconds;
+  double _contextTimeOnStart;
+  double _positionOnStart = 0;
+  Timer _audioTimer;
+  Timer _videoTimer;
+  AudioContext _ctx;
+  bool _running = false;
 
-  double _length;
+  double _length = 1;
   double get length => _length;
   set length(double length) {
-    _length = length;
+    if (_length != length) {
+      if (_running) {
+        var position =
+            (_positionOnStart + _ctx.currentTime - _contextTimeOnStart) %
+                _length;
+        _bufferedSeconds =
+            _bufferedSeconds - (_ctx.currentTime - _contextTimeOnStart);
+        _contextTimeOnStart = _ctx.currentTime;
+        _positionOnStart = position % length;
+      }
+
+      _length = length;
+    }
   }
 
-  void _bufferTo(double seconds, AudioContext ctx) {
-    if (seconds > bufferedSeconds) {
-      var buffLength = seconds - bufferedSeconds;
-      var startMod = bufferedSeconds % length;
+  void Function(double timeMod) onUpdateVisuals;
+
+  void _run(AudioContext ctx, Specs specs) {
+    _ctx = ctx;
+    _running = true;
+    _videoTimer = Timer.periodic(
+      Duration(milliseconds: specs.frameDuration),
+      (timerInstance) {
+        _updateVisuals();
+      },
+    );
+    var scheduleAhead = specs.schedulingMs / 1000;
+
+    _audioTimer = Timer.periodic(
+      Duration(
+        milliseconds: (specs.schedulingMs * 0.8).round(),
+      ),
+      (timerInstance) {
+        _bufferTo(ctx.currentTime - _contextTimeOnStart + scheduleAhead);
+      },
+    );
+    _contextTimeOnStart = ctx.currentTime;
+    _bufferedSeconds = 0;
+
+    _bufferTo(scheduleAhead);
+  }
+
+  void stopPlayback() {
+    _running = false;
+    _audioTimer.cancel();
+    _videoTimer.cancel();
+  }
+
+  void _updateVisuals() {
+    onUpdateVisuals(
+        (_positionOnStart + _ctx.currentTime - _contextTimeOnStart) % length);
+  }
+
+  void _bufferTo(double seconds) {
+    if (seconds > _bufferedSeconds) {
+      var buffLength = seconds - _bufferedSeconds;
+      var startMod = (_bufferedSeconds + _positionOnStart) % length;
       var end = startMod + buffLength;
       if (end >= length) {
         // Wrap to start
-        _bufferRegionWrap(end % length, ctx);
+        _bufferRegionWrap(end % length);
       }
-      _bufferRegion(startMod, end, ctx);
-      bufferedSeconds = seconds;
+      _bufferRegion(startMod, end);
+      _bufferedSeconds = seconds;
     } else {
       print('nah');
     }
   }
 
-  void _bufferRegionWrap(double to, AudioContext ctx) {
+  void _bufferRegionWrap(double to) {
+    var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     _getNotes(0, to).forEach((pn) {
-      var when = ctx.currentTime +
-          pn.startInSeconds -
-          (ctx.currentTime % length) +
-          length;
+      var when =
+          _ctx.currentTime + pn.startInSeconds - (time % length) + length;
       pn.instrument.playNote(pn.note, when);
     });
   }
 
-  void _bufferRegion(double from, double to, AudioContext ctx) {
+  void _bufferRegion(double from, double to) {
+    var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     _getNotes(from, to).forEach((pn) {
-      var when =
-          ctx.currentTime + pn.startInSeconds - (ctx.currentTime % length);
-      if (when < ctx.currentTime) {
+      //print('$time | ${pn.note.coarsePitch} | ${pn.startInSeconds}');
+      var when = _ctx.currentTime + pn.startInSeconds - (time % length);
+      if (when < time) {
         print('hmmmm');
         print(pn.note.coarsePitch);
-        print(ctx.currentTime);
+        print(time);
         print(when);
-        print(bufferedSeconds);
+        print(_bufferedSeconds);
         print(length);
+        print(pn.note.start.beats);
       }
       //print('scheduling ${pn.note.coarsePitch} to play at $when seconds');
       pn.instrument.playNote(pn.note, when);

@@ -19,17 +19,17 @@ class Timeline {
   BeatFraction _songLength = BeatFraction(4, 4);
   set songLength(BeatFraction l) {
     _songLength = l;
-    box.length = getTimeAt(l);
+    box.length = timeAt(l);
     _drawOrientation();
   }
 
   BeatFraction get songLength => _songLength;
 
-  BeatFraction _songPosition = BeatFraction(0, 1);
-  BeatFraction get songPosition => _songPosition;
-  set songPosition(BeatFraction songPosition) {
-    _songPosition = songPosition;
-    _drawForeground();
+  BeatFraction _headPosition = BeatFraction(0, 1);
+  BeatFraction get headPosition => _headPosition;
+  set headPosition(BeatFraction headPosition) {
+    _headPosition = headPosition;
+    _drawForeground(_headPosition.beats);
   }
 
   List<Instrument> instruments;
@@ -48,6 +48,9 @@ class Timeline {
     _canvasBg = _e.querySelector('#background');
     _canvasFg = _e.querySelector('#foreground');
     _drawOrientation();
+    box.onUpdateVisuals = (time) {
+      _drawForeground(beatsAt(time));
+    };
   }
 
   void updateNoteShiftBuffer() {
@@ -65,8 +68,8 @@ class Timeline {
           return PlaybackNote(
             note: note,
             instrument: instruments[i],
-            startInSeconds: getTimeAt(note.start + shift),
-            endInSeconds: getTimeAt(note.end + shift),
+            startInSeconds: timeAt(note.start + shift),
+            endInSeconds: timeAt(note.end + shift),
           );
         }));
       });
@@ -74,7 +77,7 @@ class Timeline {
     box.cache = _cache;
   }
 
-  void _drawForeground() {
+  void _drawForeground(double songPositionInBeats) {
     var l = songLength;
     _canvasFg.width = (l.beats * pixelsPerBeat.value).round();
     _canvasFg.height = 200;
@@ -84,7 +87,7 @@ class Timeline {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1.5;
 
-    var x = songPosition.beats * pixelsPerBeat.value;
+    var x = songPositionInBeats * pixelsPerBeat.value;
     ctx.moveTo(x, 0);
     ctx.lineTo(x, _canvasFg.height);
 
@@ -113,8 +116,12 @@ class Timeline {
     updateNoteShiftBuffer();
   }
 
-  double getTimeAt(BeatFraction bf) {
+  double timeAt(BeatFraction bf) {
     return bf.beats / (Project.instance.bpm / 60);
+  }
+
+  double beatsAt(double seconds) {
+    return seconds * (Project.instance.bpm / 60);
   }
 
   void calculateSongLength() {
