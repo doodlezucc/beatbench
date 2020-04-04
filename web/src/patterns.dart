@@ -3,6 +3,7 @@ import 'dart:html';
 import 'dart:math';
 
 import 'drag.dart';
+import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
 import 'timeline.dart';
@@ -33,16 +34,43 @@ class PatternNotesComponent extends PatternDataComponent {
     return notes.fold(
         BeatFraction.washy(0), (v, n) => n.end.beats > v.beats ? n.end : v);
   }
+}
 
-  void add(Note note) {
-    _notes.add(note);
-    _streamController.add('add');
+abstract class NotesAction extends Action {
+  final PatternNotesComponent component;
+  final Iterable<Note> notes;
+
+  NotesAction(this.component, this.notes);
+
+  void _add() {
+    component._notes.addAll(notes);
+    component._streamController.add('add');
   }
 
-  void remove(Note note) {
-    _notes.remove(note);
-    _streamController.add('remoof');
+  void _remove() {
+    notes.forEach((n) {
+      component._notes.remove(n);
+    });
+    component._streamController.add('remove');
   }
+}
+
+class AddNotesAction extends NotesAction {
+  AddNotesAction(PatternNotesComponent component, Iterable<Note> notes)
+      : super(component, notes);
+  @override
+  void doAction() => _add();
+  @override
+  void undoAction() => _remove();
+}
+
+class RemoveNotesAction extends NotesAction {
+  RemoveNotesAction(PatternNotesComponent component, Iterable<Note> notes)
+      : super(component, notes);
+  @override
+  void doAction() => _remove();
+  @override
+  void undoAction() => _add();
 }
 
 class PatternData {

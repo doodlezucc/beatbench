@@ -1,6 +1,7 @@
 import 'dart:html';
 
 import 'src/beat_grid.dart';
+import 'src/history.dart';
 import 'src/instruments.dart';
 import 'src/project.dart';
 
@@ -13,7 +14,6 @@ void main() {
 
 void initStuff() async {
   var time = DateTime.now().millisecondsSinceEpoch;
-  querySelector('#output').text = 'Beatbench written in Dart!';
 
   var project = Project();
 
@@ -34,6 +34,20 @@ void initStuff() async {
     var bpm = double.tryParse((e.target as InputElement).value);
     if (bpm != null) {
       project.bpm = bpm;
+    }
+  });
+
+  document.onKeyDown.listen((e) {
+    //print('${e.ctrlKey} | ${e.shiftKey} | ${e.key}');
+    if (e.ctrlKey) {
+      switch (e.keyCode) {
+        case 90: // z
+          e.shiftKey ? History.redo() : History.undo();
+          return;
+        case 89: // y
+          History.redo();
+          return;
+      }
     }
   });
 

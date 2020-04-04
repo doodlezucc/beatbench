@@ -1,5 +1,6 @@
 import 'dart:html';
 
+import 'history.dart';
 import 'instruments.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
@@ -14,6 +15,14 @@ class BeatGrid {
   BeatGrid(this._e, this.drums)
       : data = PatternData('Beat Grid', {0: PatternNotesComponent([])}) {
     _createGrid();
+    data.listenToEdits((msg) {
+      _e.querySelectorAll('.filled').classes.toggle('filled', false);
+      data.component(0).notes.forEach((n) {
+        _e.children[_height - (n.coarsePitch - 60) - 1]
+            .children[(4 * n.start.beats).round()].classes
+            .toggle('filled', true);
+      });
+    });
   }
 
   void _createGrid() {
@@ -23,7 +32,7 @@ class BeatGrid {
         ..attributes['y'] = y.toString();
       td.onClick.listen((e) {
         var active = td.classes.toggle('filled');
-        _setData(x, y, active);
+        _setData(x, y, active, true);
       });
       return td;
     }
@@ -41,20 +50,26 @@ class BeatGrid {
     }
   }
 
-  void _setData(int x, int y, bool active) {
+  void _setData(int x, int y, bool active, bool undoable) {
     if (active) {
-      data
-          .component(0)
-          .add(Note(tone: y, octave: 5, start: BeatFraction(x, 16)));
+      History.perform(
+          AddNotesAction(data.component(0), [
+            Note(tone: y, octave: 5, start: BeatFraction(x, 16)),
+          ]),
+          undoable);
     } else {
-      data.component(0).remove(data.component(0).notes.singleWhere((n) =>
-          n.start.numerator == x && n.coarsePitch == Note.getPitch(y, 5)));
+      History.perform(
+          RemoveNotesAction(data.component(0), [
+            data.component(0).notes.singleWhere((n) =>
+                n.start.numerator == x && n.coarsePitch == Note.getPitch(y, 5)),
+          ]),
+          undoable);
     }
   }
 
   void setField(int x, int y, bool active) {
     _e.children[_height - y - 1].children[x].classes.toggle('filled', active);
-    _setData(x, y, active);
+    _setData(x, y, active, false);
   }
 
   void swaggyBeat() {
