@@ -1,11 +1,15 @@
 import 'dart:html';
 
+import 'package:meta/meta.dart';
+
 import 'beat_grid.dart';
 import 'instruments.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
 import 'patterns.dart';
+import 'project.dart';
 import 'utils.dart';
+import 'audio_assembler.dart';
 
 class Timeline {
   // UI stuff
@@ -13,9 +17,15 @@ class Timeline {
   static final pixelsPerTrack = CssPxVar('timeline-ppt', 70);
 
   BeatFraction _songLength = BeatFraction(4, 4);
-  double get lengthInBeats => _songLength.beats;
+  set songLength(BeatFraction l) {
+    _songLength = l;
+    box.length = getTimeAt(l);
+    _drawOrientation();
+  }
 
-  BeatFraction _songPosition;
+  BeatFraction get songLength => _songLength;
+
+  BeatFraction _songPosition = BeatFraction(0, 1);
   BeatFraction get songPosition => _songPosition;
   set songPosition(BeatFraction songPosition) {
     _songPosition = songPosition;
@@ -24,45 +34,48 @@ class Timeline {
 
   List<Instrument> instruments;
   final List<PatternInstance> _patterns = [];
-  List<List<NoteShift>> _noteShiftBuffer;
   final HtmlElement _e;
   CanvasElement _canvasBg;
   CanvasElement _canvasFg;
+  final PlaybackBox box;
 
   bool _hasChanges = false;
   bool get hasChanges => _hasChanges;
 
-  Timeline() : _e = querySelector('#timeline') {
+  Timeline()
+      : box = PlaybackBox(),
+        _e = querySelector('#timeline') {
     _canvasBg = _e.querySelector('#background');
     _canvasFg = _e.querySelector('#foreground');
     _drawOrientation();
   }
 
-  double beatsAt(double seconds, double bps) {
-    return wrappedBeats(seconds * bps);
-  }
-
-  double wrappedBeats(double beats) {
-    return beats % lengthInBeats;
-  }
-
   void updateNoteShiftBuffer() {
     _hasChanges = false;
-    _noteShiftBuffer =
-        List<List<NoteShift>>.filled(instruments.length, <NoteShift>[]);
+
+    var _cache = <PlaybackNote>[];
     _patterns.forEach((pat) {
       var notes = pat.data.notes();
-      for (var i = 0; i < _noteShiftBuffer.length; i++) {
-        _noteShiftBuffer[i].addAll(notes[i].notes.where((note) {
+      notes.forEach((i, patNotesComp) {
+        _cache.addAll(patNotesComp.notes.where((note) {
           return note.start >= pat.contentShift &&
               note.start < pat.length + pat.contentShift;
-        }).map((note) => NoteShift(note, pat.start - pat.contentShift)));
-      }
+        }).map((note) {
+          var shift = pat.start - pat.contentShift;
+          return PlaybackNote(
+            note: note,
+            instrument: instruments[i],
+            startInSeconds: getTimeAt(note.start + shift),
+            endInSeconds: getTimeAt(note.end + shift),
+          );
+        }));
+      });
     });
+    box.cache = _cache;
   }
 
   void _drawForeground() {
-    var l = _songLength;
+    var l = songLength;
     _canvasFg.width = (l.beats * pixelsPerBeat.value).round();
     _canvasFg.height = 200;
 
@@ -79,7 +92,7 @@ class Timeline {
   }
 
   void _drawOrientation() {
-    var l = _songLength;
+    var l = songLength;
     _canvasBg.width = (l.beats * pixelsPerBeat.value).round();
     _canvasBg.height = 200;
 
@@ -94,56 +107,34 @@ class Timeline {
     ctx.stroke();
   }
 
-  // WARNING: doesn't do more than one wrap!
-  Iterable<Iterable<NoteShift>> getNotes(
-      double startInBeats, double lengthInBeats) {
-    var endInBeats = startInBeats + lengthInBeats;
-    var loopCount = (startInBeats / this.lengthInBeats).floor();
-    var shiftBeats = _songLength.beats * loopCount;
-
-    return _noteShiftBuffer.map((patShiftedNotesOfAnInstr) =>
-        patShiftedNotesOfAnInstr
-            .where((n) {
-              var shiftedStart =
-                  n.note.start.beats + n.shift.beats + shiftBeats;
-              return shiftedStart >= startInBeats && shiftedStart < endInBeats;
-            })
-            .map((n) => NoteShift(n.note, n.shift + _songLength * loopCount))
-            // wrapping
-            .followedBy(patShiftedNotesOfAnInstr
-                .where((n) =>
-                    n.note.start.beats + n.shift.beats + shiftBeats <
-                    endInBeats - this.lengthInBeats)
-                .map((n) => NoteShift(
-                    n.note, n.shift + _songLength * (loopCount + 1)))));
+  void thereAreChanges() {
+    //print('bruv there are changes');
+    _hasChanges = true;
+    updateNoteShiftBuffer();
   }
 
-  void thereAreChanges() {
-    print('bruv there are changes');
-    _hasChanges = true;
+  double getTimeAt(BeatFraction bf) {
+    return bf.beats / (Project.instance.bpm / 60);
   }
 
   void calculateSongLength() {
-    _songLength = _patterns.fold(
+    songLength = _patterns.fold(
         BeatFraction.washy(0), (v, pat) => pat.end > v ? pat.end : v);
-    _drawOrientation();
   }
 
   PatternInstance insertPattern(PatternData data,
       {BeatFraction start = const BeatFraction(0, 1), int track = 0}) {
     PatternInstance instance;
     instance = PatternInstance(data, start, null, track, () {
-      if (instance.end > _songLength) {
-        _songLength = instance.end;
-        _drawOrientation();
-      } else if (instance.end < _songLength) {
+      if (instance.end > songLength) {
+        songLength = instance.end;
+      } else if (instance.end < songLength) {
         calculateSongLength();
       }
       thereAreChanges();
     });
-    if (instance.end > _songLength) {
-      _songLength = instance.end;
-      _drawOrientation();
+    if (instance.end > songLength) {
+      songLength = instance.end;
     }
     _patterns.add(instance);
     thereAreChanges();
@@ -170,9 +161,25 @@ class Timeline {
   }
 }
 
-class NoteShift {
+class PlaybackNote {
+  final Instrument instrument;
   final Note note;
-  final BeatFraction shift;
+  final double startInSeconds;
+  final double endInSeconds;
 
-  const NoteShift(this.note, this.shift);
+  PlaybackNote({
+    @required this.startInSeconds,
+    @required this.endInSeconds,
+    @required this.note,
+    @required this.instrument,
+  });
+
+  PlaybackNote clone({double startInSeconds}) {
+    return PlaybackNote(
+      startInSeconds: startInSeconds ?? this.startInSeconds,
+      endInSeconds: endInSeconds,
+      note: note,
+      instrument: instrument,
+    );
+  }
 }

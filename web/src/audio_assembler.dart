@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:web_audio';
 
-import 'package:meta/meta.dart';
-
-import 'beat_fraction.dart';
 import 'timeline.dart';
 
 class Specs {
@@ -15,114 +12,102 @@ class Specs {
 class AudioAssembler {
   var specs = Specs();
   var ctx = AudioContext();
-  Timer audioTimer;
-  Timer videoTimer;
-  bool isRunning;
-  int bufferedIndex;
-  double regionLength; // duration of a single region (in seconds)
+  Timer _audioTimer;
+  Timer _videoTimer;
+  PlaybackBox _box;
+  PlaybackBox get box => _box;
+  bool get isRunning => _box != null;
+  double get scheduleAhead => specs.schedulingMs / 1000;
 
-  AudioAssembler() {
-    regionLength = specs.schedulingMs / 1000;
-  }
-
-  void run({@required double bpm, @required Timeline timeline}) async {
+  void run(PlaybackBox box) async {
     await ctx.resume();
-    isRunning = true;
-    bufferedIndex = -1;
 
-    var startTime = ctx.currentTime;
-
-    if (audioTimer != null) {
-      audioTimer.cancel();
-      videoTimer.cancel();
+    if (_audioTimer != null) {
+      _audioTimer.cancel();
+      _videoTimer.cancel();
     }
 
-    var bps = bpm / 60;
-
-    videoTimer = Timer.periodic(
+    _videoTimer = Timer.periodic(
       Duration(milliseconds: specs.frameDuration),
-      (timerInstance) {
-        var timeAbsolute = ctx.currentTime - startTime;
-        var beats = timeAbsolute * bps;
-        timeline.songPosition = BeatFraction.washy(beats);
-      },
+      (timerInstance) {},
     );
-    audioTimer = Timer.periodic(
+    _audioTimer = Timer.periodic(
       Duration(
         milliseconds: (specs.schedulingMs * 0.8).round(),
       ),
       (timerInstance) {
-        _bufferNotes(bps: bps, timeline: timeline, contextStartTime: startTime);
+        box._bufferTo(ctx.currentTime + scheduleAhead, ctx);
       },
     );
-    _bufferNotes(bps: bps, timeline: timeline, contextStartTime: startTime);
+    box._bufferTo(scheduleAhead, ctx);
   }
 
-  void _bufferNotes({
-    @required double bps,
-    @required Timeline timeline,
-    @required double contextStartTime,
-  }) {
-    if (timeline.hasChanges) {
-      timeline.updateNoteShiftBuffer();
-    }
+  void stopPlayback() {
+    _audioTimer.cancel();
+    _videoTimer.cancel();
+    _box = null;
+  }
+}
 
-    // time since playback was started (in seconds)
-    var timeAbsolute = ctx.currentTime - contextStartTime;
-
-    var floor = (timeAbsolute / regionLength).floor();
-    var ceil = floor + 1;
-
-    // in the rare case of "floor" not having been buffered in the previous run, buffer it now
-    if (bufferedIndex < floor) {
-      _bufferRegion(
-        bps: bps,
-        timeline: timeline,
-        contextStartTime: contextStartTime,
-        regionIndex: floor,
-      );
-    }
-    // buffer "ceil" (if it wasn't already)
-    if (bufferedIndex < ceil) {
-      _bufferRegion(
-        bps: bps,
-        timeline: timeline,
-        contextStartTime: contextStartTime,
-        regionIndex: ceil,
-      );
-      bufferedIndex = ceil;
-    }
+class PlaybackBox {
+  List<PlaybackNote> _cache = [];
+  set cache(Iterable<PlaybackNote> l) {
+    _cache = l.toList(growable: false);
   }
 
-  void _bufferRegion({
-    @required double bps,
-    @required Timeline timeline,
-    @required double contextStartTime,
-    @required int regionIndex,
-  }) {
-    var regionStartSec = regionIndex * regionLength;
-    var regionEndSec = (regionIndex + 1) * regionLength;
+  double bufferedSeconds = 0;
 
-    var regionStartBeats = regionStartSec * bps;
-    var regionEndBeats = regionEndSec * bps;
+  double _length;
+  double get length => _length;
+  set length(double length) {
+    _length = length;
+  }
 
-    var instrumentNotes =
-        timeline.getNotes(regionStartBeats, regionEndBeats - regionStartBeats);
-    for (var i = 0; i < instrumentNotes.length; i++) {
-      instrumentNotes.elementAt(i).forEach((noteShift) {
-        var n = noteShift.note;
-        print(
-            '${n.coarsePitch} at ${n.start.beats + noteShift.shift.beats} beats (shift: ${noteShift.shift.beats})');
-        timeline.instruments[0].playNote(n,
-            contextStartTime + (n.start.beats + noteShift.shift.beats) / bps);
-      });
+  void _bufferTo(double seconds, AudioContext ctx) {
+    if (seconds > bufferedSeconds) {
+      var buffLength = seconds - bufferedSeconds;
+      var startMod = bufferedSeconds % length;
+      var end = startMod + buffLength;
+      if (end >= length) {
+        // Wrap to start
+        _bufferRegionWrap(end % length, ctx);
+      }
+      _bufferRegion(startMod, end, ctx);
+      bufferedSeconds = seconds;
+    } else {
+      print('nah');
     }
   }
 
-  void stopPlayback({@required Timeline timeline}) {
-    audioTimer.cancel();
-    videoTimer.cancel();
-    timeline.songPosition = BeatFraction(0, 1);
-    isRunning = false;
+  void _bufferRegionWrap(double to, AudioContext ctx) {
+    _getNotes(0, to).forEach((pn) {
+      var when = ctx.currentTime +
+          pn.startInSeconds -
+          (ctx.currentTime % length) +
+          length;
+      pn.instrument.playNote(pn.note, when);
+    });
+  }
+
+  void _bufferRegion(double from, double to, AudioContext ctx) {
+    _getNotes(from, to).forEach((pn) {
+      var when =
+          ctx.currentTime + pn.startInSeconds - (ctx.currentTime % length);
+      if (when < ctx.currentTime) {
+        print('hmmmm');
+        print(pn.note.coarsePitch);
+        print(ctx.currentTime);
+        print(when);
+        print(bufferedSeconds);
+        print(length);
+      }
+      //print('scheduling ${pn.note.coarsePitch} to play at $when seconds');
+      pn.instrument.playNote(pn.note, when);
+    });
+  }
+
+  Iterable<PlaybackNote> _getNotes(double from, double to) {
+    return _cache
+        .where((pn) => pn.startInSeconds >= from && pn.startInSeconds < to);
   }
 }

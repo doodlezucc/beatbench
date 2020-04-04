@@ -6,14 +6,18 @@ class Project {
   final Timeline timeline = Timeline();
   double bpm;
 
-  Project({this.bpm = 120});
+  static Project _instance;
+  static Project get instance => _instance;
+
+  Project({this.bpm = 120}) {
+    _instance = this;
+  }
 
   void play() {
-    audioAssembler.run(bpm: bpm, timeline: timeline);
+    audioAssembler.run(timeline.box);
   }
 
   void pause() {
-    audioAssembler.stopPlayback(timeline: timeline);
-    print('suspended');
+    audioAssembler.stopPlayback();
   }
 }
