@@ -17,13 +17,12 @@ class Timeline {
   static final pixelsPerTrack = CssPxVar('timeline-ppt', 70);
 
   BeatFraction _songLength = BeatFraction(4, 4);
+  BeatFraction get songLength => _songLength;
   set songLength(BeatFraction l) {
     _songLength = l;
     box.length = timeAt(l);
     _drawOrientation();
   }
-
-  BeatFraction get songLength => _songLength;
 
   BeatFraction _headPosition = BeatFraction(0, 1);
   BeatFraction get headPosition => _headPosition;
@@ -53,7 +52,7 @@ class Timeline {
     };
   }
 
-  void updateNoteShiftBuffer() {
+  void updatePlaybackCache() {
     _hasChanges = false;
 
     var _cache = <PlaybackNote>[];
@@ -110,10 +109,15 @@ class Timeline {
     ctx.stroke();
   }
 
+  void onNewTempo() {
+    updatePlaybackCache();
+    box.handleNewTempo(timeAt(songLength));
+  }
+
   void thereAreChanges() {
     //print('bruv there are changes');
     _hasChanges = true;
-    updateNoteShiftBuffer();
+    updatePlaybackCache();
   }
 
   double timeAt(BeatFraction bf) {

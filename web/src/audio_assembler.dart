@@ -63,6 +63,20 @@ class PlaybackBox {
     }
   }
 
+  void handleNewTempo(double newLength) {
+    if (_running) {
+      var position = (newLength / length) *
+          ((_positionOnStart + _ctx.currentTime - _contextTimeOnStart) %
+              _length);
+      _bufferedSeconds =
+          _bufferedSeconds - (_ctx.currentTime - _contextTimeOnStart);
+      _contextTimeOnStart = _ctx.currentTime;
+      _positionOnStart = position % newLength;
+    }
+
+    _length = newLength;
+  }
+
   void Function(double timeMod) onUpdateVisuals;
 
   void _run(AudioContext ctx, Specs specs) {
@@ -129,17 +143,7 @@ class PlaybackBox {
   void _bufferRegion(double from, double to) {
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     _getNotes(from, to).forEach((pn) {
-      //print('$time | ${pn.note.coarsePitch} | ${pn.startInSeconds}');
       var when = _ctx.currentTime + pn.startInSeconds - (time % length);
-      if (when < time) {
-        print('hmmmm');
-        print(pn.note.coarsePitch);
-        print(time);
-        print(when);
-        print(_bufferedSeconds);
-        print(length);
-        print(pn.note.start.beats);
-      }
       //print('scheduling ${pn.note.coarsePitch} to play at $when seconds');
       pn.instrument.playNote(pn.note, when);
     });

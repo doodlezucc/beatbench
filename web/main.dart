@@ -30,6 +30,10 @@ void initStuff() async {
   querySelector('#pause').onClick.listen((e) {
     project.pause();
   });
+  querySelector('#tempo').onInput.listen((e) {
+    var v = (e.target as InputElement).value;
+    project.bpm = double.parse(v);
+  });
 
   print('init stuff done in ' +
       (DateTime.now().millisecondsSinceEpoch - time).toString() +
