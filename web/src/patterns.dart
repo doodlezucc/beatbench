@@ -182,9 +182,11 @@ class PatternInstance {
     _draw();
 
     data.listenToEdits((ev) {
-      //print('EDIT: $ev');
-      _draw();
-      _onUpdate();
+      if (!_e.classes.contains('hidden')) {
+        //print('EDIT: $ev');
+        _draw();
+        _onUpdate();
+      }
     });
 
     setExistence(false);

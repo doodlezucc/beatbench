@@ -21,9 +21,12 @@ class Timeline extends Window {
   BeatFraction _songLength = BeatFraction(4, 4);
   BeatFraction get songLength => _songLength;
   set songLength(BeatFraction l) {
+    var min = BeatFraction(4, 4);
+    if (l < min) l = min;
     _songLength = l;
     box.length = timeAt(l);
     _drawOrientation();
+    thereAreChanges();
   }
 
   BeatFraction _headPosition = BeatFraction(0, 1);
@@ -143,8 +146,9 @@ class Timeline extends Window {
         songLength = instance.end;
       } else if (instance.end < songLength) {
         calculateSongLength();
+      } else {
+        thereAreChanges();
       }
-      thereAreChanges();
     });
     if (instance.end > songLength) {
       songLength = instance.end;
@@ -220,6 +224,6 @@ class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
 
   @override
   void onExecuted(bool forward) {
-    Project.instance.timeline.thereAreChanges();
+    Project.instance.timeline.calculateSongLength();
   }
 }
