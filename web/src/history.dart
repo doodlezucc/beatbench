@@ -24,7 +24,7 @@ class History {
   static final List<Action> _stack = [];
   static int _actionsDone = 0;
 
-  static void perform(Action a, [bool undoable]) {
+  static void perform(Action a, [bool undoable = true]) {
     if (!undoable) {
       a._run();
     } else {
@@ -35,12 +35,13 @@ class History {
       _stack.add(a);
       a._run();
       _actionsDone++;
-      print('im committing a crime');
+      print('im committing an $a');
     }
   }
 
   static void undo() {
     if (_actionsDone > 0) {
+      print('Undoing');
       _stack[_actionsDone - 1]._unrun();
       _actionsDone--;
     } else {
@@ -50,10 +51,38 @@ class History {
 
   static void redo() {
     if (_actionsDone < _stack.length) {
+      print('Redoing');
       _stack[_actionsDone]._run();
       _actionsDone++;
     } else {
       print('No actions to redo');
     }
   }
+}
+
+abstract class AddRemoveAction<T> extends Action {
+  final bool forward;
+  final Iterable<T> list;
+
+  AddRemoveAction(this.forward, this.list);
+
+  void add(T object);
+  void remove(T object);
+
+  void _addAll() => list.forEach((t) => add(t));
+  void _removeAll() => list.forEach((t) => remove(t));
+
+  @override
+  void doAction() {
+    forward ? _addAll() : _removeAll();
+    onExecuted(forward);
+  }
+
+  @override
+  void undoAction() {
+    forward ? _removeAll() : _addAll();
+    onExecuted(!forward);
+  }
+
+  void onExecuted(bool forward);
 }

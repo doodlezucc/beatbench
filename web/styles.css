@@ -156,3 +156,7 @@ input.shy {
 #timeline #foreground {
 	z-index: 10;
 }
+
+.hidden {
+	display: none !important;
+}

@@ -12,7 +12,7 @@ import 'utils.dart';
 abstract class PatternDataComponent {
   final StreamController _streamController = StreamController.broadcast(
     sync: true,
-    onListen: () => print('hello there?'),
+    //onListen: () => print('hello there?'),
   );
   Stream get stream => _streamController.stream;
 
@@ -36,41 +36,26 @@ class PatternNotesComponent extends PatternDataComponent {
   }
 }
 
-abstract class NotesAction extends Action {
+class NotesComponentAction extends AddRemoveAction<Note> {
   final PatternNotesComponent component;
-  final Iterable<Note> notes;
 
-  NotesAction(this.component, this.notes);
+  NotesComponentAction(this.component, bool forward, Iterable<Note> notes)
+      : super(forward, notes);
 
-  void _add() {
-    component._notes.addAll(notes);
-    component._streamController.add('add');
+  @override
+  void add(Note object) {
+    component._notes.add(object);
   }
 
-  void _remove() {
-    notes.forEach((n) {
-      component._notes.remove(n);
-    });
-    component._streamController.add('remove');
+  @override
+  void remove(Note object) {
+    component._notes.remove(object);
   }
-}
 
-class AddNotesAction extends NotesAction {
-  AddNotesAction(PatternNotesComponent component, Iterable<Note> notes)
-      : super(component, notes);
   @override
-  void doAction() => _add();
-  @override
-  void undoAction() => _remove();
-}
-
-class RemoveNotesAction extends NotesAction {
-  RemoveNotesAction(PatternNotesComponent component, Iterable<Note> notes)
-      : super(component, notes);
-  @override
-  void doAction() => _remove();
-  @override
-  void undoAction() => _add();
+  void onExecuted(bool didAdd) {
+    component._streamController.add(didAdd);
+  }
 }
 
 class PatternData {
@@ -171,12 +156,14 @@ class PatternInstance {
       ..value = data.name;
 
     _e = querySelector('#patterns').append(DivElement()
-      ..className = 'pattern'
+      ..className = 'pattern hidden'
       ..append(_input)
       ..append(
           _canvas = CanvasElement(height: Timeline.pixelsPerTrack.value.ceil()))
       ..append(stretchElem(false))
       ..append(stretchElem(true)));
+
+    _e.onDoubleClick.listen((e) {});
 
     Draggable(_e, () => this.start, () => this.track,
         (firstStart, firstTrack, pixelOff) {
@@ -192,9 +179,16 @@ class PatternInstance {
     _draw();
 
     data.listenToEdits((ev) {
+      //print('EDIT: $ev');
       _draw();
       _onUpdate();
     });
+
+    setExistence(false);
+  }
+
+  void setExistence(bool v) {
+    _e.classes.toggle('hidden', !v);
   }
 
   DivElement stretchElem(bool right) {

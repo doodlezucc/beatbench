@@ -53,13 +53,13 @@ class BeatGrid {
   void _setData(int x, int y, bool active, bool undoable) {
     if (active) {
       History.perform(
-          AddNotesAction(data.component(0), [
-            Note(tone: y, octave: 5, start: BeatFraction(x, 16)),
+          NotesComponentAction(data.component(0), true, [
+            _quickNote(x, y),
           ]),
           undoable);
     } else {
       History.perform(
-          RemoveNotesAction(data.component(0), [
+          NotesComponentAction(data.component(0), false, [
             data.component(0).notes.singleWhere((n) =>
                 n.start.numerator == x && n.coarsePitch == Note.getPitch(y, 5)),
           ]),
@@ -72,17 +72,22 @@ class BeatGrid {
     _setData(x, y, active, false);
   }
 
-  void swaggyBeat() {
-    // KICK
-    setField(0, 0, true);
-    setField(4, 0, true);
-    //SNARE
-    setField(8, 1, true);
-    //HI-HAT
-    setField(2, 2, true);
-    setField(3, 2, true);
+  Note _quickNote(int x, int y) =>
+      Note(tone: y, octave: 5, start: BeatFraction(x, 16));
 
-    setField(6, 2, true);
-    setField(7, 2, true);
+  void swaggyBeat() {
+    History.perform(NotesComponentAction(data.component(0), true, <Note>[
+      // Kick
+      _quickNote(0, 0),
+      _quickNote(3, 0),
+      _quickNote(6, 0),
+      _quickNote(10, 0),
+      // Snare
+      _quickNote(4, 1),
+      _quickNote(12, 1),
+      //Hi-Hat
+      _quickNote(2, 2),
+      _quickNote(10, 2),
+    ]));
   }
 }

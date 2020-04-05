@@ -3,6 +3,7 @@ import 'dart:html';
 import 'package:meta/meta.dart';
 
 import 'beat_grid.dart';
+import 'history.dart';
 import 'instruments.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
@@ -10,8 +11,9 @@ import 'patterns.dart';
 import 'project.dart';
 import 'utils.dart';
 import 'audio_assembler.dart';
+import 'windows.dart';
 
-class Timeline {
+class Timeline extends Window {
   // UI stuff
   static final pixelsPerBeat = CssPxVar('timeline-ppb', 20);
   static final pixelsPerTrack = CssPxVar('timeline-ppt', 70);
@@ -133,7 +135,7 @@ class Timeline {
         BeatFraction.washy(0), (v, pat) => pat.end > v ? pat.end : v);
   }
 
-  PatternInstance insertPattern(PatternData data,
+  PatternInstance instantiatePattern(PatternData data,
       {BeatFraction start = const BeatFraction(0, 1), int track = 0}) {
     PatternInstance instance;
     instance = PatternInstance(data, start, null, track, () {
@@ -147,8 +149,7 @@ class Timeline {
     if (instance.end > songLength) {
       songLength = instance.end;
     }
-    _patterns.add(instance);
-    thereAreChanges();
+    History.perform(PatternsAction(true, [instance]));
     return instance;
   }
 
@@ -164,12 +165,18 @@ class Timeline {
       },
     );
     for (var i = 0; i < 4; i++) {
-      insertPattern(gridPatternData, start: BeatFraction(i, 1));
+      instantiatePattern(gridPatternData, start: BeatFraction(i, 1));
     }
-    insertPattern(crashPatternData, track: 1);
+    instantiatePattern(crashPatternData, track: 1);
     calculateSongLength();
     thereAreChanges();
   }
+
+  @override
+  void handleDelete() {}
+
+  @override
+  void handleKeyDown(KeyEvent event) {}
 }
 
 class PlaybackNote {
@@ -192,5 +199,27 @@ class PlaybackNote {
       note: note,
       instrument: instrument,
     );
+  }
+}
+
+class PatternsAction extends AddRemoveAction<PatternInstance> {
+  PatternsAction(bool forward, Iterable<PatternInstance> list)
+      : super(forward, list);
+
+  @override
+  void add(PatternInstance object) {
+    object.setExistence(true);
+    Project.instance.timeline._patterns.add(object);
+  }
+
+  @override
+  void remove(PatternInstance object) {
+    object.setExistence(false);
+    Project.instance.timeline._patterns.remove(object);
+  }
+
+  @override
+  void onExecuted(bool forward) {
+    Project.instance.timeline.thereAreChanges();
   }
 }
