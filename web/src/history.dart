@@ -28,15 +28,26 @@ class History {
     if (!undoable) {
       a._run();
     } else {
-      if (_actionsDone < _stack.length) {
-        print('discarding actions');
-        _stack.removeRange(_actionsDone, _stack.length);
-      }
-      _stack.add(a);
-      a._run();
-      _actionsDone++;
-      print('im committing an $a');
+      _registerAction(a);
     }
+  }
+
+  static void registerDoneAction(Action a) {
+    a._isDone = true;
+    _registerAction(a);
+  }
+
+  static void _registerAction(Action a) {
+    if (_actionsDone < _stack.length) {
+      print('discarding actions');
+      _stack.removeRange(_actionsDone, _stack.length);
+    }
+    _stack.add(a);
+    if (!a._isDone) {
+      a._run();
+    }
+    _actionsDone++;
+    print('im committing an $a');
   }
 
   static void undo() {
@@ -60,17 +71,31 @@ class History {
   }
 }
 
-abstract class AddRemoveAction<T> extends Action {
-  final bool forward;
+abstract class MultipleAction<T> extends Action {
   final Iterable<T> list;
 
-  AddRemoveAction(this.forward, this.list);
+  MultipleAction(this.list);
 
-  void add(T object);
-  void remove(T object);
+  void doSingle(T object);
+  void undoSingle(T object);
 
-  void _addAll() => list.forEach((t) => add(t));
-  void _removeAll() => list.forEach((t) => remove(t));
+  void _doAll() => list.forEach((t) => doSingle(t));
+  void _undoAll() => list.forEach((t) => undoSingle(t));
+
+  @override
+  void doAction() => _doAll();
+
+  @override
+  void undoAction() => _undoAll();
+}
+
+abstract class AddRemoveAction<T> extends MultipleAction<T> {
+  final bool forward;
+
+  AddRemoveAction(this.forward, Iterable<T> list) : super(list);
+
+  void _addAll() => list.forEach((t) => doSingle(t));
+  void _removeAll() => list.forEach((t) => undoSingle(t));
 
   @override
   void doAction() {

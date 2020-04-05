@@ -29,7 +29,7 @@ class Project {
     _init();
   }
 
-  Future<void> createDemo() async {
+  void createDemo() async {
     var grid = BeatGrid(querySelector('#grid'),
         await PresetDrums.cymaticsLofiKit(audioAssembler.ctx));
 

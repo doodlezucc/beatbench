@@ -43,12 +43,12 @@ class NotesComponentAction extends AddRemoveAction<Note> {
       : super(forward, notes);
 
   @override
-  void add(Note object) {
+  void doSingle(Note object) {
     component._notes.add(object);
   }
 
   @override
-  void remove(Note object) {
+  void undoSingle(Note object) {
     component._notes.remove(object);
   }
 
@@ -165,12 +165,16 @@ class PatternInstance {
 
     _e.onDoubleClick.listen((e) {});
 
-    Draggable(_e, () => this.start, () => this.track,
-        (firstStart, firstTrack, pixelOff) {
-      this.start = (firstStart as BeatFraction) +
+    Draggable<PatternTransform>(_e, () => transform, (tr, pixelOff, mouseUp) {
+      this.start = tr.start +
           BeatFraction((pixelOff.x / Timeline.pixelsPerBeat.value).round(), 4);
-      this.track = (firstTrack as int) +
-          (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
+      this.track =
+          tr.track + (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
+
+      if (mouseUp) {
+        print('hoof');
+        History.registerDoneAction(PatternTransformAction(this, tr, transform));
+      }
     });
 
     _silentStart(start);
@@ -193,34 +197,41 @@ class PatternInstance {
 
   DivElement stretchElem(bool right) {
     var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
-    Draggable(
+    Draggable<PatternTransform>(
       out,
-      right ? () => length : () => [start, contentShift, length],
-      () => null,
-      right
-          ? (srcLength, y, off) {
-              length = (srcLength as BeatFraction) +
-                  BeatFraction(
-                      (off.x / Timeline.pixelsPerBeat.value).round(), 4);
-            }
-          : (sources, y, off) {
-              var diff = BeatFraction(
-                  (off.x / Timeline.pixelsPerBeat.value).round(), 4);
-              // diff maximum: lengthOld - 1
-              var maxDiff = sources[2].beats - 1;
-              if (diff.beats > maxDiff) diff = BeatFraction.washy(maxDiff);
-              // diff minimum: -contentShiftOld
-              var minDiff = (sources[1] as BeatFraction) * -1;
-              if (diff < minDiff) diff = minDiff;
+      () => transform,
+      (tr, off, up) {
+        if (right) {
+          length = tr.length +
+              BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
+        } else {
+          var diff =
+              BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
+          // diff maximum: lengthOld - 1
+          var maxDiff = tr.length.beats - 1;
+          if (diff.beats > maxDiff) diff = BeatFraction.washy(maxDiff);
+          // diff minimum: -contentShiftOld
+          var minDiff = tr.contentShift * -1;
+          if (diff < minDiff) diff = minDiff;
 
-              _silentStart((sources[0] as BeatFraction) + diff);
-              _silentLength(sources[2] - diff);
-              contentShift = (sources[1] as BeatFraction) + diff;
-              _draw();
-            },
+          _silentStart(tr.start + diff);
+          _silentLength(tr.length - diff);
+          contentShift = tr.contentShift + diff;
+          _draw();
+        }
+        if (up) {
+          // register reversible action
+          print('hoof');
+          History.registerDoneAction(
+              PatternTransformAction(this, tr, transform));
+        }
+      },
     );
     return out;
   }
+
+  PatternTransform get transform =>
+      PatternTransform(start, length, contentShift, track);
 
   void _draw() {
     var ctx = _canvas.context2D;
@@ -250,4 +261,34 @@ class PatternInstance {
       });
     });
   }
+
+  void applyTransform(PatternTransform transform) {
+    start = transform.start;
+    length = transform.length;
+    contentShift = transform.contentShift;
+    track = transform.track;
+  }
+}
+
+class PatternTransform {
+  final BeatFraction start;
+  final BeatFraction length;
+  final BeatFraction contentShift;
+  final int track;
+
+  PatternTransform(this.start, this.length, this.contentShift, this.track);
+}
+
+class PatternTransformAction extends Action {
+  final PatternInstance pattern;
+  final PatternTransform transformA;
+  final PatternTransform transformB;
+
+  PatternTransformAction(this.pattern, this.transformA, this.transformB);
+
+  @override
+  void doAction() => pattern.applyTransform(transformB);
+
+  @override
+  void undoAction() => pattern.applyTransform(transformA);
 }

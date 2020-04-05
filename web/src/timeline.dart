@@ -149,7 +149,7 @@ class Timeline extends Window {
     if (instance.end > songLength) {
       songLength = instance.end;
     }
-    History.perform(PatternsAction(true, [instance]));
+    History.perform(PatternsCreationAction(true, [instance]));
     return instance;
   }
 
@@ -202,18 +202,18 @@ class PlaybackNote {
   }
 }
 
-class PatternsAction extends AddRemoveAction<PatternInstance> {
-  PatternsAction(bool forward, Iterable<PatternInstance> list)
+class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
+  PatternsCreationAction(bool forward, Iterable<PatternInstance> list)
       : super(forward, list);
 
   @override
-  void add(PatternInstance object) {
+  void doSingle(PatternInstance object) {
     object.setExistence(true);
     Project.instance.timeline._patterns.add(object);
   }
 
   @override
-  void remove(PatternInstance object) {
+  void undoSingle(PatternInstance object) {
     object.setExistence(false);
     Project.instance.timeline._patterns.remove(object);
   }
