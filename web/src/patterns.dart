@@ -171,8 +171,7 @@ class PatternInstance {
       this.track =
           tr.track + (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
 
-      if (mouseUp) {
-        print('hoof');
+      if (mouseUp && tr != transform) {
         History.registerDoneAction(PatternTransformAction(this, tr, transform));
       }
     });
@@ -202,8 +201,9 @@ class PatternInstance {
       () => transform,
       (tr, off, up) {
         if (right) {
-          length = tr.length +
-              BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
+          var diff = (off.x / Timeline.pixelsPerBeat.value).round();
+          length = tr.length + BeatFraction(diff, 4);
+          if (diff == 0) return;
         } else {
           var diff =
               BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
@@ -214,14 +214,16 @@ class PatternInstance {
           var minDiff = tr.contentShift * -1;
           if (diff < minDiff) diff = minDiff;
 
-          _silentStart(tr.start + diff);
-          _silentLength(tr.length - diff);
-          contentShift = tr.contentShift + diff;
-          _draw();
+          if (_silentLength(tr.length - diff)) {
+            _silentStart(tr.start + diff);
+            contentShift = tr.contentShift + diff;
+            _draw();
+          }
+
+          if (diff.numerator == 0) return;
         }
         if (up) {
           // register reversible action
-          print('hoof');
           History.registerDoneAction(
               PatternTransformAction(this, tr, transform));
         }
@@ -277,6 +279,14 @@ class PatternTransform {
   final int track;
 
   PatternTransform(this.start, this.length, this.contentShift, this.track);
+
+  @override
+  bool operator ==(dynamic other) => other is PatternTransform
+      ? start == other.start &&
+          length == other.length &&
+          contentShift == other.contentShift &&
+          track == other.track
+      : false;
 }
 
 class PatternTransformAction extends Action {
