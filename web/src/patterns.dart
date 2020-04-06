@@ -188,7 +188,23 @@ class PatternInstance {
         (tr, pixelOff, mouseUp) {
       var xDiff =
           BeatFraction((pixelOff.x / Timeline.pixelsPerBeat.value).round(), 4);
-      var yDiff = (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
+      var minXDiff = Project.instance.timeline.selectedPatterns
+              .fold<BeatFraction>(
+                  tr.start,
+                  (v, p) => p._draggable.savedVar.start < v
+                      ? p._draggable.savedVar.start
+                      : v) *
+          -1;
+      if (xDiff < minXDiff) {
+        xDiff = minXDiff;
+      }
+      var minYDiff = -Project.instance.timeline.selectedPatterns.fold<num>(
+          tr.track,
+          (v, p) => p._draggable.savedVar.track < v
+              ? p._draggable.savedVar.track
+              : v);
+      var yDiff = max(
+          minYDiff, (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor());
 
       Project.instance.timeline.selectedPatterns.forEach((p) {
         p.start = p._draggable.savedVar.start + xDiff;
@@ -197,7 +213,8 @@ class PatternInstance {
 
       if (mouseUp && tr != transform) {
         History.registerDoneAction(PatternTransformAction(
-            Project.instance.timeline.selectedPatterns, tr, transform));
+            Project.instance.timeline.selectedPatterns.toList(growable: false),
+            transform - tr));
       }
     });
     _dragSystem.register(_draggable);
@@ -253,7 +270,7 @@ class PatternInstance {
         if (up) {
           // register reversible action
           History.registerDoneAction(PatternTransformAction(
-              Project.instance.timeline.selectedPatterns, tr, transform));
+              Project.instance.timeline.selectedPatterns, transform - tr));
         }
       },
     );
@@ -315,23 +332,35 @@ class PatternTransform {
           contentShift == other.contentShift &&
           track == other.track
       : false;
+
+  PatternTransform operator +(PatternTransform o) => PatternTransform(
+        start + o.start,
+        length + o.length,
+        contentShift + o.contentShift,
+        track + o.track,
+      );
+
+  PatternTransform operator -(PatternTransform o) => PatternTransform(
+        start - o.start,
+        length - o.length,
+        contentShift - o.contentShift,
+        track - o.track,
+      );
 }
 
 class PatternTransformAction extends MultipleAction<PatternInstance> {
-  final Iterable<PatternInstance> patterns;
-  final PatternTransform transformA;
-  final PatternTransform transformB;
+  final PatternTransform diff;
 
-  PatternTransformAction(this.patterns, this.transformA, this.transformB)
+  PatternTransformAction(Iterable<PatternInstance> patterns, this.diff)
       : super(patterns);
 
   @override
   void doSingle(PatternInstance object) {
-    object.applyTransform(transformB);
+    object.applyTransform(object.transform + diff);
   }
 
   @override
   void undoSingle(PatternInstance object) {
-    object.applyTransform(transformA);
+    object.applyTransform(object.transform - diff);
   }
 }
