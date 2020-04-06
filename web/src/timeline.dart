@@ -38,6 +38,8 @@ class Timeline extends Window {
 
   List<Instrument> instruments;
   final List<PatternInstance> _patterns = [];
+  Iterable<PatternInstance> get selectedPatterns =>
+      _patterns.where((p) => p.selected);
   final HtmlElement _e;
   CanvasElement _canvasBg;
   CanvasElement _canvasFg;

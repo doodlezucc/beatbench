@@ -1,5 +1,26 @@
 import 'dart:html';
 
+class DragSystem<T> {
+  final List<Draggable<T>> _registered = [];
+  Iterable<Draggable<T>> get registered => _registered;
+
+  void register(Draggable<T> d) {
+    _registered.add(d);
+    d.e.onMouseDown.listen((ev) {
+      d.e.classes.toggle('dragged', true);
+      if (ev.target == d.e ||
+          !Draggable._draggables.any((draggable) => draggable.e == ev.target)) {
+        Draggable._offset1 = ev.client;
+        d._isDragged = true;
+
+        registered.forEach((r) {
+          r._saved = r.saveVariable();
+        });
+      }
+    });
+  }
+}
+
 class Draggable<T> {
   static final List<Draggable> _draggables = [];
   static Iterable<Draggable> get _dragged =>
@@ -12,6 +33,7 @@ class Draggable<T> {
   final T Function() saveVariable;
   final void Function(T startVar, Point<num> diff, bool mouseUp) applyTransform;
   T _saved;
+  T get savedVar => _saved;
   bool _isDragged = false;
 
   Draggable(this.e, this.saveVariable, this.applyTransform) {
@@ -19,15 +41,6 @@ class Draggable<T> {
       _initializeSystem();
     }
     _draggables.add(this);
-    e.onMouseDown.listen((ev) {
-      e.classes.toggle('dragged', true);
-      if (ev.target == e ||
-          !_draggables.any((draggable) => draggable.e == ev.target)) {
-        _offset1 = ev.client;
-        _saved = saveVariable();
-        _isDragged = true;
-      }
-    });
   }
 
   void _apply(dynamic startVar, Point<num> diff, bool mouseUp) {

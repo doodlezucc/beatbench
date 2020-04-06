@@ -6,6 +6,7 @@ import 'drag.dart';
 import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
+import 'project.dart';
 import 'timeline.dart';
 import 'utils.dart';
 
@@ -144,6 +145,16 @@ class PatternInstance {
 
   BeatFraction get end => start + length;
 
+  bool _selected = false;
+  bool get selected => _selected;
+  set selected(bool v) {
+    _selected = v;
+    _e.classes.toggle('selected', v);
+  }
+
+  Draggable<PatternTransform> _draggable;
+  static final DragSystem<PatternTransform> _dragSystem = DragSystem();
+
   PatternInstance(
     this.data,
     BeatFraction start,
@@ -163,18 +174,33 @@ class PatternInstance {
       ..append(stretchElem(false))
       ..append(stretchElem(true)));
 
-    _e.onDoubleClick.listen((e) {});
-
-    Draggable<PatternTransform>(_e, () => transform, (tr, pixelOff, mouseUp) {
-      this.start = tr.start +
-          BeatFraction((pixelOff.x / Timeline.pixelsPerBeat.value).round(), 4);
-      this.track =
-          tr.track + (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
-
-      if (mouseUp && tr != transform) {
-        History.registerDoneAction(PatternTransformAction(this, tr, transform));
+    _e.onMouseDown.listen((e) {
+      if (!selected) {
+        if (!e.shiftKey) {
+          Project.instance.timeline.selectedPatterns
+              .forEach((p) => p.selected = false);
+        }
+        selected = true;
       }
     });
+
+    _draggable = Draggable<PatternTransform>(_e, () => transform,
+        (tr, pixelOff, mouseUp) {
+      var xDiff =
+          BeatFraction((pixelOff.x / Timeline.pixelsPerBeat.value).round(), 4);
+      var yDiff = (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor();
+
+      Project.instance.timeline.selectedPatterns.forEach((p) {
+        p.start = p._draggable.savedVar.start + xDiff;
+        p.track = p._draggable.savedVar.track + yDiff;
+      });
+
+      if (mouseUp && tr != transform) {
+        History.registerDoneAction(PatternTransformAction(
+            Project.instance.timeline.selectedPatterns, tr, transform));
+      }
+    });
+    _dragSystem.register(_draggable);
 
     _silentStart(start);
     _silentLength(length ?? data.length().ceilTo(2));
@@ -226,8 +252,8 @@ class PatternInstance {
         }
         if (up) {
           // register reversible action
-          History.registerDoneAction(
-              PatternTransformAction(this, tr, transform));
+          History.registerDoneAction(PatternTransformAction(
+              Project.instance.timeline.selectedPatterns, tr, transform));
         }
       },
     );
@@ -291,16 +317,21 @@ class PatternTransform {
       : false;
 }
 
-class PatternTransformAction extends Action {
-  final PatternInstance pattern;
+class PatternTransformAction extends MultipleAction<PatternInstance> {
+  final Iterable<PatternInstance> patterns;
   final PatternTransform transformA;
   final PatternTransform transformB;
 
-  PatternTransformAction(this.pattern, this.transformA, this.transformB);
+  PatternTransformAction(this.patterns, this.transformA, this.transformB)
+      : super(patterns);
 
   @override
-  void doAction() => pattern.applyTransform(transformB);
+  void doSingle(PatternInstance object) {
+    object.applyTransform(transformB);
+  }
 
   @override
-  void undoAction() => pattern.applyTransform(transformA);
+  void undoSingle(PatternInstance object) {
+    object.applyTransform(transformA);
+  }
 }
