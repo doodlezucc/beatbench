@@ -154,11 +154,11 @@ input.shy {
 
 #timeline canvas {
 	position: absolute;
-	pointer-events: none;
 }
 
 #timeline #foreground {
 	z-index: 10;
+	pointer-events: none;
 }
 
 .hidden {

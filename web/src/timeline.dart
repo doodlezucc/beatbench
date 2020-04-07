@@ -51,7 +51,10 @@ class Timeline extends Window {
   Timeline()
       : box = PlaybackBox(),
         _e = querySelector('#timeline') {
-    _canvasBg = _e.querySelector('#background');
+    _canvasBg = _e.querySelector('#background')
+      ..onClick.listen((e) {
+        selectedPatterns.forEach((p) => p.selected = false);
+      });
     _canvasFg = _e.querySelector('#foreground');
     _drawOrientation();
     box.onUpdateVisuals = (time) {
