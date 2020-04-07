@@ -5,6 +5,8 @@ abstract class Window {
     print('bruh');
   }
 
-  void handleKeyDown(KeyEvent event);
-  void handleDelete();
+  bool handleKeyDown(KeyEvent event) => false;
+  bool handleDelete() => false;
+
+  bool handleSelectAll() => false;
 }

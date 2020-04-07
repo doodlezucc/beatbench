@@ -179,10 +179,24 @@ class Timeline extends Window {
   }
 
   @override
-  void handleDelete() {}
+  bool handleDelete() {
+    if (selectedPatterns.isNotEmpty) {
+      History.perform(PatternsCreationAction(
+          false, selectedPatterns.toList(growable: false)));
+    }
+    return true;
+  }
 
   @override
-  void handleKeyDown(KeyEvent event) {}
+  bool handleSelectAll() {
+    if (_patterns.isNotEmpty) {
+      var doSelect = !_patterns.every((pattern) => pattern.selected);
+      _patterns.forEach((p) {
+        p.selected = doSelect;
+      });
+    }
+    return true;
+  }
 }
 
 class PlaybackNote {

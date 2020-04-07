@@ -65,11 +65,15 @@ class Project {
             return e.shiftKey ? History.redo() : History.undo();
           case 89: // y
             return History.redo();
+          case 65: // a
+            if (_currentWindow.handleSelectAll()) e.preventDefault();
+            return;
         }
       } else {
         switch (e.keyCode) {
           case 8: // backspace
-            return _currentWindow.handleDelete();
+            if (_currentWindow.handleDelete()) e.preventDefault();
+            return;
         }
       }
     });
