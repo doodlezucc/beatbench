@@ -31,7 +31,8 @@ class Draggable<T> {
 
   final HtmlElement e;
   final T Function() saveVariable;
-  final void Function(T startVar, Point<num> diff, bool mouseUp) applyTransform;
+  final void Function(T startVar, Point<num> diff, MouseEvent ev)
+      applyTransform;
   T _saved;
   T get savedVar => _saved;
   bool _isDragged = false;
@@ -43,8 +44,8 @@ class Draggable<T> {
     _draggables.add(this);
   }
 
-  void _apply(dynamic startVar, Point<num> diff, bool mouseUp) {
-    applyTransform(startVar as T, diff, mouseUp);
+  void _apply(dynamic startVar, Point<num> diff, MouseEvent ev) {
+    applyTransform(startVar as T, diff, ev);
   }
 
   static void _stopTheDragging() {
@@ -54,22 +55,22 @@ class Draggable<T> {
     });
   }
 
-  static void _passMovement(MouseEvent ev, bool up) {
+  static void _passMovement(MouseEvent ev) {
     if (_dragged.isNotEmpty) {
       var diff = ev.client - _offset1;
       _dragged.forEach((d) {
-        d._apply(d._saved, diff, up);
+        d._apply(d._saved, diff, ev);
       });
     }
   }
 
   static void _initializeSystem() {
     document.onMouseUp.listen((ev) {
-      _passMovement(ev, true);
+      _passMovement(ev);
       _stopTheDragging();
     });
     document.onMouseMove.listen((ev) {
-      _passMovement(ev, false);
+      _passMovement(ev);
     });
     _isSetUp = true;
   }

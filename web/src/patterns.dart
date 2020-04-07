@@ -184,8 +184,8 @@ class PatternInstance {
       }
     });
 
-    _draggable = Draggable<PatternTransform>(_e, () => transform,
-        (tr, pixelOff, mouseUp) {
+    _draggable =
+        Draggable<PatternTransform>(_e, () => transform, (tr, pixelOff, ev) {
       var xDiff =
           BeatFraction((pixelOff.x / Timeline.pixelsPerBeat.value).round(), 4);
       var minXDiff = Project.instance.timeline.selectedPatterns
@@ -211,10 +211,19 @@ class PatternInstance {
         p.track = p._draggable.savedVar.track + yDiff;
       });
 
-      if (mouseUp && tr != transform) {
-        History.registerDoneAction(PatternTransformAction(
-            Project.instance.timeline.selectedPatterns.toList(growable: false),
-            transform - tr));
+      if (ev.detail == 1) {
+        if (tr != transform) {
+          History.registerDoneAction(PatternTransformAction(
+              Project.instance.timeline.selectedPatterns
+                  .toList(growable: false),
+              transform - tr));
+        } else if (pixelOff.x == 0 && pixelOff.y == 0) {
+          if (!ev.shiftKey) {
+            Project.instance.timeline.selectedPatterns
+                .forEach((p) => p.selected = false);
+          }
+          selected = true;
+        }
       }
     });
     _dragSystem.register(_draggable);
@@ -244,7 +253,7 @@ class PatternInstance {
     Draggable<PatternTransform>(
       out,
       () => transform,
-      (tr, off, up) {
+      (tr, off, ev) {
         if (right) {
           var diff = (off.x / Timeline.pixelsPerBeat.value).round();
           length = tr.length + BeatFraction(diff, 4);
@@ -267,7 +276,7 @@ class PatternInstance {
 
           if (diff.numerator == 0) return;
         }
-        if (up) {
+        if (ev.detail == 1) {
           // register reversible action
           History.registerDoneAction(PatternTransformAction(
               Project.instance.timeline.selectedPatterns, transform - tr));
