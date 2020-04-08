@@ -73,7 +73,7 @@ class BeatGrid {
   }
 
   Note _quickNote(int x, int y) =>
-      Note(tone: y, octave: 5, start: BeatFraction(x, 16));
+      Note(pitch: Note.getPitch(y, 5), start: BeatFraction(x, 16));
 
   void swaggyBeat() {
     History.perform(NotesComponentAction(data.component(0), true, <Note>[

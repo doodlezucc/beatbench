@@ -62,27 +62,25 @@ class Timeline extends Window {
   final HtmlElement _e;
   CanvasElement _canvasBg;
   CanvasElement _canvasFg;
-  final PlaybackBox box;
+  PlaybackBox _box;
+  PlaybackBox get box => _box;
 
-  bool _hasChanges = false;
-  bool get hasChanges => _hasChanges;
-
-  Timeline()
-      : box = PlaybackBox(),
-        _e = querySelector('#timeline') {
+  Timeline() : _e = querySelector('#timeline') {
     _canvasBg = _e.querySelector('#background')
       ..onClick.listen((e) {
         selectedPatterns.forEach((p) => p.selected = false);
       });
     _canvasFg = _e.querySelector('#foreground');
     _drawOrientation();
-    box
-      ..onUpdateVisuals = (time) {
+    _box = PlaybackBox(
+      onUpdateVisuals: (time) {
         _drawForeground(headPosition.beats, beatsAt(time));
-      }
-      ..onStop = () {
+      },
+      onStop: () {
         _drawForeground(headPosition.beats, headPosition.beats);
-      };
+      },
+      getNotes: notesCache,
+    );
 
     _scrollArea.onScroll.listen((ev) => _onScroll());
     _onScroll();
@@ -119,9 +117,7 @@ class Timeline extends Window {
         (-_scrollArea.scrollTop).toString() + 'px';
   }
 
-  void updatePlaybackCache() {
-    _hasChanges = false;
-
+  Iterable<PlaybackNote> notesCache() {
     var _cache = <PlaybackNote>[];
     _patterns.forEach((pat) {
       var notes = pat.data.notes();
@@ -140,7 +136,7 @@ class Timeline extends Window {
         }));
       });
     });
-    box.cache = _cache;
+    return _cache;
   }
 
   void _drawForeground(double head, double ghost) {
@@ -191,14 +187,11 @@ class Timeline extends Window {
   }
 
   void onNewTempo() {
-    updatePlaybackCache();
     box.handleNewTempo(timeAt(songLength));
   }
 
   void thereAreChanges() {
-    //print('bruv there are changes');
-    _hasChanges = true;
-    updatePlaybackCache();
+    box.thereAreChanges();
   }
 
   double timeAt(BeatFraction bf) {
@@ -268,7 +261,7 @@ class Timeline extends Window {
       'Crash!',
       {
         0: PatternNotesComponent([
-          Note(tone: Note.D + 1, octave: 5),
+          Note(pitch: Note.getPitch(Note.D + 1, 5)),
         ])
       },
     );
@@ -311,7 +304,9 @@ class Timeline extends Window {
   }
 
   Note _demoChordNote(int tone, int start) => Note(
-      tone: tone, start: BeatFraction(start, 1), length: BeatFraction(1, 1));
+      pitch: Note.getPitch(tone, 5),
+      start: BeatFraction(start, 1),
+      length: BeatFraction(1, 1));
 
   @override
   bool handleDelete() {

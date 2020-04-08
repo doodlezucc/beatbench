@@ -8,8 +8,16 @@ class Pitched {
   Pitched(this.coarsePitch);
 }
 
-class Note extends Pitched {
+class NoteInfo extends Pitched {
   double velocity;
+
+  NoteInfo(int coarsePitch) : super(coarsePitch);
+}
+
+class Note {
+  final NoteInfo info;
+  int get coarsePitch => info.coarsePitch;
+
   BeatFraction start;
   BeatFraction length;
 
@@ -18,19 +26,14 @@ class Note extends Pitched {
   static int getPitch(int tone, int octave) => tone + octave * 12;
 
   Note(
-      {@required int tone,
-      int octave = 4,
+      {@required int pitch,
       this.start = const BeatFraction(0, 4),
       this.length = const BeatFraction(1, 16)})
-      : super(getPitch(tone, octave));
-  Note.exact(int pitch) : super(pitch);
+      : info = NoteInfo(pitch);
+  Note._withInfo(this.info, this.start, this.length);
 
-  Note clone({int pitch, BeatFraction start, BeatFraction length}) {
-    return Note(
-        tone: pitch ?? coarsePitch,
-        octave: 0,
-        start: start ?? this.start,
-        length: length ?? this.length);
+  Note cloneKeepInfo({int pitch, BeatFraction start, BeatFraction length}) {
+    return Note._withInfo(info, start ?? this.start, length ?? this.length);
   }
 
   static const int C = 0;

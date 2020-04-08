@@ -9,23 +9,25 @@ class Oscillator extends Generator {
     node.gain.value = 0.05;
   }
 
-  final Map<Note, OscillatorNode> _nodes = {};
+  final Map<NoteInfo, OscillatorNode> _nodes = {};
 
   @override
-  void noteEvent(Note note, double when, bool noteOn) {
+  void noteEvent(NoteInfo info, double when, bool noteOn) {
+    if (_nodes.containsKey(info)) {
+      _nodes[info].stop(when);
+    }
     if (noteOn) {
-      var freq = 440 * pow(2, (note.coarsePitch + 12 - 69) / 12);
-      print('Frequency: $freq');
-      if (_nodes.containsKey(note)) {
-        _nodes[note].stop(when);
+      var freq = 440 * pow(2, (info.coarsePitch - 69) / 12);
+      //print('Frequency: $freq');
+      if (_nodes.containsKey(info)) {
+        _nodes[info].stop(when);
       }
-      _nodes[note] = node.context.createOscillator()
+      _nodes[info] = node.context.createOscillator()
         ..frequency.value = freq
         ..connectNode(node)
         ..start2(when);
     } else {
-      _nodes[note].stop(when);
-      _nodes.remove(note);
+      _nodes.remove(info);
     }
   }
 }
