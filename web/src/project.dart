@@ -69,6 +69,12 @@ class Project {
             if (_currentWindow.handleSelectAll()) e.preventDefault();
             return;
         }
+      } else if (e.altKey) {
+        switch (e.keyCode) {
+          case 67: // c
+            if (_currentWindow.handleClone()) e.preventDefault();
+            return;
+        }
       } else {
         switch (e.keyCode) {
           case 8: // backspace

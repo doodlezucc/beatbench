@@ -7,6 +7,6 @@ abstract class Window {
 
   bool handleKeyDown(KeyEvent event) => false;
   bool handleDelete() => false;
-
   bool handleSelectAll() => false;
+  bool handleClone() => false;
 }

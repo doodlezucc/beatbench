@@ -143,6 +143,34 @@ class Timeline extends Window {
         BeatFraction.washy(0), (v, pat) => pat.end > v ? pat.end : v);
   }
 
+  void cloneSelectedPatterns() {
+    var clones = <PatternInstance>[];
+    selectedPatterns.forEach((p) {
+      clones.add(_clonePattern(p)..selected = true);
+      p.selected = false;
+    });
+    History.perform(PatternsCreationAction(true, clones));
+  }
+
+  PatternInstance _clonePattern(PatternInstance original) {
+    PatternInstance instance;
+    instance = PatternInstance(
+        original.data, original.start, original.length, original.track, () {
+      if (instance.end > songLength) {
+        songLength = instance.end;
+      } else if (instance.end < songLength) {
+        calculateSongLength();
+      } else {
+        thereAreChanges();
+      }
+    })
+      ..contentShift = original.contentShift;
+    if (instance.end > songLength) {
+      songLength = instance.end;
+    }
+    return instance;
+  }
+
   PatternInstance instantiatePattern(PatternData data,
       {BeatFraction start = const BeatFraction(0, 1), int track = 0}) {
     PatternInstance instance;
@@ -198,6 +226,12 @@ class Timeline extends Window {
         p.selected = doSelect;
       });
     }
+    return true;
+  }
+
+  @override
+  bool handleClone() {
+    cloneSelectedPatterns();
     return true;
   }
 }
