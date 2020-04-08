@@ -127,6 +127,10 @@ td.filled {
 	left: 0;
 }
 
+#timeline .pattern canvas {
+	position: static;
+}
+
 .stretch {
 	width: 10px;
 	position: absolute;
