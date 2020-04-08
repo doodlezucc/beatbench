@@ -70,14 +70,8 @@ class Timeline extends Window {
       _drawForeground(headPosition.beats, beatsAt(time));
     };
 
-    var scrollArea = querySelector('#patterns');
-    scrollArea.onScroll.listen((ev) {
-      //e.style.top = (-querySelector('#right').scrollTop).toString() + 'px';
-      querySelector('#head').parent.style.left =
-          (100 - scrollArea.scrollLeft).toString() + 'px';
-      querySelector('#tracks').style.top =
-          (-scrollArea.scrollTop).toString() + 'px';
-    });
+    _scrollArea.onScroll.listen((ev) => _onScroll());
+    _onScroll();
 
     var headDragSystem = DragSystem<BeatFraction>();
     headDragSystem.register(Draggable<BeatFraction>(
@@ -89,6 +83,16 @@ class Timeline extends Window {
 
       headPosition = src + diff;
     }));
+  }
+
+  HtmlElement get _scrollArea => querySelector('#patterns');
+
+  void _onScroll() {
+    //e.style.top = (-querySelector('#right').scrollTop).toString() + 'px';
+    querySelector('#head').parent.style.left =
+        (100 - _scrollArea.scrollLeft).toString() + 'px';
+    querySelector('#tracks').style.top =
+        (-_scrollArea.scrollTop).toString() + 'px';
   }
 
   void updatePlaybackCache() {
