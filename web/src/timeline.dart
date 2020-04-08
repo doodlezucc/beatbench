@@ -3,7 +3,6 @@ import 'dart:html';
 import 'package:meta/meta.dart';
 
 import 'beat_grid.dart';
-import 'drag.dart';
 import 'history.dart';
 import 'instruments.dart';
 import 'notes.dart';
@@ -40,6 +39,8 @@ class Timeline extends Window {
   set headPosition(BeatFraction headPosition) {
     if (headPosition > songLength) {
       headPosition = songLength;
+    } else if (headPosition.numerator < 0) {
+      headPosition = BeatFraction(0, 4);
     }
     if (headPosition != _headPosition) {
       _headPosition = headPosition;
@@ -85,16 +86,26 @@ class Timeline extends Window {
     _scrollArea.onScroll.listen((ev) => _onScroll());
     _onScroll();
 
-    var headDragSystem = DragSystem<BeatFraction>();
-    headDragSystem.register(Draggable<BeatFraction>(
-        querySelector('#head'), () => headPosition, (src, off, ev) {
-      var diff =
-          BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
-      var minDiff = src * -1;
-      if (diff < minDiff) diff = minDiff;
+    var handle = querySelector('#head .handle');
+    querySelector('#rail').onMouseDown.listen((e) {
+      handle.classes.toggle('dragged', true);
+      _playheadFromPixels(e);
+      var sub = document.onMouseMove.listen(_playheadFromPixels);
+      var sub2;
+      sub2 = document.onMouseUp.listen((e) {
+        handle.classes.toggle('dragged', false);
+        sub.cancel();
+        sub2.cancel();
+      });
+    });
+  }
 
-      headPosition = src + diff;
-    }));
+  void _playheadFromPixels(MouseEvent e) {
+    headPosition = BeatFraction(
+        ((e.client.x - querySelector('#rail').documentOffset.x) /
+                pixelsPerBeat.value)
+            .floor(),
+        4);
   }
 
   HtmlElement get _scrollArea => querySelector('#patterns');
@@ -102,7 +113,7 @@ class Timeline extends Window {
   void _onScroll() {
     //e.style.top = (-querySelector('#right').scrollTop).toString() + 'px';
     querySelector('#head').parent.style.left =
-        (100 - _scrollArea.scrollLeft).toString() + 'px';
+        (-_scrollArea.scrollLeft).toString() + 'px';
     querySelector('#tracks').style.top =
         (-_scrollArea.scrollTop).toString() + 'px';
   }

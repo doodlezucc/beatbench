@@ -181,16 +181,21 @@ input.shy {
 	display: none !important;
 }
 
-#rail {
+#top {
 	width: 100%;
 	height: var(--rail-height);
-	background-color: hsla(0, 0%, 25%, 0.3);
 	position: relative;
-	z-index: 1;
 }
 
-#rail * {
+#top * {
 	position: absolute;
+}
+
+#rail {
+	left: var(--track-width);
+	width: 100%;
+	height: var(--rail-height);
+	background-color: hsla(0, 0%, 35%, 0.3);
 }
 
 .handle {
@@ -203,17 +208,17 @@ input.shy {
 	z-index: 5;
 }
 
-.handle:hover {
+.handle:hover, .handle.dragged {
 	background-color: gray;
 	cursor: pointer;
 }
 
-#rail .top-left {
+#top .top-left {
 	top: 0;
 	left: 0;
 	width: var(--track-width);
 	height: var(--rail-height);
 	z-index: 15;
-	background-color: hsl(0, 0%, 20%);
+	background-color: hsl(0, 0%, 25%);
 	text-align: center;
 }
