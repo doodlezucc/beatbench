@@ -58,13 +58,15 @@ class Project {
     });
 
     document.onKeyDown.listen((e) {
-      //print('${e.ctrlKey} | ${e.shiftKey} | ${e.key}');
+      if (e.target is InputElement) return;
       if (e.ctrlKey) {
         switch (e.keyCode) {
           case 90: // z
-            return e.shiftKey ? History.redo() : History.undo();
+            e.shiftKey ? History.redo() : History.undo();
+            return e.preventDefault();
           case 89: // y
-            return History.redo();
+            History.redo();
+            return e.preventDefault();
           case 65: // a
             if (_currentWindow.handleSelectAll()) e.preventDefault();
             return;
