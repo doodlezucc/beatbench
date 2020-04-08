@@ -71,9 +71,13 @@ td.filled {
 #timeline .track {
 	height: var(--timeline-ppt);
 	background-color: #666;
-	box-sizing: border-box;
 	display: grid;
+	border-top: 1px solid #777;
+}
+
+#timeline .track, #timeline .top-left {
 	border-right: 2px solid #ccc;
+	box-sizing: border-box;
 }
 
 #timeline .track span {
@@ -180,7 +184,7 @@ input.shy {
 #rail {
 	width: 100%;
 	height: var(--rail-height);
-	background-color: darksalmon;
+	background-color: hsla(0, 0%, 25%, 0.3);
 	position: relative;
 	z-index: 1;
 }
@@ -193,7 +197,6 @@ input.shy {
 	left: -10px;
 	width: 20px;
 	height: var(--rail-height);
-	background-color: #444;
 	border-radius: 5px;
 	border: 2px solid white;
 	box-sizing: border-box;
@@ -203,4 +206,14 @@ input.shy {
 .handle:hover {
 	background-color: gray;
 	cursor: pointer;
+}
+
+#rail .top-left {
+	top: 0;
+	left: 0;
+	width: var(--track-width);
+	height: var(--rail-height);
+	z-index: 15;
+	background-color: hsl(0, 0%, 20%);
+	text-align: center;
 }
