@@ -16,11 +16,11 @@ class AudioAssembler {
   PlaybackBox get box => _box;
   bool get isRunning => _box != null;
 
-  void run(PlaybackBox box) async {
+  void run(PlaybackBox box, double start) async {
     stopPlayback();
     _box = box;
     await ctx.resume();
-    _box._run(ctx, specs);
+    _box._run(ctx, specs, start);
   }
 
   void stopPlayback() {
@@ -63,6 +63,15 @@ class PlaybackBox {
     }
   }
 
+  set position(double position) {
+    if (_running) {
+      //_bufferedSeconds = _bufferedSeconds - (_ctx.currentTime - _contextTimeOnStart);
+      _bufferedSeconds = 0;
+      _contextTimeOnStart = _ctx.currentTime;
+    }
+    _positionOnStart = position % length;
+  }
+
   void handleNewTempo(double newLength) {
     if (_running) {
       var position = (newLength / length) *
@@ -79,7 +88,7 @@ class PlaybackBox {
 
   void Function(double timeMod) onUpdateVisuals;
 
-  void _run(AudioContext ctx, Specs specs) {
+  void _run(AudioContext ctx, Specs specs, double start) {
     _ctx = ctx;
     _running = true;
     _videoTimer = Timer.periodic(
@@ -100,6 +109,7 @@ class PlaybackBox {
     );
     _contextTimeOnStart = ctx.currentTime;
     _bufferedSeconds = 0;
+    _positionOnStart = start;
 
     _bufferTo(scheduleAhead);
   }

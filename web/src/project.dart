@@ -35,12 +35,12 @@ class Project {
 
     grid.swaggyBeat();
 
-    timeline.fromBeatGrid(grid);
+    timeline.demoFromBeatGrid(grid);
     _currentWindow = timeline;
   }
 
   void play() {
-    audioAssembler.run(timeline.box);
+    audioAssembler.run(timeline.box, timeline.timeAt(timeline.headPosition));
   }
 
   void pause() {

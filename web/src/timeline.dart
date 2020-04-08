@@ -3,6 +3,7 @@ import 'dart:html';
 import 'package:meta/meta.dart';
 
 import 'beat_grid.dart';
+import 'drag.dart';
 import 'history.dart';
 import 'instruments.dart';
 import 'notes.dart';
@@ -32,9 +33,17 @@ class Timeline extends Window {
   BeatFraction _headPosition = BeatFraction(0, 1);
   BeatFraction get headPosition => _headPosition;
   set headPosition(BeatFraction headPosition) {
-    _headPosition = headPosition;
-    _drawForeground(_headPosition.beats);
+    if (headPosition != _headPosition) {
+      _headPosition = headPosition;
+      querySelector('#head').style.left =
+          cssCalc(headPosition.beats, pixelsPerBeat);
+      _drawForeground(headPosition.beats, headPosition.beats);
+      box.position = timeAt(headPosition);
+    }
   }
+
+  int get _trackCount => 4;
+  int get canvasHeight => (_trackCount * pixelsPerTrack.value).round();
 
   List<Instrument> instruments;
   final List<PatternInstance> _patterns = [];
@@ -58,8 +67,28 @@ class Timeline extends Window {
     _canvasFg = _e.querySelector('#foreground');
     _drawOrientation();
     box.onUpdateVisuals = (time) {
-      _drawForeground(beatsAt(time));
+      _drawForeground(headPosition.beats, beatsAt(time));
     };
+
+    var scrollArea = querySelector('#patterns');
+    scrollArea.onScroll.listen((ev) {
+      //e.style.top = (-querySelector('#right').scrollTop).toString() + 'px';
+      querySelector('#head').parent.style.left =
+          (100 - scrollArea.scrollLeft).toString() + 'px';
+      querySelector('#tracks').style.top =
+          (-scrollArea.scrollTop).toString() + 'px';
+    });
+
+    var headDragSystem = DragSystem<BeatFraction>();
+    headDragSystem.register(Draggable<BeatFraction>(
+        querySelector('#head'), () => headPosition, (src, off, ev) {
+      var diff =
+          BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
+      var minDiff = src * -1;
+      if (diff < minDiff) diff = minDiff;
+
+      headPosition = src + diff;
+    }));
   }
 
   void updatePlaybackCache() {
@@ -86,17 +115,23 @@ class Timeline extends Window {
     box.cache = _cache;
   }
 
-  void _drawForeground(double songPositionInBeats) {
+  void _drawForeground(double head, double ghost) {
     var l = songLength;
     _canvasFg.width = (l.beats * pixelsPerBeat.value).round();
-    _canvasFg.height = 200;
+    _canvasFg.height = canvasHeight;
 
     var ctx = _canvasFg.context2D;
     ctx.clearRect(0, 0, _canvasFg.width, _canvasFg.height);
+
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1.5;
+    var x = head * pixelsPerBeat.value;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, _canvasFg.height);
 
-    var x = songPositionInBeats * pixelsPerBeat.value;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    x = ghost * pixelsPerBeat.value;
     ctx.moveTo(x, 0);
     ctx.lineTo(x, _canvasFg.height);
 
@@ -106,7 +141,7 @@ class Timeline extends Window {
   void _drawOrientation() {
     var l = songLength;
     _canvasBg.width = (l.beats * pixelsPerBeat.value).round();
-    _canvasBg.height = 200;
+    _canvasBg.height = canvasHeight;
 
     var ctx = _canvasBg.context2D;
     ctx.clearRect(0, 0, _canvasBg.width, _canvasBg.height);
@@ -190,7 +225,7 @@ class Timeline extends Window {
     return instance;
   }
 
-  void fromBeatGrid(BeatGrid grid) {
+  void demoFromBeatGrid(BeatGrid grid) {
     instruments = [grid.drums];
     var gridPatternData = grid.data;
     var crashPatternData = PatternData(
@@ -201,7 +236,7 @@ class Timeline extends Window {
         ])
       },
     );
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < 16; i++) {
       instantiatePattern(gridPatternData, start: BeatFraction(i, 1));
     }
     instantiatePattern(crashPatternData, track: 1);

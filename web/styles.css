@@ -5,10 +5,12 @@ html, body {
 	margin: 0;
 	padding: 0;
 	font-family: 'Roboto', sans-serif;
+	user-select: none;
 	--cell-size: 30px;
 	--timeline-ppt: 0;
 	--timeline-ppb: 0;
-	user-select: none;
+	--rail-height: 20px;
+	--track-width: 100px;
 }
 
 #output {
@@ -43,18 +45,27 @@ td.filled {
 
 #timeline {
 	background-color: #333;
-	display: flex;
-	flex-direction: row;
+	display: block;
 	color: white;
 	margin: 5px;
+	overflow: hidden;
+	position: relative;
+}
+
+#timeline #bottom {
+	display: flex;
+	flex-direction: row;
+	position: relative;
+	overflow: hidden;
+	height: 200px;
 }
 
 #timeline #tracks {
-	width: 100px;
-	min-width: 100px;
-	height: 240px;
-	border-right: 2px solid #ccc;
+	width: var(--track-width);
+	min-width: var(--track-width);
 	box-sizing: border-box;
+	position: relative;
+	z-index: 10;
 }
 
 #timeline .track {
@@ -62,6 +73,7 @@ td.filled {
 	background-color: #666;
 	box-sizing: border-box;
 	display: grid;
+	border-right: 2px solid #ccc;
 }
 
 #timeline .track span {
@@ -72,10 +84,9 @@ td.filled {
 }
 
 #timeline #patterns {
-	overflow-x: scroll;
-	overflow-y: hidden;
 	width: 100%;
 	position: relative;
+	overflow: scroll;
 }
 
 #timeline .pattern {
@@ -154,6 +165,7 @@ input.shy {
 
 #timeline canvas {
 	position: absolute;
+	top: calc(-1 * var(--rail-height));
 }
 
 #timeline #foreground {
@@ -163,4 +175,32 @@ input.shy {
 
 .hidden {
 	display: none !important;
+}
+
+#rail {
+	width: 100%;
+	height: var(--rail-height);
+	background-color: darksalmon;
+	position: relative;
+	z-index: 1;
+}
+
+#rail * {
+	position: absolute;
+}
+
+.handle {
+	left: -10px;
+	width: 20px;
+	height: var(--rail-height);
+	background-color: #444;
+	border-radius: 5px;
+	border: 2px solid white;
+	box-sizing: border-box;
+	z-index: 5;
+}
+
+.handle:hover {
+	background-color: gray;
+	cursor: pointer;
 }
