@@ -64,6 +64,7 @@ class Project {
   void _init() {
     querySelector('#play').onClick.listen((e) => play());
     querySelector('#pause').onClick.listen((e) => pause());
+    querySelector('#abort').onClick.listen((e) => audioAssembler.ctx.suspend());
     querySelector('#tempo').onInput.listen((e) => _parseTempoInput());
     _parseTempoInput();
 

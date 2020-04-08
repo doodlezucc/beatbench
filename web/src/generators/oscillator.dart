@@ -16,12 +16,16 @@ class Oscillator extends Generator {
     if (noteOn) {
       var freq = 440 * pow(2, (note.coarsePitch + 12 - 69) / 12);
       print('Frequency: $freq');
+      if (_nodes.containsKey(note)) {
+        _nodes[note].stop(when);
+      }
       _nodes[note] = node.context.createOscillator()
         ..frequency.value = freq
         ..connectNode(node)
         ..start2(when);
     } else {
       _nodes[note].stop(when);
+      _nodes.remove(note);
     }
   }
 }

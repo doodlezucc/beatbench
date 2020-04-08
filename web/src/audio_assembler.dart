@@ -124,6 +124,7 @@ class PlaybackBox {
 
     _notesPlaying
         .forEach((n) => n.generator.noteEvent(n.note, _ctx.currentTime, false));
+    _notesPlaying.clear();
 
     if (onStop != null) onStop();
   }
@@ -158,9 +159,11 @@ class PlaybackBox {
       if (pn.startInSeconds >= from && pn.startInSeconds < to) {
         noteOn = true;
         when += pn.startInSeconds;
+        _notesPlaying.add(pn);
       } else if (pn.endInSeconds >= from && pn.endInSeconds < to) {
         noteOn = false;
         when += pn.endInSeconds;
+        _notesPlaying.remove(pn);
       } else {
         return;
       }
@@ -170,7 +173,6 @@ class PlaybackBox {
             '${pn.note.coarsePitch} (${noteOn ? 'on' : 'off'}) at $when seconds');
       }
       pn.generator.noteEvent(pn.note, when, noteOn);
-      _notesPlaying.add(pn);
     });
   }
 }
