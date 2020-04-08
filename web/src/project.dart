@@ -47,6 +47,14 @@ class Project {
     audioAssembler.stopPlayback();
   }
 
+  void togglePlayPause() {
+    if (audioAssembler.isRunning) {
+      pause();
+    } else {
+      play();
+    }
+  }
+
   void _init() {
     querySelector('#play').onClick.listen((e) => play());
     querySelector('#pause').onClick.listen((e) => pause());
@@ -82,6 +90,9 @@ class Project {
           case 8: // backspace
             if (_currentWindow.handleDelete()) e.preventDefault();
             return;
+          case 32: // space
+            e.preventDefault();
+            return togglePlayPause();
         }
       }
     });
