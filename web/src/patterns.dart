@@ -60,28 +60,28 @@ class NotesComponentAction extends AddRemoveAction<Note> {
 }
 
 class PatternData {
-  final Map<int, PatternNotesComponent> _instrumentNotes = {};
+  final Map<int, PatternNotesComponent> _genNotes = {};
   String name;
 
-  PatternData(this.name, Map<int, PatternNotesComponent> instrumentNotes) {
-    _instrumentNotes.addAll(instrumentNotes);
+  PatternData(this.name, Map<int, PatternNotesComponent> genNotes) {
+    _genNotes.addAll(genNotes);
   }
 
-  PatternNotesComponent component(int instrument) {
-    return _instrumentNotes[instrument];
+  PatternNotesComponent component(int gen) {
+    return _genNotes[gen];
   }
 
-  Map<int, PatternNotesComponent> notes() => Map.unmodifiable(_instrumentNotes);
+  Map<int, PatternNotesComponent> notes() => Map.unmodifiable(_genNotes);
 
   BeatFraction length() {
-    return _instrumentNotes.values.fold(BeatFraction.washy(0), (v, n) {
+    return _genNotes.values.fold(BeatFraction.washy(0), (v, n) {
       var l = n.length();
       return l.beats > v.beats ? l : v;
     });
   }
 
   void listenToEdits(void Function(dynamic) handler) {
-    _instrumentNotes.values.forEach((comp) => comp.stream.listen(handler));
+    _genNotes.values.forEach((comp) => comp.stream.listen(handler));
   }
 }
 
@@ -311,7 +311,7 @@ class PatternInstance {
     ctx.clearRect(0, 0, _canvas.width, _canvas.height);
     var minPitch = 1000;
     var maxPitch = 0;
-    data._instrumentNotes.forEach((instrument, component) {
+    data._genNotes.values.forEach((component) {
       component.notes.forEach((n) {
         if (n.coarsePitch > maxPitch) maxPitch = n.coarsePitch;
         if (n.coarsePitch < minPitch) minPitch = n.coarsePitch;
@@ -323,7 +323,7 @@ class PatternInstance {
 
     ctx.fillStyle = '#fff';
 
-    data._instrumentNotes.forEach((instrument, component) {
+    data._genNotes.values.forEach((component) {
       component.notes.forEach((n) {
         ctx.fillRect(
             Timeline.pixelsPerBeat.value * (n.start - contentShift).beats,

@@ -1,7 +1,7 @@
 import 'dart:html';
 
+import 'generators/drums.dart';
 import 'history.dart';
-import 'instruments.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
 import 'patterns.dart';

@@ -4,18 +4,10 @@ import 'dart:web_audio';
 
 import 'package:meta/meta.dart';
 
-import 'notes.dart';
+import '../notes.dart';
+import 'base.dart';
 
-abstract class Instrument {
-  final GainNode node;
-
-  Instrument(AudioContext ctx)
-      : node = ctx.createGain()..connectNode(ctx.destination);
-
-  void playNote(Note note, double when);
-}
-
-class Drums extends Instrument {
+class Drums extends Generator {
   Map<int, DrumSample> drumSamples;
 
   Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx);
@@ -65,9 +57,8 @@ class PresetDrums {
       Uri.file('resources/$path').toString(),
       responseType: 'arraybuffer',
     );
-    ByteBuffer response = request.response;
 
-    var buffer = await ctx.decodeAudioData(response);
+    var buffer = await ctx.decodeAudioData(request.response as ByteBuffer);
     print('Loaded some stuff yay');
     return buffer;
   }

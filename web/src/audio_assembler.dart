@@ -148,7 +148,7 @@ class PlaybackBox {
     _getNotes(0, to).forEach((pn) {
       var when =
           _ctx.currentTime + pn.startInSeconds - (time % length) + length;
-      pn.instrument.playNote(pn.note, when);
+      pn.generator.playNote(pn.note, when);
     });
   }
 
@@ -157,7 +157,7 @@ class PlaybackBox {
     _getNotes(from, to).forEach((pn) {
       var when = _ctx.currentTime + pn.startInSeconds - (time % length);
       //print('scheduling ${pn.note.coarsePitch} to play at $when seconds');
-      pn.instrument.playNote(pn.note, when);
+      pn.generator.playNote(pn.note, when);
     });
   }
 

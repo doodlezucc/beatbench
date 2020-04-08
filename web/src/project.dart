@@ -3,8 +3,8 @@ import 'dart:math';
 
 import 'audio_assembler.dart';
 import 'beat_grid.dart';
+import 'generators/drums.dart';
 import 'history.dart';
-import 'instruments.dart';
 import 'timeline.dart';
 import 'windows.dart';
 

@@ -3,8 +3,8 @@ import 'dart:html';
 import 'package:meta/meta.dart';
 
 import 'beat_grid.dart';
+import 'generators/base.dart';
 import 'history.dart';
-import 'instruments.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
 import 'patterns.dart';
@@ -54,7 +54,7 @@ class Timeline extends Window {
   int get _trackCount => 4;
   int get canvasHeight => (_trackCount * pixelsPerTrack.value).round();
 
-  List<Instrument> instruments;
+  List<Generator> generators;
   final List<PatternInstance> _patterns = [];
   Iterable<PatternInstance> get selectedPatterns =>
       _patterns.where((p) => p.selected);
@@ -132,7 +132,7 @@ class Timeline extends Window {
           var shift = pat.start - pat.contentShift;
           return PlaybackNote(
             note: note,
-            instrument: instruments[i],
+            generator: generators[i],
             startInSeconds: timeAt(note.start + shift),
             endInSeconds: timeAt(note.end + shift),
           );
@@ -261,7 +261,7 @@ class Timeline extends Window {
   }
 
   void demoFromBeatGrid(BeatGrid grid) {
-    instruments = [grid.drums];
+    generators = [grid.drums];
     var gridPatternData = grid.data;
     var crashPatternData = PatternData(
       'Crash!',
@@ -307,7 +307,7 @@ class Timeline extends Window {
 }
 
 class PlaybackNote {
-  final Instrument instrument;
+  final Generator generator;
   final Note note;
   final double startInSeconds;
   final double endInSeconds;
@@ -316,7 +316,7 @@ class PlaybackNote {
     @required this.startInSeconds,
     @required this.endInSeconds,
     @required this.note,
-    @required this.instrument,
+    @required this.generator,
   });
 
   PlaybackNote clone({double startInSeconds}) {
@@ -324,7 +324,7 @@ class PlaybackNote {
       startInSeconds: startInSeconds ?? this.startInSeconds,
       endInSeconds: endInSeconds,
       note: note,
-      instrument: instrument,
+      generator: generator,
     );
   }
 }
