@@ -87,6 +87,7 @@ class PlaybackBox {
   }
 
   void Function(double timeMod) onUpdateVisuals;
+  void Function() onStop;
 
   void _run(AudioContext ctx, Specs specs, double start) {
     _ctx = ctx;
@@ -118,6 +119,7 @@ class PlaybackBox {
     _running = false;
     _audioTimer.cancel();
     _videoTimer.cancel();
+    if (onStop != null) onStop();
   }
 
   void _updateVisuals() {

@@ -74,9 +74,13 @@ class Timeline extends Window {
       });
     _canvasFg = _e.querySelector('#foreground');
     _drawOrientation();
-    box.onUpdateVisuals = (time) {
-      _drawForeground(headPosition.beats, beatsAt(time));
-    };
+    box
+      ..onUpdateVisuals = (time) {
+        _drawForeground(headPosition.beats, beatsAt(time));
+      }
+      ..onStop = () {
+        _drawForeground(headPosition.beats, headPosition.beats);
+      };
 
     _scrollArea.onScroll.listen((ev) => _onScroll());
     _onScroll();
