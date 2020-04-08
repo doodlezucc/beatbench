@@ -16,16 +16,15 @@ class Project {
   double _bpm;
   double get bpm => _bpm;
   set bpm(double bpm) {
-    _bpm = max(40, bpm);
+    _bpm = max(20, bpm);
     timeline.onNewTempo();
   }
 
   static Project _instance;
   static Project get instance => _instance;
 
-  Project({double bpm = 150}) {
+  Project() {
     _instance = this;
-    this.bpm = bpm;
     _init();
   }
 
@@ -55,15 +54,18 @@ class Project {
     }
   }
 
+  void _parseTempoInput() {
+    var bpm = double.tryParse((querySelector('#tempo') as InputElement).value);
+    if (bpm != null) {
+      this.bpm = bpm;
+    }
+  }
+
   void _init() {
     querySelector('#play').onClick.listen((e) => play());
     querySelector('#pause').onClick.listen((e) => pause());
-    querySelector('#tempo').onInput.listen((e) {
-      var bpm = double.tryParse((e.target as InputElement).value);
-      if (bpm != null) {
-        this.bpm = bpm;
-      }
-    });
+    querySelector('#tempo').onInput.listen((e) => _parseTempoInput());
+    _parseTempoInput();
 
     document.onKeyDown.listen((e) {
       if (e.target is InputElement) return;

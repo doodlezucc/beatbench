@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:web_audio';
 
+import 'generators/oscillator.dart';
 import 'timeline.dart';
 
 class Specs {
@@ -44,6 +45,7 @@ class PlaybackBox {
   Timer _videoTimer;
   AudioContext _ctx;
   bool _running = false;
+  final List<PlaybackNote> _notesPlaying = [];
 
   double _length = 1;
   double get length => _length;
@@ -119,6 +121,10 @@ class PlaybackBox {
     _running = false;
     _audioTimer.cancel();
     _videoTimer.cancel();
+
+    _notesPlaying
+        .forEach((n) => n.generator.noteEvent(n.note, _ctx.currentTime, false));
+
     if (onStop != null) onStop();
   }
 
@@ -134,7 +140,7 @@ class PlaybackBox {
       var end = startMod + buffLength;
       if (end >= length) {
         // Wrap to start
-        _bufferRegionWrap(end % length);
+        _bufferRegion(0, end % length, true);
       }
       _bufferRegion(startMod, end);
       _bufferedSeconds = seconds;
@@ -143,26 +149,28 @@ class PlaybackBox {
     }
   }
 
-  void _bufferRegionWrap(double to) {
+  void _bufferRegion(double from, double to, [bool wrap = false]) {
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
-    _getNotes(0, to).forEach((pn) {
-      var when =
-          _ctx.currentTime + pn.startInSeconds - (time % length) + length;
-      pn.generator.playNote(pn.note, when);
-    });
-  }
 
-  void _bufferRegion(double from, double to) {
-    var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
-    _getNotes(from, to).forEach((pn) {
-      var when = _ctx.currentTime + pn.startInSeconds - (time % length);
-      //print('scheduling ${pn.note.coarsePitch} to play at $when seconds');
-      pn.generator.playNote(pn.note, when);
+    _cache.forEach((pn) {
+      var noteOn;
+      var when = _ctx.currentTime - (time % length);
+      if (pn.startInSeconds >= from && pn.startInSeconds < to) {
+        noteOn = true;
+        when += pn.startInSeconds;
+      } else if (pn.endInSeconds >= from && pn.endInSeconds < to) {
+        noteOn = false;
+        when += pn.endInSeconds;
+      } else {
+        return;
+      }
+      if (wrap) when += length;
+      if (pn.generator is Oscillator) {
+        print(
+            '${pn.note.coarsePitch} (${noteOn ? 'on' : 'off'}) at $when seconds');
+      }
+      pn.generator.noteEvent(pn.note, when, noteOn);
+      _notesPlaying.add(pn);
     });
-  }
-
-  Iterable<PlaybackNote> _getNotes(double from, double to) {
-    return _cache
-        .where((pn) => pn.startInSeconds >= from && pn.startInSeconds < to);
   }
 }

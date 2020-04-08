@@ -8,5 +8,5 @@ abstract class Generator {
   Generator(AudioContext ctx)
       : node = ctx.createGain()..connectNode(ctx.destination);
 
-  void playNote(Note note, double when);
+  void noteEvent(Note note, double when, bool noteOn);
 }

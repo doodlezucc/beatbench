@@ -10,15 +10,19 @@ import 'base.dart';
 class Drums extends Generator {
   Map<int, DrumSample> drumSamples;
 
-  Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx);
+  Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx) {
+    node.gain.value = 0.5;
+  }
 
   @override
-  void playNote(Note note, double when) {
-    if (drumSamples.containsKey(note.coarsePitch)) {
-      node.context.createBufferSource()
-        ..connectNode(node)
-        ..buffer = drumSamples[note.coarsePitch].buffer
-        ..start(when);
+  void noteEvent(Note note, double when, bool noteOn) {
+    if (noteOn) {
+      if (drumSamples.containsKey(note.coarsePitch)) {
+        node.context.createBufferSource()
+          ..connectNode(node)
+          ..buffer = drumSamples[note.coarsePitch].buffer
+          ..start(when);
+      }
     }
   }
 }

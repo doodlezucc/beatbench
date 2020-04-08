@@ -4,6 +4,7 @@ import 'package:meta/meta.dart';
 
 import 'beat_grid.dart';
 import 'generators/base.dart';
+import 'generators/oscillator.dart';
 import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
@@ -261,7 +262,7 @@ class Timeline extends Window {
   }
 
   void demoFromBeatGrid(BeatGrid grid) {
-    generators = [grid.drums];
+    generators = [grid.drums, Oscillator(grid.drums.node.context)];
     var gridPatternData = grid.data;
     var crashPatternData = PatternData(
       'Crash!',
@@ -275,9 +276,42 @@ class Timeline extends Window {
       instantiatePattern(gridPatternData, start: BeatFraction(i, 1));
     }
     instantiatePattern(crashPatternData, track: 1);
+
+    var chordPatternData = PatternData(
+      'My Little Cheap Oscillator',
+      {
+        1: PatternNotesComponent([
+          // Cmaj7
+          _demoChordNote(Note.C, 0),
+          _demoChordNote(Note.G, 0),
+          _demoChordNote(Note.E, 0),
+          _demoChordNote(Note.B, 0),
+          // E7
+          _demoChordNote(Note.D + 12, 1),
+          _demoChordNote(Note.E, 1),
+          _demoChordNote(Note.G + 1, 1),
+          _demoChordNote(Note.B, 1),
+          // Fmaj7
+          _demoChordNote(Note.F, 2),
+          _demoChordNote(Note.A, 2),
+          _demoChordNote(Note.C, 2),
+          _demoChordNote(Note.E + 12, 2),
+          // G7
+          _demoChordNote(Note.G, 3),
+          _demoChordNote(Note.B, 3),
+          _demoChordNote(Note.F, 3),
+          _demoChordNote(Note.D, 3),
+        ])
+      },
+    );
+
+    instantiatePattern(chordPatternData, track: 2);
+
     calculateSongLength();
-    thereAreChanges();
   }
+
+  Note _demoChordNote(int tone, int start) => Note(
+      tone: tone, start: BeatFraction(start, 1), length: BeatFraction(1, 1));
 
   @override
   bool handleDelete() {
