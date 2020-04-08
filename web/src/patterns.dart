@@ -250,39 +250,56 @@ class PatternInstance {
 
   DivElement stretchElem(bool right) {
     var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
-    Draggable<PatternTransform>(
+    _dragSystem.register(Draggable<PatternTransform>(
       out,
       () => transform,
       (tr, off, ev) {
+        var diff =
+            BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
+        var maxDiff = Project.instance.timeline.selectedPatterns
+                .fold<BeatFraction>(
+                    tr.length,
+                    (v, p) => p._draggable.savedVar.length < v
+                        ? p._draggable.savedVar.length
+                        : v) -
+            BeatFraction(1, 4);
         if (right) {
-          var diff = (off.x / Timeline.pixelsPerBeat.value).round();
-          length = tr.length + BeatFraction(diff, 4);
-          if (diff == 0) return;
+          if (diff < maxDiff * -1) diff = maxDiff * -1;
+          Project.instance.timeline.selectedPatterns.forEach((p) {
+            p.length = p._draggable.savedVar.length + diff;
+          });
         } else {
-          var diff =
-              BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
           // diff maximum: lengthOld - 1
-          var maxDiff = tr.length.beats - 1;
-          if (diff.beats > maxDiff) diff = BeatFraction.washy(maxDiff);
+          if (diff > maxDiff) diff = maxDiff;
+
           // diff minimum: -contentShiftOld
-          var minDiff = tr.contentShift * -1;
+          var minDiff = Project.instance.timeline.selectedPatterns
+                  .fold<BeatFraction>(
+                      tr.contentShift,
+                      (v, p) => p._draggable.savedVar.contentShift > v
+                          ? p._draggable.savedVar.contentShift
+                          : v) *
+              -1;
           if (diff < minDiff) diff = minDiff;
 
-          if (_silentLength(tr.length - diff)) {
-            _silentStart(tr.start + diff);
-            contentShift = tr.contentShift + diff;
-            _draw();
-          }
-
-          if (diff.numerator == 0) return;
+          Project.instance.timeline.selectedPatterns.forEach((p) {
+            if (p._silentLength(p._draggable.savedVar.length - diff)) {
+              p._silentStart(p._draggable.savedVar.start + diff);
+              p.contentShift = p._draggable.savedVar.contentShift + diff;
+              p._draw();
+            }
+          });
         }
+        if (diff.numerator == 0) return;
         if (ev.detail == 1) {
           // register reversible action
           History.registerDoneAction(PatternTransformAction(
-              Project.instance.timeline.selectedPatterns, transform - tr));
+              Project.instance.timeline.selectedPatterns
+                  .toList(growable: false),
+              transform - tr));
         }
       },
-    );
+    ));
     return out;
   }
 
