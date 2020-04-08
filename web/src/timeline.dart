@@ -21,6 +21,7 @@ class Timeline extends Window {
 
   BeatFraction _songLength = BeatFraction(4, 4);
   BeatFraction get songLength => _songLength;
+  BeatFraction get renderLength => _songLength + BeatFraction(16, 1);
   set songLength(BeatFraction l) {
     var min = BeatFraction(4, 4);
     if (l < min) l = min;
@@ -28,11 +29,18 @@ class Timeline extends Window {
     box.length = timeAt(l);
     _drawOrientation();
     thereAreChanges();
+    if (headPosition > renderLength) {
+      headPosition =
+          BeatFraction.washy(headPosition.beats % renderLength.beats);
+    }
   }
 
   BeatFraction _headPosition = BeatFraction(0, 1);
   BeatFraction get headPosition => _headPosition;
   set headPosition(BeatFraction headPosition) {
+    if (headPosition > songLength) {
+      headPosition = songLength;
+    }
     if (headPosition != _headPosition) {
       _headPosition = headPosition;
       querySelector('#head').style.left =
@@ -120,7 +128,7 @@ class Timeline extends Window {
   }
 
   void _drawForeground(double head, double ghost) {
-    var l = songLength;
+    var l = renderLength;
     _canvasFg.width = (l.beats * pixelsPerBeat.value).round();
     _canvasFg.height = canvasHeight;
 
@@ -143,12 +151,13 @@ class Timeline extends Window {
   }
 
   void _drawOrientation() {
-    var l = songLength;
+    var l = renderLength;
     _canvasBg.width = (l.beats * pixelsPerBeat.value).round();
     _canvasBg.height = canvasHeight;
 
     var ctx = _canvasBg.context2D;
     ctx.clearRect(0, 0, _canvasBg.width, _canvasBg.height);
+
     ctx.strokeStyle = '#fff4';
     for (var b = 0; b <= l.beats; b++) {
       var x = (b * pixelsPerBeat.value).round() - 0.5;
@@ -156,6 +165,13 @@ class Timeline extends Window {
       ctx.lineTo(x, _canvasBg.height);
     }
     ctx.stroke();
+
+    ctx.fillStyle = '#0008';
+    ctx.fillRect(
+        songLength.beats * pixelsPerBeat.value,
+        0,
+        (renderLength - songLength).beats * pixelsPerBeat.value,
+        _canvasBg.height);
   }
 
   void onNewTempo() {
@@ -240,7 +256,7 @@ class Timeline extends Window {
         ])
       },
     );
-    for (var i = 0; i < 16; i++) {
+    for (var i = 0; i < 4; i++) {
       instantiatePattern(gridPatternData, start: BeatFraction(i, 1));
     }
     instantiatePattern(crashPatternData, track: 1);
