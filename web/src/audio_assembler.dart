@@ -34,6 +34,13 @@ class AudioAssembler {
   }
 }
 
+class _SentSignal {
+  final NoteSignal sig;
+  final double time;
+
+  _SentSignal(this.sig, this.time);
+}
+
 class PlaybackBox {
   final List<PlaybackNote> _cache = [];
 
@@ -44,7 +51,7 @@ class PlaybackBox {
   Timer _videoTimer;
   AudioContext _ctx;
   bool _running = false;
-  final Set<PlaybackNote> _notesPlaying = {};
+  final Map<PlaybackNote, _SentSignal> _sentSignals = {};
   bool _shouldUpdateCache = true;
 
   double _length = 1;
@@ -59,7 +66,7 @@ class PlaybackBox {
             _bufferedSeconds - (_ctx.currentTime - _contextTimeOnStart);
         _contextTimeOnStart = _ctx.currentTime;
         _positionOnStart = position % length;
-        _refreshPlayingNotes();
+        _correctPlayingNotes();
       }
 
       _length = length;
@@ -73,7 +80,7 @@ class PlaybackBox {
       _contextTimeOnStart = _ctx.currentTime;
     }
     _positionOnStart = position % length;
-    _refreshPlayingNotes();
+    if (_running) _correctPlayingNotes();
   }
 
   PlaybackBox(
@@ -81,33 +88,16 @@ class PlaybackBox {
       @required this.onStop,
       @required this.getNotes});
 
-  void _refreshPlayingNotes() {
-    if (!_running) {
-      _notesPlaying.clear();
-      return;
-    }
+  void _correctPlayingNotes() {
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     var now = time % length;
 
     _cache.forEach((pn) {
-      var signal = NoteSignal.NOTE_END;
-      // check if note should be playing right now
-      if (pn.startInSeconds <= now && pn.endInSeconds > now) {
-        // send NOTE ON if not already playing
-        if (_notesPlaying.any((playing) => playing == pn)) return;
-
-        signal = NoteSignal.NOTE_RESUME;
-        _notesPlaying.add(pn);
-      }
-      // send NOTE OFF if already playing
-      else {
-        var iAmPlaying = _notesPlaying.firstWhere((playing) => playing == pn,
-            orElse: () => null);
-        if (iAmPlaying == null || iAmPlaying.startInSeconds > now) return;
-        _notesPlaying.remove(iAmPlaying);
-      }
-      print('Sent ${signal.noteOn} to ' + pn.note.coarsePitch.toString());
-      pn.generator.noteEvent(pn.note.info, _ctx.currentTime, signal);
+      var signal = pn.startInSeconds <= now && pn.endInSeconds > now
+          ? NoteSignal.NOTE_RESUME
+          : NoteSignal.NOTE_END;
+      //print('Refresh');
+      _sendNoteEvent(pn, _ctx.currentTime, signal);
     });
 
     //_notesPlaying.clear();
@@ -115,9 +105,11 @@ class PlaybackBox {
   }
 
   void _sendStopNotes() {
-    _notesPlaying.forEach((n) => n.generator
-        .noteEvent(n.note.info, _ctx.currentTime, NoteSignal.NOTE_END));
-    _notesPlaying.clear();
+    _sentSignals.forEach((pn, sig) {
+      if (sig.sig.noteOn) {
+        _sendNoteEvent(pn, _ctx.currentTime, NoteSignal.NOTE_END, force: true);
+      }
+    });
   }
 
   void thereAreChanges() {
@@ -161,7 +153,7 @@ class PlaybackBox {
       (timerInstance) {
         if (_shouldUpdateCache) {
           _forceUpdateCache();
-          _refreshPlayingNotes();
+          _correctPlayingNotes();
         }
         _bufferTo(ctx.currentTime - _contextTimeOnStart + scheduleAhead);
       },
@@ -172,7 +164,7 @@ class PlaybackBox {
 
     _forceUpdateCache();
     _bufferTo(scheduleAhead);
-    _refreshPlayingNotes();
+    _correctPlayingNotes();
   }
 
   void stopPlayback() {
@@ -181,6 +173,7 @@ class PlaybackBox {
     _videoTimer.cancel();
 
     _sendStopNotes();
+    _sentSignals.clear();
 
     if (onStop != null) onStop();
   }
@@ -199,12 +192,15 @@ class PlaybackBox {
   }
 
   void _bufferTo(double seconds) {
-    //print('Buffering to $seconds seconds');
     if (seconds > _bufferedSeconds) {
       var buffLength = seconds - _bufferedSeconds;
       var startMod = (_bufferedSeconds + _positionOnStart) % length;
       var end = startMod + buffLength;
-      _bufferRegion(startMod, end);
+      _bufferRegion(startMod, end,
+          wrap: ((_ctx.currentTime - _contextTimeOnStart + _positionOnStart) /
+                      length)
+                  .floor() <
+              ((_bufferedSeconds + _positionOnStart) / length).floor());
       if (end >= length) {
         // Wrap to start
         _bufferRegion(0, end % length, wrap: true);
@@ -215,28 +211,37 @@ class PlaybackBox {
     }
   }
 
-  void _sendNoteEvent(PlaybackNote pn, double when, bool noteOn, bool wrap) {
-    if (wrap) when += length;
-    // if (pn.generator is Oscillator) {
-    //   print(
-    //       '${pn.note.coarsePitch} (${noteOn ? 'on' : 'off'}) at ${when.toStringAsFixed(2)} seconds');
-    // }
-    pn.generator.noteEvent(pn.note.info, when,
-        noteOn ? NoteSignal.NOTE_START : NoteSignal.NOTE_END);
+  bool _sendNoteEvent(PlaybackNote pn, double when, NoteSignal sig,
+      {bool force = false}) {
+    var key = _sentSignals.keys.firstWhere((n) => n == pn, orElse: () => null);
+    if (key != null) {
+      if (_sentSignals[key].sig.noteOn == sig.noteOn) return false;
+      if (when < _sentSignals[key].time) {
+        if (force) {
+          return _sendNoteEvent(pn, _sentSignals[key].time, sig);
+        }
+        print('did not send signal because another one is scheduled later');
+        return false;
+      }
+    }
+    _sentSignals[key ?? pn] = _SentSignal(sig, when);
+    pn.generator.noteEvent(pn.note.info, when, sig);
+    return true;
   }
 
   void _bufferRegion(double from, double to, {bool wrap = false}) {
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
+    var when = _ctx.currentTime - (time % length);
+    if (wrap) {
+      when += length;
+    }
 
     _cache.forEach((pn) {
-      var when = _ctx.currentTime - (time % length);
       if (pn.startInSeconds >= from && pn.startInSeconds < to) {
-        _sendNoteEvent(pn, when + pn.startInSeconds, true, wrap);
-        _notesPlaying.add(pn);
+        _sendNoteEvent(pn, when + pn.startInSeconds, NoteSignal.NOTE_START);
       }
       if (pn.endInSeconds >= from && pn.endInSeconds < to) {
-        _sendNoteEvent(pn, when + pn.endInSeconds, false, wrap);
-        _notesPlaying.removeWhere((n) => n == pn);
+        _sendNoteEvent(pn, when + pn.endInSeconds, NoteSignal.NOTE_END);
       }
     });
   }
