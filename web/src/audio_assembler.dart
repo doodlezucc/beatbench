@@ -82,7 +82,10 @@ class PlaybackBox {
       @required this.getNotes});
 
   void _refreshPlayingNotes() {
-    var newNotesPlaying = <PlaybackNote>[];
+    if (!_running) {
+      _notesPlaying.clear();
+      return;
+    }
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     var now = time % length;
 
@@ -90,21 +93,25 @@ class PlaybackBox {
       var signal = NoteSignal.NOTE_END;
       // check if note should be playing right now
       if (pn.startInSeconds <= now && pn.endInSeconds > now) {
-        newNotesPlaying.add(pn);
         // send NOTE ON if not already playing
-        if (_notesPlaying.any((playing) => playing == pn)) {
-          return;
-        }
+        if (_notesPlaying.any((playing) => playing == pn)) return;
+
         signal = NoteSignal.NOTE_RESUME;
-      } // send NOTE OFF if already playing
-      else if (!_notesPlaying.any((playing) => playing == pn)) {
-        return;
+        _notesPlaying.add(pn);
       }
+      // send NOTE OFF if already playing
+      else {
+        var iAmPlaying = _notesPlaying.firstWhere((playing) => playing == pn,
+            orElse: () => null);
+        if (iAmPlaying == null || iAmPlaying.startInSeconds > now) return;
+        _notesPlaying.remove(iAmPlaying);
+      }
+      print('Sent ${signal.noteOn} to ' + pn.note.coarsePitch.toString());
       pn.generator.noteEvent(pn.note.info, _ctx.currentTime, signal);
     });
 
-    _notesPlaying.clear();
-    _notesPlaying.addAll(newNotesPlaying);
+    //_notesPlaying.clear();
+    //_notesPlaying.addAll(newNotesPlaying);
   }
 
   void _sendStopNotes() {
@@ -152,6 +159,10 @@ class PlaybackBox {
         milliseconds: (specs.schedulingMs * 0.8).round(),
       ),
       (timerInstance) {
+        if (_shouldUpdateCache) {
+          _forceUpdateCache();
+          _refreshPlayingNotes();
+        }
         _bufferTo(ctx.currentTime - _contextTimeOnStart + scheduleAhead);
       },
     );
@@ -159,7 +170,9 @@ class PlaybackBox {
     _bufferedSeconds = 0;
     _positionOnStart = start;
 
+    _forceUpdateCache();
     _bufferTo(scheduleAhead);
+    _refreshPlayingNotes();
   }
 
   void stopPlayback() {
@@ -180,15 +193,13 @@ class PlaybackBox {
   void _forceUpdateCache() {
     _cache.clear();
     _cache.addAll(getNotes());
-    _refreshPlayingNotes();
+    //_refreshPlayingNotes();
     _shouldUpdateCache = false;
-    print('Updated cache');
+    //print('Updated cache');
   }
 
   void _bufferTo(double seconds) {
-    if (_shouldUpdateCache) {
-      _forceUpdateCache();
-    }
+    //print('Buffering to $seconds seconds');
     if (seconds > _bufferedSeconds) {
       var buffLength = seconds - _bufferedSeconds;
       var startMod = (_bufferedSeconds + _positionOnStart) % length;
@@ -225,9 +236,7 @@ class PlaybackBox {
       }
       if (pn.endInSeconds >= from && pn.endInSeconds < to) {
         _sendNoteEvent(pn, when + pn.endInSeconds, false, wrap);
-        if (!_notesPlaying.remove(pn)) {
-          _notesPlaying.removeWhere((n) => n.note.info == pn.note.info);
-        }
+        _notesPlaying.removeWhere((n) => n == pn);
       }
     });
   }
