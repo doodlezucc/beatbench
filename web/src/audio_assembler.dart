@@ -213,6 +213,7 @@ class PlaybackBox {
 
   bool _sendNoteEvent(PlaybackNote pn, double when, NoteSignal sig,
       {bool force = false}) {
+    //print('${pn.noteInfo.coarsePitch} / ${sig.noteOn}');
     var key = _sentSignals.keys.firstWhere((n) => n == pn, orElse: () => null);
     if (key != null) {
       if (_sentSignals[key].sig.noteOn == sig.noteOn) return false;
@@ -220,12 +221,12 @@ class PlaybackBox {
         if (force) {
           return _sendNoteEvent(pn, _sentSignals[key].time, sig);
         }
-        print('did not send signal because another one is scheduled later');
         return false;
       }
-    }
+    } else if (!sig.noteOn) return false;
     _sentSignals[key ?? pn] = _SentSignal(sig, when);
-    pn.generator.noteEvent(pn.note.info, when, sig);
+    pn.generator.noteEvent(pn.noteInfo, when, sig);
+    //print('sent');
     return true;
   }
 

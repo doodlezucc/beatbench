@@ -132,7 +132,7 @@ class Timeline extends Window {
             // note must play at SOME point...
             var shift = pat.start - pat.contentShift;
             _cache.add(PlaybackNote(
-              note: note,
+              noteInfo: note.info,
               generator: generators[i],
               startInSeconds: (noteStartBeats > 0)
                   ? timeAt(note.start + shift)
@@ -308,9 +308,24 @@ class Timeline extends Window {
       },
     );
 
-    instantiatePattern(chordPatternData, track: 2);
+    var src = instantiatePattern(chordPatternData, track: 2)
+      ..length = BeatFraction(6, 4);
+    History.perform(PatternsCreationAction(true, [
+      _clonePattern(src)
+        ..start = BeatFraction(6, 4)
+        ..contentShift = BeatFraction(8, 4)
+        ..length = BeatFraction(2, 4),
+      _clonePattern(src)
+        ..start = BeatFraction(9, 4)
+        ..contentShift = BeatFraction(0, 4)
+        ..length = BeatFraction(3, 4),
+      _clonePattern(src)
+        ..start = BeatFraction(12, 4)
+        ..contentShift = BeatFraction(12, 4)
+        ..length = BeatFraction(3, 4),
+    ]));
 
-    calculateSongLength();
+    //calculateSongLength();
   }
 
   Note _demoChordNote(int tone, int start) => Note(
@@ -347,7 +362,7 @@ class Timeline extends Window {
 
 class PlaybackNote {
   final Generator generator;
-  final Note note;
+  final NoteInfo noteInfo;
   final double startInSeconds;
   final double endInSeconds;
   final PatternInstance pattern;
@@ -355,7 +370,7 @@ class PlaybackNote {
   PlaybackNote({
     @required this.startInSeconds,
     @required this.endInSeconds,
-    @required this.note,
+    @required this.noteInfo,
     @required this.generator,
     @required this.pattern,
   });
@@ -363,7 +378,7 @@ class PlaybackNote {
   @override
   bool operator ==(dynamic other) =>
       generator == other.generator &&
-      note.info == other.note.info &&
+      noteInfo == other.noteInfo &&
       pattern == other.pattern;
 }
 
