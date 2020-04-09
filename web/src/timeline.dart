@@ -120,20 +120,29 @@ class Timeline extends Window {
   Iterable<PlaybackNote> notesCache() {
     var _cache = <PlaybackNote>[];
     _patterns.forEach((pat) {
+      var patternStartTime = timeAt(pat.start);
+      var patternEndTime = timeAt(pat.end);
+
       var notes = pat.data.notes();
       notes.forEach((i, patNotesComp) {
-        _cache.addAll(patNotesComp.notesWithSwing.where((note) {
-          return note.start >= pat.contentShift &&
-              note.start < pat.length + pat.contentShift;
-        }).map((note) {
-          var shift = pat.start - pat.contentShift;
-          return PlaybackNote(
-            note: note,
-            generator: generators[i],
-            startInSeconds: timeAt(note.start + shift),
-            endInSeconds: timeAt(note.end + shift),
-          );
-        }));
+        patNotesComp.notesWithSwing.forEach((note) {
+          var noteStartBeats = note.start.beats - pat.contentShift.beats;
+          var noteEndBeats = note.end.beats - pat.contentShift.beats;
+          if (noteEndBeats >= 0 && noteStartBeats < pat.length.beats) {
+            // note must play at SOME point...
+            var shift = pat.start - pat.contentShift;
+            _cache.add(PlaybackNote(
+              note: note,
+              generator: generators[i],
+              startInSeconds: (noteStartBeats > 0)
+                  ? timeAt(note.start + shift)
+                  : patternStartTime,
+              endInSeconds: (noteEndBeats < pat.length.beats)
+                  ? timeAt(note.end + shift)
+                  : patternEndTime,
+            ));
+          }
+        });
       });
     });
     return _cache;
