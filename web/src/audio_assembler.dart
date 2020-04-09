@@ -3,7 +3,7 @@ import 'dart:web_audio';
 
 import 'package:meta/meta.dart';
 
-import 'generators/oscillator.dart';
+import 'generators/base.dart';
 import 'timeline.dart';
 
 class Specs {
@@ -59,6 +59,7 @@ class PlaybackBox {
             _bufferedSeconds - (_ctx.currentTime - _contextTimeOnStart);
         _contextTimeOnStart = _ctx.currentTime;
         _positionOnStart = position % length;
+        _refreshPlayingNotes();
       }
 
       _length = length;
@@ -72,7 +73,7 @@ class PlaybackBox {
       _contextTimeOnStart = _ctx.currentTime;
     }
     _positionOnStart = position % length;
-    _resetPlayingNotes();
+    _refreshPlayingNotes();
   }
 
   PlaybackBox(
@@ -80,13 +81,36 @@ class PlaybackBox {
       @required this.onStop,
       @required this.getNotes});
 
-  void _resetPlayingNotes() {
-    _sendStopNotes();
+  void _refreshPlayingNotes() {
+    var newNotesPlaying = <PlaybackNote>[];
+    var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
+    var now = time % length;
+
+    _cache.forEach((pn) {
+      var signal = NoteSignal.NOTE_END;
+      // check if note should be playing right now
+      if (pn.startInSeconds <= now && pn.endInSeconds > now) {
+        newNotesPlaying.add(pn);
+        // send NOTE ON if not already playing
+        if (_notesPlaying.any((playing) => playing.note.info == pn.note.info)) {
+          return;
+        }
+        signal = NoteSignal.NOTE_RESUME;
+      } // send NOTE OFF if already playing
+      else if (!_notesPlaying
+          .any((playing) => playing.note.info == pn.note.info)) {
+        return;
+      }
+      pn.generator.noteEvent(pn.note.info, _ctx.currentTime, signal);
+    });
+
+    _notesPlaying.clear();
+    _notesPlaying.addAll(newNotesPlaying);
   }
 
   void _sendStopNotes() {
-    _notesPlaying.forEach(
-        (n) => n.generator.noteEvent(n.note.info, _ctx.currentTime, false));
+    _notesPlaying.forEach((n) => n.generator
+        .noteEvent(n.note.info, _ctx.currentTime, NoteSignal.NOTE_END));
     _notesPlaying.clear();
   }
 
@@ -154,12 +178,17 @@ class PlaybackBox {
         (_positionOnStart + _ctx.currentTime - _contextTimeOnStart) % length);
   }
 
+  void _forceUpdateCache() {
+    _cache.clear();
+    _cache.addAll(getNotes());
+    _refreshPlayingNotes();
+    _shouldUpdateCache = false;
+    print('Updated cache');
+  }
+
   void _bufferTo(double seconds) {
     if (_shouldUpdateCache) {
-      _cache.clear();
-      _cache.addAll(getNotes());
-      _shouldUpdateCache = false;
-      print('Updated cache');
+      _forceUpdateCache();
     }
     if (seconds > _bufferedSeconds) {
       var buffLength = seconds - _bufferedSeconds;
@@ -178,11 +207,12 @@ class PlaybackBox {
 
   void _sendNoteEvent(PlaybackNote pn, double when, bool noteOn, bool wrap) {
     if (wrap) when += length;
-    if (pn.generator is Oscillator) {
-      print(
-          '${pn.note.coarsePitch} (${noteOn ? 'on' : 'off'}) at ${when.toStringAsFixed(2)} seconds');
-    }
-    pn.generator.noteEvent(pn.note.info, when, noteOn);
+    // if (pn.generator is Oscillator) {
+    //   print(
+    //       '${pn.note.coarsePitch} (${noteOn ? 'on' : 'off'}) at ${when.toStringAsFixed(2)} seconds');
+    // }
+    pn.generator.noteEvent(pn.note.info, when,
+        noteOn ? NoteSignal.NOTE_START : NoteSignal.NOTE_END);
   }
 
   void _bufferRegion(double from, double to, {bool wrap = false}) {

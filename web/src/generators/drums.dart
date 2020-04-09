@@ -15,8 +15,8 @@ class Drums extends Generator {
   }
 
   @override
-  void noteEvent(NoteInfo note, double when, bool noteOn) {
-    if (noteOn) {
+  void noteEvent(NoteInfo note, double when, NoteSignal signal) {
+    if (signal == NoteSignal.NOTE_START) {
       if (drumSamples.containsKey(note.coarsePitch)) {
         node.context.createBufferSource()
           ..connectNode(node)

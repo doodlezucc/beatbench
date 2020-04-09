@@ -12,11 +12,11 @@ class Oscillator extends Generator {
   final Map<NoteInfo, OscillatorNode> _nodes = {};
 
   @override
-  void noteEvent(NoteInfo info, double when, bool noteOn) {
+  void noteEvent(NoteInfo info, double when, NoteSignal signal) {
     if (_nodes.containsKey(info)) {
       _nodes[info].stop(when);
     }
-    if (noteOn) {
+    if (signal.noteOn) {
       var freq = 440 * pow(2, (info.coarsePitch - 69) / 12);
       //print('Frequency: $freq');
       if (_nodes.containsKey(info)) {
