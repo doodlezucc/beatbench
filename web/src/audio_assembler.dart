@@ -92,13 +92,12 @@ class PlaybackBox {
       if (pn.startInSeconds <= now && pn.endInSeconds > now) {
         newNotesPlaying.add(pn);
         // send NOTE ON if not already playing
-        if (_notesPlaying.any((playing) => playing.note.info == pn.note.info)) {
+        if (_notesPlaying.any((playing) => playing == pn)) {
           return;
         }
         signal = NoteSignal.NOTE_RESUME;
       } // send NOTE OFF if already playing
-      else if (!_notesPlaying
-          .any((playing) => playing.note.info == pn.note.info)) {
+      else if (!_notesPlaying.any((playing) => playing == pn)) {
         return;
       }
       pn.generator.noteEvent(pn.note.info, _ctx.currentTime, signal);

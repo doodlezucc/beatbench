@@ -140,6 +140,7 @@ class Timeline extends Window {
               endInSeconds: (noteEndBeats < pat.length.beats)
                   ? timeAt(note.end + shift)
                   : patternEndTime,
+              pattern: pat,
             ));
           }
         });
@@ -349,22 +350,21 @@ class PlaybackNote {
   final Note note;
   final double startInSeconds;
   final double endInSeconds;
+  final PatternInstance pattern;
 
   PlaybackNote({
     @required this.startInSeconds,
     @required this.endInSeconds,
     @required this.note,
     @required this.generator,
+    @required this.pattern,
   });
 
-  PlaybackNote clone({double startInSeconds}) {
-    return PlaybackNote(
-      startInSeconds: startInSeconds ?? this.startInSeconds,
-      endInSeconds: endInSeconds,
-      note: note,
-      generator: generator,
-    );
-  }
+  @override
+  bool operator ==(dynamic other) =>
+      generator == other.generator &&
+      note.info == other.note.info &&
+      pattern == other.pattern;
 }
 
 class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
