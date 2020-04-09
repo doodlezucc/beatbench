@@ -16,7 +16,7 @@ class Project {
   double _bpm;
   double get bpm => _bpm;
   set bpm(double bpm) {
-    _bpm = max(20, bpm);
+    _bpm = min(max(bpm, 20), 420);
     timeline.onNewTempo();
   }
 
