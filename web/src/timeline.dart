@@ -236,8 +236,8 @@ class Timeline extends Window {
       } else {
         thereAreChanges();
       }
-    })
-      ..contentShift = original.contentShift;
+    });
+    instance.contentShift = original.contentShift;
     if (instance.end > songLength) {
       songLength = instance.end;
     }
