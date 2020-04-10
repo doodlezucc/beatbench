@@ -1,30 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
-html, body {
+/* #region BASIC*/
+@import url(https://fonts.googleapis.com/css2?family=Roboto&display=swap);
+html,body {
 	width: 100%;
 	height: 100%;
 	margin: 0;
 	padding: 0;
-	font-family: 'Roboto', sans-serif;
+	font-family: 'Roboto',sans-serif;
 	user-select: none;
 	--cell-size: 30px;
 	--timeline-ppt: 0;
 	--timeline-ppb: 0;
 	--rail-height: 20px;
-	--track-width: 100px;
+	--track-width: 100px
 }
-
-#output {
-	padding: 20px;
-	text-align: center;
+.hidden {
+	display: none !important
 }
-
+/* #endregion */
+/* #region INPUT*/
+input {
+	font: inherit;
+	border: none;
+	color: inherit;
+	background-color: inherit
+}
+input:focus {
+	outline: none
+}
+input.shy {
+	background: none
+}
+/* #endregion */
+/* #region STRETCHING*/
+.stretch {
+	width: 10px;
+	position: absolute;
+	height: 100%;
+	top: 0
+}
+.stretch:hover {
+	background-color: #fff5
+}
+.stretch.dragged {
+	background-color: #fffa
+}
+.stretch.left {
+	cursor: w-resize;
+	left: 0
+}
+.stretch.right {
+	cursor: e-resize;
+	right: 0
+}
+/* #endregion */
+/* #region BEAT GRID*/
 #grid {
 	border-collapse: collapse;
 	margin-left: auto;
-	margin-right: auto;
+	margin-right: auto
 }
-
-td, th {
+td,th {
 	border: 1px solid #444;
 	min-width: var(--cell-size);
 	width: var(--cell-size);
@@ -32,67 +67,81 @@ td, th {
 	height: var(--cell-size);
 	box-sizing: border-box;
 	background-color: white;
-	transition: 0.15s;
+	transition: 0.15s
 }
-
 td:hover {
-	background-color: #ccc;
+	background-color: #ccc
 }
-
 td.filled {
-	background-color: #444;
+	background-color: #444
 }
-
+/* #endregion */
+/* #region TIMELINE*/
+/* #region ---BASIC*/
 #timeline {
 	background-color: #333;
 	display: block;
 	color: white;
 	margin: 5px;
 	overflow: hidden;
-	position: relative;
+	position: relative
 }
-
 #timeline #bottom {
 	display: flex;
 	flex-direction: row;
 	position: relative;
 	overflow: hidden;
-	height: 200px;
+	height: 200px
 }
-
+#timeline canvas {
+	position: absolute;
+	top: calc(-1 * var(--rail-height))
+}
+#timeline #foreground {
+	z-index: 10;
+	pointer-events: none
+}
+#top .top-left {
+	top: 0;
+	left: 0;
+	width: var(--track-width);
+	height: var(--rail-height);
+	z-index: 15;
+	background-color: hsl(0, 0%, 25%);
+	text-align: center
+}
+/* #endregion */
+/* #region ---TRACKS*/
 #timeline #tracks {
 	width: var(--track-width);
 	min-width: var(--track-width);
 	box-sizing: border-box;
 	position: relative;
-	z-index: 10;
+	z-index: 10
 }
-
 #timeline .track {
 	height: var(--timeline-ppt);
 	background-color: #666;
 	display: grid;
-	border-top: 1px solid #777;
+	border-top: 1px solid #777
 }
-
-#timeline .track, #timeline .top-left {
+#timeline .track,#timeline .top-left {
 	border-right: 2px solid #ccc;
-	box-sizing: border-box;
+	box-sizing: border-box
 }
-
 #timeline .track span {
 	padding: 0 2px;
 	white-space: nowrap;
 	text-overflow: ellipsis;
-	overflow: hidden;
+	overflow: hidden
 }
-
+/* #endregion */
+/* #region ---PATTERNS*/
 #timeline #patterns {
 	width: 100%;
 	position: relative;
-	overflow: scroll;
+	overflow: scroll
 }
-
 #timeline .pattern {
 	--hue: 24;
 	width: 180px;
@@ -102,17 +151,14 @@ td.filled {
 	cursor: pointer;
 	position: absolute;
 	border-right: 1px dotted white;
-	box-sizing: border-box;
+	box-sizing: border-box
 }
-
-#timeline .pattern:hover, #timeline .pattern.dragged {
-	background-color: hsla(var(--hue), 100%, 80%, 0.6);
+#timeline .pattern:hover,#timeline .pattern.dragged {
+	background-color: hsla(var(--hue), 100%, 80%, 0.6)
 }
-
 #timeline .pattern.selected {
-	background-color: hsla(calc(var(--hue) + 20), 100%, 80%, 0.6);
+	background-color: hsla(calc(var(--hue) + 20), 100%, 80%, 0.6)
 }
-
 #timeline .pattern input {
 	padding: 0 2px;
 	box-sizing: border-box;
@@ -124,84 +170,27 @@ td.filled {
 	font-size: 12px;
 	position: absolute;
 	top: 0;
-	left: 0;
+	left: 0
 }
-
 #timeline .pattern canvas {
-	position: static;
+	position: static
 }
-
-.stretch {
-	width: 10px;
-	position: absolute;
-	height: 100%;
-	top: 0;
-}
-
-.stretch:hover {
-	background-color: #fff5;
-}
-
-.stretch.dragged {
-	background-color: #fffa;
-}
-
-.stretch.left {
-	cursor: w-resize;
-	left: 0;
-}
-
-.stretch.right {
-	cursor: e-resize;
-	right: 0;
-}
-
-input {
-	font: inherit;
-	border: none;
-	color: inherit;
-	background-color: inherit;
-}
-
-input:focus {
-	outline: none;
-}
-
-input.shy {
-	background: none;
-}
-
-#timeline canvas {
-	position: absolute;
-	top: calc(-1 * var(--rail-height));
-}
-
-#timeline #foreground {
-	z-index: 10;
-	pointer-events: none;
-}
-
-.hidden {
-	display: none !important;
-}
-
+/* #endregion */
+/* #region ---RAIL*/
 #top {
 	width: 100%;
 	height: var(--rail-height);
-	position: relative;
+	position: relative
 }
-
 #top * {
-	position: absolute;
+	position: absolute
 }
-
 #rail {
 	left: var(--track-width);
 	width: 100%;
 	height: var(--rail-height);
-	background-color: hsla(0, 0%, 35%, 0.3);
+	background-color: hsla(0, 0%, 35%, 0.3)
 }
-
 .handle {
 	left: -10px;
 	width: 20px;
@@ -209,20 +198,11 @@ input.shy {
 	border-radius: 5px;
 	border: 2px solid white;
 	box-sizing: border-box;
-	z-index: 5;
+	z-index: 5
 }
-
-.handle:hover, .handle.dragged {
+.handle:hover,.handle.dragged {
 	background-color: gray;
-	cursor: pointer;
+	cursor: pointer
 }
-
-#top .top-left {
-	top: 0;
-	left: 0;
-	width: var(--track-width);
-	height: var(--rail-height);
-	z-index: 15;
-	background-color: hsl(0, 0%, 25%);
-	text-align: center;
-}
+/* #endregion */
+/* #endregion */
