@@ -11,7 +11,12 @@ import 'windows.dart';
 class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
   final Timeline timeline = Timeline();
+
   Window _currentWindow;
+  Window get currentWindow => _currentWindow;
+  set currentWindow(Window currentWindow) {
+    _currentWindow = currentWindow;
+  }
 
   double _bpm;
   double get bpm => _bpm;

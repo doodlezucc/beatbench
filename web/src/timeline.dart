@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 
 import 'beat_grid.dart';
 import 'generators/base.dart';
-import 'generators/oscillator.dart';
+import 'generators/oscillator/oscillator.dart';
 import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
@@ -45,8 +45,7 @@ class Timeline extends Window {
     }
     if (headPosition != _headPosition) {
       _headPosition = headPosition;
-      querySelector('#head').style.left =
-          cssCalc(headPosition.beats, pixelsPerBeat);
+      query('#head').style.left = cssCalc(headPosition.beats, pixelsPerBeat);
       _drawForeground(headPosition.beats, headPosition.beats);
       box.position = timeAt(headPosition);
     }
@@ -55,22 +54,21 @@ class Timeline extends Window {
   int get _trackCount => 4;
   int get canvasHeight => (_trackCount * pixelsPerTrack.value).round();
 
-  List<Generator> generators;
+  final List<Generator> generators = [];
   final List<PatternInstance> _patterns = [];
   Iterable<PatternInstance> get selectedPatterns =>
       _patterns.where((p) => p.selected);
-  final HtmlElement _e;
   CanvasElement _canvasBg;
   CanvasElement _canvasFg;
   PlaybackBox _box;
   PlaybackBox get box => _box;
 
-  Timeline() : _e = querySelector('#timeline') {
-    _canvasBg = _e.querySelector('#background')
+  Timeline() : super(querySelector('#timeline'), 'Timeline') {
+    _canvasBg = query('#background')
       ..onClick.listen((e) {
         selectedPatterns.forEach((p) => p.selected = false);
       });
-    _canvasFg = _e.querySelector('#foreground');
+    _canvasFg = query('#foreground');
     _drawOrientation();
     _box = PlaybackBox(
       onUpdateVisuals: (time) {
@@ -85,8 +83,8 @@ class Timeline extends Window {
     _scrollArea.onScroll.listen((ev) => _onScroll());
     _onScroll();
 
-    var handle = querySelector('#head .handle');
-    querySelector('#rail').onMouseDown.listen((e) {
+    var handle = query('#head .handle');
+    query('#rail').onMouseDown.listen((e) {
       handle.classes.toggle('dragged', true);
       _playheadFromPixels(e);
       var sub = document.onMouseMove.listen(_playheadFromPixels);
@@ -101,20 +99,18 @@ class Timeline extends Window {
 
   void _playheadFromPixels(MouseEvent e) {
     headPosition = BeatFraction(
-        ((e.client.x - querySelector('#rail').documentOffset.x) /
-                pixelsPerBeat.value)
+        ((e.client.x - query('#rail').documentOffset.x) / pixelsPerBeat.value)
             .floor(),
         4);
   }
 
-  HtmlElement get _scrollArea => querySelector('#patterns');
+  HtmlElement get _scrollArea => query('#patterns');
 
   void _onScroll() {
-    //e.style.top = (-querySelector('#right').scrollTop).toString() + 'px';
-    querySelector('#head').parent.style.left =
+    //e.style.top = (-query('#right').scrollTop).toString() + 'px';
+    query('#head').parent.style.left =
         (-_scrollArea.scrollLeft).toString() + 'px';
-    querySelector('#tracks').style.top =
-        (-_scrollArea.scrollTop).toString() + 'px';
+    query('#tracks').style.top = (-_scrollArea.scrollTop).toString() + 'px';
   }
 
   Iterable<PlaybackNote> notesCache() {
@@ -265,7 +261,7 @@ class Timeline extends Window {
   }
 
   void demoFromBeatGrid(BeatGrid grid) {
-    generators = [grid.drums, Oscillator(grid.drums.node.context)];
+    generators.addAll([grid.drums, Oscillator(grid.drums.node.context)]);
     var gridPatternData = grid.data;
     var crashPatternData = PatternData(
       'Crash!',

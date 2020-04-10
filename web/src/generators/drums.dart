@@ -10,7 +10,7 @@ import 'base.dart';
 class Drums extends Generator {
   Map<int, DrumSample> drumSamples;
 
-  Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx) {
+  Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx, null) {
     node.gain.value = 0.5;
   }
 
@@ -25,6 +25,9 @@ class Drums extends Generator {
       }
     }
   }
+
+  @override
+  String get name => 'Fragile Drums';
 }
 
 class DrumSample {

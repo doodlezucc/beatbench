@@ -1,10 +1,15 @@
+import 'src/generators/oscillator/oscillator.dart';
 import 'src/project.dart';
 
 void main() {
-  var styleWorkbench = false;
-  if (!styleWorkbench) {
-    initStuff();
-  }
+  //initStuff();
+  generatorDemo();
+}
+
+void generatorDemo() {
+  var project = Project();
+  project.timeline.generators
+      .add(Oscillator(project.audioAssembler.ctx)..interface.focus());
 }
 
 void initStuff() async {

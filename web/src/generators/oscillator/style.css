@@ -1,0 +1,12 @@
+.generator {
+    background-color: aquamarine;
+}
+
+.center {
+    display: flex;
+    align-items: center;
+}
+
+body {
+    background-color: aquamarine;
+}
