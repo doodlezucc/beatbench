@@ -92,6 +92,14 @@ class PlaybackBox {
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     var now = time % length;
 
+    _sentSignals.forEach((pn, sentSig) {
+      if (sentSig.sig.noteOn) {
+        if (!_cache.contains(pn)) {
+          // Note is still playing although it doesn't exist... dewit.
+          _sendNoteEvent(pn, _ctx.currentTime, NoteSignal.NOTE_END);
+        }
+      }
+    });
     _cache.forEach((pn) {
       var signal = pn.startInSeconds <= now && pn.endInSeconds > now
           ? NoteSignal.NOTE_RESUME
@@ -99,9 +107,6 @@ class PlaybackBox {
       //print('Refresh');
       _sendNoteEvent(pn, _ctx.currentTime, signal);
     });
-
-    //_notesPlaying.clear();
-    //_notesPlaying.addAll(newNotesPlaying);
   }
 
   void _sendStopNotes() {
@@ -188,7 +193,7 @@ class PlaybackBox {
     _cache.addAll(getNotes());
     //_refreshPlayingNotes();
     _shouldUpdateCache = false;
-    //print('Updated cache');
+    print('Updated cache');
   }
 
   void _bufferTo(double seconds) {
