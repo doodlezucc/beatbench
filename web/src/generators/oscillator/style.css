@@ -1,12 +1,12 @@
-.generator {
-    background-color: aquamarine;
+generator {
+    width: 300px;
 }
 
-.center {
+.center, body .shmuck {
     display: flex;
     align-items: center;
 }
 
-body {
-    background-color: aquamarine;
+p {
+    margin: 0;
 }
