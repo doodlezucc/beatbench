@@ -267,7 +267,7 @@ class Timeline extends Window {
       'Crash!',
       {
         0: PatternNotesComponent([
-          Note(pitch: Note.getPitch(Note.D + 1, 5)),
+          Note(pitch: Note.octave(Note.D + 1, 5)),
         ])
       },
     );
@@ -325,7 +325,7 @@ class Timeline extends Window {
   }
 
   Note _demoChordNote(int tone, int start) => Note(
-      pitch: Note.getPitch(tone, 5),
+      pitch: Note.octave(tone, 5),
       start: BeatFraction(start, 1),
       length: BeatFraction(1, 1));
 

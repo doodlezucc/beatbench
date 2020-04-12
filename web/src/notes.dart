@@ -23,7 +23,7 @@ class Note {
 
   BeatFraction get end => start + length;
 
-  static int getPitch(int tone, int octave) => tone + octave * 12;
+  static int octave(int tone, int octave) => tone + octave * 12;
 
   Note(
       {@required int pitch,

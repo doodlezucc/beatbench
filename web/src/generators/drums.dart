@@ -39,15 +39,15 @@ class DrumSample {
 
 class PresetDrums {
   static Future<Drums> cymaticsLofiKit(AudioContext ctx) async => Drums({
-        Note.getPitch(Note.C, 5): await load(
+        Note.octave(Note.C, 5): await load(
             name: 'Kick', path: 'Cymatics - Lofi Kick 4 - D#.wav', ctx: ctx),
-        Note.getPitch(Note.C + 1, 5): await load(
+        Note.octave(Note.C + 1, 5): await load(
             name: 'Snare', path: 'Cymatics - Lofi Snare 10 - A.wav', ctx: ctx),
-        Note.getPitch(Note.C + 2, 5): await load(
+        Note.octave(Note.C + 2, 5): await load(
             name: 'Closed Hihat',
             path: 'Cymatics - Lofi Closed Hihat 1.wav',
             ctx: ctx),
-        Note.getPitch(Note.C + 3, 5): await load(
+        Note.octave(Note.C + 3, 5): await load(
             name: 'Open Hihat',
             path: 'Cymatics - Lofi Open Hihat 2.wav',
             ctx: ctx),

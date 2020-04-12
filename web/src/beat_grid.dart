@@ -61,7 +61,7 @@ class BeatGrid {
       History.perform(
           NotesComponentAction(data.component(0), false, [
             data.component(0).notes.singleWhere((n) =>
-                n.start.numerator == x && n.coarsePitch == Note.getPitch(y, 5)),
+                n.start.numerator == x && n.coarsePitch == Note.octave(y, 5)),
           ]),
           undoable);
     }
@@ -73,7 +73,7 @@ class BeatGrid {
   }
 
   Note _quickNote(int x, int y) =>
-      Note(pitch: Note.getPitch(y, 5), start: BeatFraction(x, 16));
+      Note(pitch: Note.octave(y, 5), start: BeatFraction(x, 16));
 
   void swaggyBeat() {
     History.perform(NotesComponentAction(data.component(0), true, <Note>[

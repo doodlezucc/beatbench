@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'audio_assembler.dart';
 import 'beat_grid.dart';
+import 'generators/base.dart';
 import 'generators/drums.dart';
 import 'history.dart';
+import 'midi_typing.dart';
 import 'timeline.dart';
 import 'windows.dart';
 
@@ -24,6 +26,8 @@ class Project {
     _bpm = min(max(bpm, 20), 420);
     timeline.onNewTempo();
   }
+
+  Generator get selectedGenerator => timeline.generators[0];
 
   static Project _instance;
   static Project get instance => _instance;
@@ -102,6 +106,18 @@ class Project {
             e.preventDefault();
             return togglePlayPause();
         }
+        var info = MidiTyping.generateNoteInfo(e.key, true);
+        if (info != null) {
+          selectedGenerator.noteEvent(
+              info, audioAssembler.ctx.currentTime, NoteSignal.NOTE_START);
+        }
+      }
+    });
+    document.onKeyUp.listen((e) {
+      var info = MidiTyping.getExistingNoteInfo(e.key);
+      if (info != null) {
+        selectedGenerator.noteEvent(
+            info, audioAssembler.ctx.currentTime, NoteSignal.NOTE_END);
       }
     });
   }

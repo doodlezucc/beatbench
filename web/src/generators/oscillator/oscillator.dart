@@ -46,7 +46,7 @@ class Oscillator extends Generator {
   }
 
   @override
-  String get name => 'My Little Chep Oscillator';
+  String get name => 'My Little Cheap Oscillator';
 }
 
 class _OscillatorInterface extends GeneratorInterface<Oscillator> {
