@@ -46,13 +46,11 @@ class Oscillator extends Generator {
   }
 
   @override
-  String get name => 'Oscillator I guess';
+  String get name => 'My Little Chep Oscillator';
 }
 
 class _OscillatorInterface extends GeneratorInterface<Oscillator> {
   SelectElement shapeSelect;
-
-  _OscillatorInterface() : super('Demo Oscillator');
 
   @override
   void domInit(Oscillator osc) {

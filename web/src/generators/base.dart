@@ -8,10 +8,20 @@ import '../notes.dart';
 import '../windows.dart';
 
 abstract class GeneratorInterface<G extends Generator> extends Window {
-  GeneratorInterface(String windowTitle)
-      : super(DivElement()..className = 'generator', '');
+  GeneratorInterface() : super(DivElement()..className = 'generator', '');
 
   void _init(G gen) async {
+    element.parent.firstChild.append(ButtonElement()
+      ..className = 'reload'
+      ..text = 'Reload'
+      ..onClick.listen((e) {
+        element.children.clear();
+        _load(gen);
+      }));
+    _load(gen);
+  }
+
+  void _load(G gen) async {
     title = gen.name;
     element.id = styleId;
 
@@ -35,13 +45,13 @@ abstract class GeneratorInterface<G extends Generator> extends Window {
     CssStyleSheet sheet = styleElement.sheet;
 
     parsedStyleSheet.topLevels.forEach((top) {
-      var rule = '';
+      var ruleset = '';
       if (top is RuleSet) {
         var printer = CssPrinter();
         top.selectorGroup.visit(printer);
 
         if (printer.toString() == 'generator') {
-          rule = '.generator#$styleId';
+          ruleset = '.generator#$styleId';
         } else {
           // modify selectors
           var selectors = top.selectorGroup.selectors;
@@ -49,20 +59,20 @@ abstract class GeneratorInterface<G extends Generator> extends Window {
             var printer = CssPrinter();
             selectors[i].visit(printer);
             if (i > 0) {
-              rule += ', ';
+              ruleset += ', ';
             }
-            rule += '#$styleId ' + printer.toString();
+            ruleset += '#$styleId ' + printer.toString();
           }
         }
         // include rules
         printer = CssPrinter();
         top.declarationGroup.visit(printer);
         var declaration = printer.toString();
-        rule += '{ $declaration }';
+        ruleset += '{ $declaration }';
       }
       //print('inserting rule');
       //print(rule);
-      sheet.insertRule(rule);
+      sheet.insertRule(ruleset);
     });
 
     domInit(gen);

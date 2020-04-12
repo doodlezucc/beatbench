@@ -14,8 +14,15 @@ abstract class Window {
 
   bool get isFocused => Project.instance.currentWindow == this;
   void focus() {
+    var old = Project.instance.currentWindow;
+    if (old != null) old._setFocus(false);
     Project.instance.currentWindow = this;
     visible = true;
+    _setFocus(true);
+  }
+
+  void _setFocus(bool v) {
+    _frame.classes.toggle('focused', v);
   }
 
   bool get visible => _frame.parent != null;
@@ -28,9 +35,11 @@ abstract class Window {
   static HtmlElement _createFrame(String title) {
     return DivElement()
       ..className = 'window'
-      ..append(SpanElement()
-        ..className = 'title'
-        ..text = title);
+      ..append(DivElement()
+        ..className = 'topbar'
+        ..append(SpanElement()
+          ..className = 'title'
+          ..text = title));
   }
 
   Window(HtmlElement element, String title) : _frame = _createFrame(title) {
