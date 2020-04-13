@@ -141,7 +141,7 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
   void _drawForeground(double ghost) {
     var l = renderedLength;
     _canvasFg.width = (l.beats * _beatWidth.value).round();
-    _canvasFg.height = _canvasHeight;
+    _canvasFg.height = _canvasHeight + railHeight.value.round();
 
     var ctx = _canvasFg.context2D;
     ctx.clearRect(0, 0, _canvasFg.width, _canvasFg.height);
@@ -165,7 +165,7 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
 
   void _drawOrientation() {
     _canvasBg.width = (renderedLength.beats * _beatWidth.value).round();
-    _canvasBg.height = _canvasHeight;
+    _canvasBg.height = _canvasHeight + railHeight.value.round();
 
     var ctx = _canvasBg.context2D;
     ctx.clearRect(0, 0, _canvasBg.width, _canvasBg.height);
@@ -815,7 +815,7 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   static final pixelsPerKey = CssPxVar('piano-roll-ppk');
   static final pixelsPerBeat = CssPxVar('piano-roll-ppb');
 
-  static const int _octaveMin = 4;
+  static const int _octaveMin = 5;
   static const int _octaveMax = 7;
   static int get _pitchMin => _octaveMin * 12;
   static int get _pitchMax => _octaveMax * 12;
@@ -882,7 +882,8 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   CssPxVar get _cellHeight => pixelsPerKey;
 
   @override
-  int get _canvasHeight => (4 * 12 * pixelsPerKey.value).round();
+  int get _canvasHeight =>
+      ((_pitchMax - _pitchMin + 1) * pixelsPerKey.value).round();
 
   @override
   Iterable<PlaybackNote> notesCache() {
