@@ -328,14 +328,13 @@ button.reload {
 .piano-keys > .split-bottom {
 	border-bottom: 1px solid #0005;
 }
-
-.piano-keys > 
 	/* #endregion */
 
 	/* #region NOTES*/
 .note {
 	background-color: #ff4242aa;
 	width: 100px;
+	position: absolute;
 }
 	/* #endregion */
 /* #endregion */

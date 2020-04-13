@@ -121,6 +121,22 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     box.thereAreChanges();
   }
 
+  T _min<T>(dynamic Function(Transform tr) variable) =>
+      _compare<T>(variable, false);
+  T _max<T>(dynamic Function(Transform tr) variable) =>
+      _compare<T>(variable, true);
+
+  T _compare<T>(dynamic Function(Transform tr) variable, bool max) {
+    var out = variable(_items[0]._draggable.savedVar);
+    for (var i = 1; i < _items.length; i++) {
+      var v = variable(_items[i]._draggable.savedVar);
+      if ((max && v > out) || (!max && v < out)) {
+        out = v;
+      }
+    }
+    return out;
+  }
+
   void _drawForeground(double ghost) {
     var l = renderedLength;
     _canvasFg.width = (l.beats * _beatWidth.value).round();
@@ -179,9 +195,9 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
   Iterable<PlaybackNote> notesCache();
 }
 
-abstract class _RollOrTimelineItem {
+abstract class _RollOrTimelineItem<T extends Transform> {
   final _RollOrTimelineWindow window;
-  HtmlElement el;
+  final HtmlElement el;
 
   BeatFraction _start;
   BeatFraction get start => _start;
@@ -221,6 +237,10 @@ abstract class _RollOrTimelineItem {
 
   BeatFraction get end => start + length;
 
+  int _y;
+  int get y => _y;
+  set y(int y);
+
   bool _selected = false;
   bool get selected => _selected;
   set selected(bool v) {
@@ -228,7 +248,24 @@ abstract class _RollOrTimelineItem {
     el.classes.toggle('selected', v);
   }
 
-  _RollOrTimelineItem(this.window);
+  Draggable<T> _draggable;
+  T get transform => Transform(start, length, y) as T;
+  void applyTransform(T transform) {
+    start = transform.start;
+    length = transform.length;
+    y = transform.y;
+  }
+
+  _RollOrTimelineItem(this.el, this.window) {
+    el.onMouseDown.listen((e) {
+      if (!selected) {
+        if (!e.shiftKey) {
+          window.selectedItems.forEach((p) => p.selected = false);
+        }
+        selected = true;
+      }
+    });
+  }
 }
 
 // TIMELINE
@@ -306,7 +343,7 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
   _PatternInstance _clonePattern(_PatternInstance original) {
     _PatternInstance instance;
     instance = _PatternInstance(
-        original.data, original.start, original.length, original.track, this);
+        original.data, original.start, original.length, original.y, this);
     instance.contentShift = original.contentShift;
     if (instance.end > length) {
       length = instance.end;
@@ -456,7 +493,7 @@ class PatternsCreationAction extends AddRemoveAction<_PatternInstance> {
   }
 }
 
-class _PatternInstance extends _RollOrTimelineItem {
+class _PatternInstance extends _RollOrTimelineItem<PatternTransform> {
   BeatFraction _contentShift = BeatFraction(0, 1);
   BeatFraction get contentShift => _contentShift;
   set contentShift(BeatFraction contentShift) {
@@ -478,44 +515,30 @@ class _PatternInstance extends _RollOrTimelineItem {
     _canvas.width = (_length.beats * this.window._beatWidth.value).ceil();
   }
 
-  int _track;
-  int get track => _track;
-  set track(int track) {
-    _track = max(0, track);
-    el.style.top = cssCalc(_track, Timeline.pixelsPerTrack);
-  }
-
   final PatternData data;
 
   InputElement _input;
   CanvasElement _canvas;
 
-  Draggable<PatternTransform> _draggable;
   static final DragSystem<PatternTransform> _dragSystem = DragSystem();
 
   _PatternInstance(this.data, BeatFraction start, BeatFraction length,
       int track, Timeline timeline)
-      : super(timeline) {
+      : super(
+            timeline
+                .query('#patterns')
+                .append(DivElement()..className = 'pattern hidden'),
+            timeline) {
     _input = InputElement(type: 'text')
       ..className = 'shy'
       ..value = data.name;
 
-    el = timeline.query('#patterns').append(DivElement()
-      ..className = 'pattern hidden'
+    el
       ..append(_input)
       ..append(
           _canvas = CanvasElement(height: Timeline.pixelsPerTrack.value.ceil()))
-      ..append(stretchElem(timeline, false))
-      ..append(stretchElem(timeline, true)));
-
-    el.onMouseDown.listen((e) {
-      if (!selected) {
-        if (!e.shiftKey) {
-          timeline.selectedItems.forEach((p) => p.selected = false);
-        }
-        selected = true;
-      }
-    });
+      ..append(stretchElem(false))
+      ..append(stretchElem(true));
 
     _draggable =
         Draggable<PatternTransform>(el, () => transform, (tr, pixelOff, ev) {
@@ -530,22 +553,19 @@ class _PatternInstance extends _RollOrTimelineItem {
       if (xDiff < minXDiff) {
         xDiff = minXDiff;
       }
-      var minYDiff = -timeline.selectedItems.fold<num>(
-          tr.track,
-          (v, p) => p._draggable.savedVar.track < v
-              ? p._draggable.savedVar.track
-              : v);
+      var minYDiff = -timeline.selectedItems.fold<num>(tr.y,
+          (v, p) => p._draggable.savedVar.y < v ? p._draggable.savedVar.y : v);
       var yDiff = max(
           minYDiff, (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor());
 
       timeline.selectedItems.forEach((p) {
         p.start = p._draggable.savedVar.start + xDiff;
-        p.track = p._draggable.savedVar.track + yDiff;
+        p.y = p._draggable.savedVar.y + yDiff;
       });
 
       if (ev.detail == 1) {
         if (tr != transform) {
-          History.registerDoneAction(PatternTransformAction(
+          History.registerDoneAction(TransformAction(
               timeline.selectedItems.toList(growable: false), transform - tr));
         } else if (pixelOff.x == 0 && pixelOff.y == 0) {
           if (!ev.shiftKey) {
@@ -557,7 +577,7 @@ class _PatternInstance extends _RollOrTimelineItem {
     });
     _dragSystem.register(_draggable);
 
-    this.track = track;
+    y = track;
     _silentStart(start);
     _silentLength(length ?? data.length().ceilTo(2));
     _draw();
@@ -577,7 +597,9 @@ class _PatternInstance extends _RollOrTimelineItem {
     el.classes.toggle('hidden', !v);
   }
 
-  DivElement stretchElem(Timeline timeline, bool right) {
+  Timeline get timeline => this.window;
+
+  DivElement stretchElem(bool right) {
     var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
     _dragSystem.register(Draggable<PatternTransform>(
       out,
@@ -585,12 +607,7 @@ class _PatternInstance extends _RollOrTimelineItem {
       (tr, off, ev) {
         var diff =
             BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
-        var maxDiff = timeline.selectedItems.fold<BeatFraction>(
-                tr.length,
-                (v, p) => p._draggable.savedVar.length < v
-                    ? p._draggable.savedVar.length
-                    : v) -
-            BeatFraction(1, 4);
+        var maxDiff = timeline._min((i) => i.length) - BeatFraction(1, 4);
         if (right) {
           if (diff < maxDiff * -1) diff = maxDiff * -1;
           timeline.selectedItems.forEach((p) {
@@ -601,11 +618,8 @@ class _PatternInstance extends _RollOrTimelineItem {
           if (diff > maxDiff) diff = maxDiff;
 
           // diff minimum: -contentShiftOld
-          var minDiff = timeline.selectedItems.fold<BeatFraction>(
-                  tr.contentShift,
-                  (v, p) => p._draggable.savedVar.contentShift > v
-                      ? p._draggable.savedVar.contentShift
-                      : v) *
+          var minDiff = timeline._max<BeatFraction>(
+                  (i) => (i as PatternTransform).contentShift) *
               -1;
           if (diff < minDiff) diff = minDiff;
 
@@ -620,7 +634,7 @@ class _PatternInstance extends _RollOrTimelineItem {
         if (diff.numerator == 0) return;
         if (ev.detail == 1) {
           // register reversible action
-          History.registerDoneAction(PatternTransformAction(
+          History.registerDoneAction(TransformAction(
               timeline.selectedItems.toList(growable: false), transform - tr));
         }
       },
@@ -628,8 +642,9 @@ class _PatternInstance extends _RollOrTimelineItem {
     return out;
   }
 
+  @override
   PatternTransform get transform =>
-      PatternTransform(start, length, contentShift, track);
+      PatternTransform(start, length, contentShift, y);
 
   void _draw() {
     var ctx = _canvas.context2D;
@@ -660,16 +675,15 @@ class _PatternInstance extends _RollOrTimelineItem {
     });
   }
 
+  @override
   void applyTransform(PatternTransform transform) {
-    start = transform.start;
-    length = transform.length;
+    super.applyTransform(transform);
     contentShift = transform.contentShift;
-    track = transform.track;
+    y = transform.y;
   }
 
   @override
   void _onUpdate() {
-    var timeline = this.window as Timeline;
     if (end > timeline.length) {
       timeline.length = end;
     } else if (end < timeline.length) {
@@ -678,52 +692,83 @@ class _PatternInstance extends _RollOrTimelineItem {
       timeline.thereAreChanges();
     }
   }
+
+  @override
+  set y(int y) {
+    _y = max(0, y);
+    el.style.top = cssCalc(_y, Timeline.pixelsPerTrack);
+  }
 }
 
-class PatternTransform {
+class Transform {
   final BeatFraction start;
   final BeatFraction length;
-  final BeatFraction contentShift;
-  final int track;
+  final int y;
 
-  PatternTransform(this.start, this.length, this.contentShift, this.track);
+  Transform(this.start, this.length, this.y);
+
+  @override
+  bool operator ==(dynamic other) => other is PatternTransform
+      ? start == other.start && length == other.length && y == other.y
+      : false;
+
+  Transform operator +(Transform o) => Transform(
+        start + o.start,
+        length + o.length,
+        y + o.y,
+      );
+
+  Transform operator -(Transform o) => Transform(
+        start - o.start,
+        length - o.length,
+        y - o.y,
+      );
+}
+
+class PatternTransform extends Transform {
+  final BeatFraction contentShift;
+
+  PatternTransform(
+      BeatFraction start, BeatFraction length, this.contentShift, int track)
+      : super(start, length, track);
 
   @override
   bool operator ==(dynamic other) => other is PatternTransform
       ? start == other.start &&
           length == other.length &&
           contentShift == other.contentShift &&
-          track == other.track
+          y == other.y
       : false;
 
-  PatternTransform operator +(PatternTransform o) => PatternTransform(
+  @override
+  PatternTransform operator +(dynamic o) => PatternTransform(
         start + o.start,
         length + o.length,
         contentShift + o.contentShift,
-        track + o.track,
+        y + o.y,
       );
 
-  PatternTransform operator -(PatternTransform o) => PatternTransform(
+  @override
+  PatternTransform operator -(dynamic o) => PatternTransform(
         start - o.start,
         length - o.length,
         contentShift - o.contentShift,
-        track - o.track,
+        y - o.y,
       );
 }
 
-class PatternTransformAction extends MultipleAction<_PatternInstance> {
-  final PatternTransform diff;
+class TransformAction<T extends _RollOrTimelineItem> extends MultipleAction<T> {
+  final dynamic diff;
 
-  PatternTransformAction(Iterable<_PatternInstance> patterns, this.diff)
-      : super(patterns);
+  TransformAction(Iterable<T> patterns, this.diff) : super(patterns);
 
   @override
-  void doSingle(_PatternInstance object) {
+  void doSingle(T object) {
     object.applyTransform(object.transform + diff);
   }
 
   @override
-  void undoSingle(_PatternInstance object) {
+  void undoSingle(T object) {
     object.applyTransform(object.transform - diff);
   }
 }
@@ -753,7 +798,7 @@ class TimelinePlaybackNote extends PlaybackNote {
 
 // PIANO ROLL
 
-class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
+class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   static final pixelsPerKey = CssPxVar('piano-roll-ppk');
   static final pixelsPerBeat = CssPxVar('piano-roll-ppb');
 
@@ -783,12 +828,6 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
     _buildPianoKeys();
   }
 
-  void reloadData() {
-    _items.forEach((n) => n._dispose());
-    _items.clear();
-    length = BeatFraction(4, 1);
-  }
-
   void _buildPianoKeys() {
     var parent = query('.piano-keys');
     for (var octave = 6; octave >= 4; octave--) {
@@ -813,6 +852,19 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
       ..className =
           (white ? 'white' : 'black') + (splitBottom ? ' split-bottom' : '')
       ..text = '$name$octave');
+  }
+
+  void reloadData() {
+    _items.forEach((n) => n._dispose());
+    _items.clear();
+    length = BeatFraction(4, 1);
+    _items.addAll(_patternData.component(componentIndex).notes.map(
+        (n) => _PianoRollNote(this, n.start, n.length, n.info.coarsePitch)));
+  }
+
+  void calculateSongLength() {
+    length = _items.fold(
+        BeatFraction.washy(0), (v, pat) => pat.end > v ? pat.end : v);
   }
 
   @override
@@ -884,10 +936,60 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
   BeatFraction get renderedLength => length + BeatFraction(4, 1);
 }
 
-class PianoRollNote extends _RollOrTimelineItem {
+class _PianoRollNote extends _RollOrTimelineItem<Transform> {
   PianoRoll get pianoRoll => window as PianoRoll;
 
-  PianoRollNote(PianoRoll window) : super(window);
+  static final DragSystem<Transform> _dragSystem = DragSystem();
+
+  _PianoRollNote(
+      PianoRoll window, BeatFraction start, BeatFraction length, int pitch)
+      : super(window.query('#notes').append(DivElement()..className = 'note'),
+            window) {
+    el
+      ..append(SpanElement()..text = 'C#5')
+      ..append(stretchElem(false))
+      ..append(stretchElem(true));
+
+    _draggable = Draggable<Transform>(el, () => transform, (tr, pixelOff, ev) {
+      var xDiff =
+          BeatFraction((pixelOff.x / pianoRoll._beatWidth.value).round(), 4);
+      var minXDiff = pianoRoll.selectedItems.fold<BeatFraction>(
+              tr.start,
+              (v, p) => p._draggable.savedVar.start < v
+                  ? p._draggable.savedVar.start
+                  : v) *
+          -1;
+      if (xDiff < minXDiff) {
+        xDiff = minXDiff;
+      }
+      var minYDiff = -pianoRoll.selectedItems.fold<num>(tr.y,
+          (v, p) => p._draggable.savedVar.y < v ? p._draggable.savedVar.y : v);
+      var yDiff = max(
+          minYDiff, (pixelOff.y / PianoRoll.pixelsPerKey.value + 0.5).floor());
+
+      pianoRoll.selectedItems.forEach((p) {
+        p.start = p._draggable.savedVar.start + xDiff;
+        p.y = p._draggable.savedVar.y + yDiff;
+      });
+
+      if (ev.detail == 1) {
+        if (tr != transform) {
+          History.registerDoneAction(TransformAction(
+              pianoRoll.selectedItems.toList(growable: false), transform - tr));
+        } else if (pixelOff.x == 0 && pixelOff.y == 0) {
+          if (!ev.shiftKey) {
+            pianoRoll.selectedItems.forEach((p) => p.selected = false);
+          }
+          selected = true;
+        }
+      }
+    });
+    _dragSystem.register(_draggable);
+
+    y = pitch;
+    _silentStart(start);
+    _silentLength(length);
+  }
 
   void _dispose() {
     el.remove();
@@ -895,6 +997,64 @@ class PianoRollNote extends _RollOrTimelineItem {
 
   @override
   void _onUpdate() {
-    // TODO: implement _onUpdate
+    if (end > pianoRoll.length) {
+      pianoRoll.length = end;
+    } else if (end < pianoRoll.length) {
+      pianoRoll.calculateSongLength();
+    } else {
+      pianoRoll.thereAreChanges();
+    }
+  }
+
+  DivElement stretchElem(bool right) {
+    var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
+    _dragSystem.register(Draggable<Transform>(
+      out,
+      () => transform,
+      (tr, off, ev) {
+        var diff =
+            BeatFraction((off.x / Timeline.pixelsPerBeat.value).round(), 4);
+        var maxDiff = pianoRoll.selectedItems.fold<BeatFraction>(
+                tr.length,
+                (v, p) => p._draggable.savedVar.length < v
+                    ? p._draggable.savedVar.length
+                    : v) -
+            BeatFraction(1, 4);
+        if (right) {
+          if (diff < maxDiff * -1) diff = maxDiff * -1;
+          pianoRoll.selectedItems.forEach((p) {
+            p.length = p._draggable.savedVar.length + diff;
+          });
+        } else {
+          // diff maximum: lengthOld - 1
+          if (diff > maxDiff) diff = maxDiff;
+
+          // diff minimum: -contentShiftOld
+          var minDiff = pianoRoll._max((i) => i) * -1;
+          if (diff < minDiff) diff = minDiff;
+
+          pianoRoll.selectedItems.forEach((p) {
+            if (p._silentLength(p._draggable.savedVar.length - diff)) {
+              p._silentStart(p._draggable.savedVar.start + diff);
+            }
+          });
+        }
+        if (diff.numerator == 0) return;
+        if (ev.detail == 1) {
+          // register reversible action
+          History.registerDoneAction(TransformAction(
+              pianoRoll.selectedItems.toList(growable: false), transform - tr));
+        }
+      },
+    ));
+    return out;
+  }
+
+  int get visualY => 12 * 7 - y - 1;
+
+  @override
+  set y(int y) {
+    _y = max(0, y);
+    el.style.top = cssCalc(visualY, PianoRoll.pixelsPerKey);
   }
 }
