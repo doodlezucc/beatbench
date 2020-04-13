@@ -233,6 +233,8 @@ abstract class _RollOrTimelineItem {
   _RollOrTimelineItem(this.window);
 }
 
+// TIMELINE
+
 class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
   // UI stuff
   static final pixelsPerBeat = CssPxVar('timeline-ppb', 20);
@@ -368,6 +370,7 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
         ])
       },
     );
+    Project.instance.pianoRoll.notesComponent = chordPatternData.component(1);
 
     var src = instantiatePattern(chordPatternData, track: 2)
       ..length = BeatFraction(6, 4);
@@ -528,8 +531,8 @@ class _PatternInstance extends _RollOrTimelineItem {
           (v, p) => p._draggable.savedVar.track < v
               ? p._draggable.savedVar.track
               : v);
-      var yDiff =
-          max(minYDiff, (pixelOff.y / timeline.beatWidth.value + 0.5).floor());
+      var yDiff = max(
+          minYDiff, (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor());
 
       timeline.selectedItems.forEach((p) {
         p.start = p._draggable.savedVar.start + xDiff;
@@ -746,7 +749,7 @@ class TimelinePlaybackNote extends PlaybackNote {
 
 // PIANO ROLL
 
-class PianoRoll extends _RollOrTimelineWindow {
+class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
   static final pixelsPerKey = CssPxVar('piano-roll-ppk', 20);
   static final pixelsPerBeat = CssPxVar('piano-roll-ppb', 20);
 
@@ -796,8 +799,18 @@ class PianoRoll extends _RollOrTimelineWindow {
 
   @override
   Iterable<PlaybackNote> notesCache() {
-    // TODO: implement notesCache
-    return null;
+    var _cache = <PlaybackNote>[];
+    _notesComponent.notesWithSwing.forEach((note) {
+      var shift = BeatFraction.washy(0);
+      _cache.add(PlaybackNote(
+        noteInfo: note.info,
+        generator: Project
+            .instance.timeline.generators[0], // TODO local generator variable
+        startInSeconds: timeAt(note.start + shift),
+        endInSeconds: timeAt(note.end + shift),
+      ));
+    });
+    return _cache;
   }
 
   @override
