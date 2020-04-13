@@ -4,7 +4,7 @@ import 'dart:web_audio';
 import 'package:meta/meta.dart';
 
 import 'generators/base.dart';
-import 'timeline.dart';
+import 'notes.dart';
 
 class Specs {
   final int sampleRate = 44100;
@@ -251,4 +251,22 @@ class PlaybackBox {
       }
     });
   }
+}
+
+class PlaybackNote {
+  final Generator generator;
+  final NoteInfo noteInfo;
+  final double startInSeconds;
+  final double endInSeconds;
+
+  PlaybackNote({
+    @required this.startInSeconds,
+    @required this.endInSeconds,
+    @required this.noteInfo,
+    @required this.generator,
+  });
+
+  @override
+  bool operator ==(dynamic other) =>
+      generator == other.generator && noteInfo == other.noteInfo;
 }

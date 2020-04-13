@@ -7,8 +7,7 @@ import 'generators/base.dart';
 import 'generators/drums.dart';
 import 'history.dart';
 import 'midi_typing.dart';
-import 'piano_roll.dart';
-import 'timeline.dart';
+import 'timeline_piano_roll.dart';
 import 'windows.dart';
 
 class Project {
