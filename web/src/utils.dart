@@ -13,12 +13,20 @@ class CssPxVar {
     css = css.substring(0, valueStart) +
         '${v}px' +
         css.substring(css.indexOf('px', valueStart) + 2);
-    print(css);
+    querySelector('body').style.cssText = css;
   }
 
-  CssPxVar(String name, double defaultValue)
-      : name = '--$name',
-        _value = defaultValue;
+  double read() {
+    var css = querySelector('body').style.cssText;
+    var valueStart = css.indexOf(name) + name.length + 2;
+    return double.parse(
+        css.substring(valueStart, css.indexOf('px', valueStart)));
+  }
+
+  CssPxVar(String name) : name = '--$name' {
+    _value = read();
+    //print('$name: $value');
+  }
 }
 
 String cssCalc(num m, CssPxVar v) => 'calc($m * var(${v.name}))';

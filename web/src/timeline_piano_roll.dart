@@ -19,6 +19,7 @@ import 'audio_assembler.dart';
 abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     extends Window {
   CssPxVar get _beatWidth;
+  static final CssPxVar railHeight = CssPxVar('rail-height');
 
   BeatFraction _length = BeatFraction(4, 4);
   BeatFraction get length => _length;
@@ -152,6 +153,8 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     var ctx = _canvasBg.context2D;
     ctx.clearRect(0, 0, _canvasBg.width, _canvasBg.height);
 
+    _drawPreOrientation(ctx);
+
     ctx.strokeStyle = '#fff4';
     for (var b = 0.0; b <= renderedLength.beats; b += _gridSize.beats) {
       var x = (b * _beatWidth.value).round() - 0.5;
@@ -164,6 +167,8 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     ctx.fillRect(length.beats * _beatWidth.value, 0,
         (renderedLength - length).beats * _beatWidth.value, _canvasBg.height);
   }
+
+  void _drawPreOrientation(CanvasRenderingContext2D ctx) {}
 
   int get _canvasHeight;
 
@@ -230,8 +235,8 @@ abstract class _RollOrTimelineItem {
 
 class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
   // UI stuff
-  static final pixelsPerBeat = CssPxVar('timeline-ppb', 20);
-  static final pixelsPerTrack = CssPxVar('timeline-ppt', 70);
+  static final pixelsPerBeat = CssPxVar('timeline-ppb');
+  static final pixelsPerTrack = CssPxVar('timeline-ppt');
 
   int get _trackCount => 4;
   @override
@@ -749,8 +754,8 @@ class TimelinePlaybackNote extends PlaybackNote {
 // PIANO ROLL
 
 class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
-  static final pixelsPerKey = CssPxVar('piano-roll-ppk', 20);
-  static final pixelsPerBeat = CssPxVar('piano-roll-ppb', 20);
+  static final pixelsPerKey = CssPxVar('piano-roll-ppk');
+  static final pixelsPerBeat = CssPxVar('piano-roll-ppb');
 
   PatternData _patternData;
   PatternData get patternData => _patternData;
@@ -786,25 +791,27 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
 
   void _buildPianoKeys() {
     var parent = query('.piano-keys');
-    for (var octave = 8; octave >= 0; octave--) {
+    for (var octave = 6; octave >= 4; octave--) {
       _buildKey('H', octave, true, parent);
       _buildKey('A#', octave, false, parent);
       _buildKey('A', octave, true, parent);
       _buildKey('G#', octave, false, parent);
       _buildKey('G', octave, true, parent);
       _buildKey('F#', octave, false, parent);
-      _buildKey('F', octave, true, parent);
+      _buildKey('F', octave, true, parent, true);
       _buildKey('E', octave, true, parent);
       _buildKey('D#', octave, false, parent);
       _buildKey('D', octave, true, parent);
       _buildKey('C#', octave, false, parent);
-      _buildKey('C', octave, true, parent);
+      _buildKey('C', octave, true, parent, true);
     }
   }
 
-  void _buildKey(String name, int octave, bool white, HtmlElement parent) {
+  void _buildKey(String name, int octave, bool white, HtmlElement parent,
+      [bool splitBottom = false]) {
     parent.append(DivElement()
-      ..className = white ? 'white' : 'black'
+      ..className =
+          (white ? 'white' : 'black') + (splitBottom ? ' split-bottom' : '')
       ..text = '$name$octave');
   }
 
@@ -812,7 +819,7 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
   CssPxVar get _beatWidth => pixelsPerBeat;
 
   @override
-  int get _canvasHeight => (9 * 12 * pixelsPerKey.value).round();
+  int get _canvasHeight => (4 * 12 * pixelsPerKey.value).round();
 
   @override
   Iterable<PlaybackNote> notesCache() {
@@ -829,6 +836,35 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
       });
     });
     return _cache;
+  }
+
+  @override
+  void _drawPreOrientation(CanvasRenderingContext2D ctx) {
+    ctx.fillStyle = '#0005';
+    ctx.strokeStyle = '#222';
+    for (var o = 0; o <= 3; o++) {
+      var i = o * 12;
+      _drawKey(ctx, i + 1);
+      _drawKey(ctx, i + 3);
+      _drawKey(ctx, i + 5);
+      _drawLine(ctx, i + 7);
+      _drawKey(ctx, i + 8);
+      _drawKey(ctx, i + 10);
+      _drawLine(ctx, i + 12);
+    }
+    ctx.stroke();
+  }
+
+  void _drawKey(CanvasRenderingContext2D ctx, int i) {
+    var y = i * pixelsPerKey.value + _RollOrTimelineWindow.railHeight.value;
+    ctx.fillRect(0, y, _canvasBg.width, pixelsPerKey.value);
+  }
+
+  void _drawLine(CanvasRenderingContext2D ctx, int i) {
+    var y =
+        i * pixelsPerKey.value + _RollOrTimelineWindow.railHeight.value - 0.5;
+    ctx.moveTo(0, y);
+    ctx.lineTo(_canvasBg.width, y);
   }
 
   @override

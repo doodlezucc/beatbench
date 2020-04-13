@@ -9,11 +9,11 @@ body {
 	box-sizing: border-box;
 
 	--cell-size: 30px;
+	--rail-height: 0;
 	--timeline-ppt: 0;
 	--timeline-ppb: 0;
-	--rail-height: 20px;
 	--track-width: 100px;
-	--piano-roll-ppk: 25px;
+	--piano-roll-ppk: 0;
 	--key-width: 50px;
 }
 
@@ -254,7 +254,7 @@ div.window {
 	background-color: hsl(0, 0%, 20%);
 	box-shadow: 0 0 20px #000a;
 	width: 600px;
-	height: 500px;
+	height: 300px;
 	box-sizing: border-box;
 	display: flex;
 	flex-direction: column;
@@ -287,7 +287,7 @@ button.reload {
 /* #region PIANO ROLL*/
 	/* #region BASIC*/
 #pianoRoll {
-	background-color: black;
+	background-color: #727272;
 }
 
 #pianoRoll .top .top-left {
@@ -310,6 +310,7 @@ button.reload {
 .piano-keys > * {
 	text-shadow: 0 0 5px #000a;
 	padding: 0 5px;
+	box-sizing: border-box;
 }
 
 .piano-keys > *, .note {
@@ -325,6 +326,12 @@ button.reload {
 .piano-keys > .black {
 	background-color: #444;
 }
+
+.piano-keys > .split-bottom {
+	border-bottom: 1px solid #0005;
+}
+
+.piano-keys > 
 	/* #endregion */
 
 	/* #region NOTES*/
