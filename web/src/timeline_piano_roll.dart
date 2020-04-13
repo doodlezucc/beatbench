@@ -18,11 +18,11 @@ import 'audio_assembler.dart';
 
 abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     extends Window {
-  CssPxVar get beatWidth;
+  CssPxVar get _beatWidth;
 
   BeatFraction _length = BeatFraction(4, 4);
   BeatFraction get length => _length;
-  BeatFraction get renderLength => _length + BeatFraction(16, 1);
+  BeatFraction get renderedLength;
   set length(BeatFraction l) {
     var min = BeatFraction(4, 4);
     if (l < min) l = min;
@@ -30,9 +30,9 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     box.length = timeAt(l);
     _drawOrientation();
     box.thereAreChanges();
-    if (headPosition > renderLength) {
+    if (headPosition > renderedLength) {
       headPosition =
-          BeatFraction.washy(headPosition.beats % renderLength.beats);
+          BeatFraction.washy(headPosition.beats % renderedLength.beats);
     }
   }
 
@@ -46,8 +46,8 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     }
     if (headPosition != _headPosition) {
       _headPosition = headPosition;
-      query('#head').style.left = cssCalc(headPosition.beats, beatWidth);
-      drawForeground(headPosition.beats);
+      query('#head').style.left = cssCalc(headPosition.beats, _beatWidth);
+      _drawForeground(headPosition.beats);
       box.position = timeAt(headPosition);
     }
   }
@@ -73,10 +73,10 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     _drawOrientation();
     _box = PlaybackBox(
       onUpdateVisuals: (time) {
-        drawForeground(beatsAt(time));
+        _drawForeground(beatsAt(time));
       },
       onStop: () {
-        drawForeground(headPosition.beats);
+        _drawForeground(headPosition.beats);
       },
       getNotes: notesCache,
     );
@@ -107,7 +107,7 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
 
   void _playheadFromPixels(MouseEvent e) {
     headPosition = BeatFraction(
-        ((e.client.x - query('.rail').documentOffset.x) / beatWidth.value)
+        ((e.client.x - query('.rail').documentOffset.x) / _beatWidth.value)
             .floor(),
         4);
   }
@@ -120,59 +120,52 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     box.thereAreChanges();
   }
 
-  void _drawOrientation() {
-    drawOrientation(length, renderLength, BeatFraction(1, 4), beatWidth.value);
-  }
-
-  void drawForeground(double ghost) {
-    var l = renderLength;
-    _canvasFg.width = (l.beats * beatWidth.value).round();
-    _canvasFg.height = canvasHeight;
+  void _drawForeground(double ghost) {
+    var l = renderedLength;
+    _canvasFg.width = (l.beats * _beatWidth.value).round();
+    _canvasFg.height = _canvasHeight;
 
     var ctx = _canvasFg.context2D;
     ctx.clearRect(0, 0, _canvasFg.width, _canvasFg.height);
 
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1.5;
-    var x = headPosition.beats * beatWidth.value;
+    var x = headPosition.beats * _beatWidth.value;
     ctx.moveTo(x, 0);
     ctx.lineTo(x, _canvasFg.height);
 
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1.5;
-    x = ghost * beatWidth.value;
+    x = ghost * _beatWidth.value;
     ctx.moveTo(x, 0);
     ctx.lineTo(x, _canvasFg.height);
 
     ctx.stroke();
   }
 
-  void drawOrientation(
-    BeatFraction activeLength,
-    BeatFraction renderLength,
-    BeatFraction drawSteps,
-    double ppb,
-  ) {
-    _canvasBg.width = (renderLength.beats * ppb).round();
-    _canvasBg.height = canvasHeight;
+  BeatFraction get _gridSize;
+
+  void _drawOrientation() {
+    _canvasBg.width = (renderedLength.beats * _beatWidth.value).round();
+    _canvasBg.height = _canvasHeight;
 
     var ctx = _canvasBg.context2D;
     ctx.clearRect(0, 0, _canvasBg.width, _canvasBg.height);
 
     ctx.strokeStyle = '#fff4';
-    for (var b = 0.0; b <= renderLength.beats; b += drawSteps.beats) {
-      var x = (b * ppb).round() - 0.5;
+    for (var b = 0.0; b <= renderedLength.beats; b += _gridSize.beats) {
+      var x = (b * _beatWidth.value).round() - 0.5;
       ctx.moveTo(x, 0);
       ctx.lineTo(x, _canvasBg.height);
     }
     ctx.stroke();
 
     ctx.fillStyle = '#0008';
-    ctx.fillRect(activeLength.beats * ppb, 0,
-        (renderLength - activeLength).beats * ppb, _canvasBg.height);
+    ctx.fillRect(length.beats * _beatWidth.value, 0,
+        (renderedLength - length).beats * _beatWidth.value, _canvasBg.height);
   }
 
-  int get canvasHeight;
+  int get _canvasHeight;
 
   double timeAt(BeatFraction songLength);
 
@@ -194,7 +187,7 @@ abstract class _RollOrTimelineItem {
   bool _silentStart(BeatFraction start) {
     var oldStart = _start;
     _start = start.beats >= 0 ? start : BeatFraction(0, 1);
-    el.style.left = cssCalc(_start.beats, window.beatWidth);
+    el.style.left = cssCalc(_start.beats, window._beatWidth);
     return _start != oldStart;
   }
 
@@ -211,7 +204,7 @@ abstract class _RollOrTimelineItem {
   bool _silentLength(BeatFraction length) {
     var oldLength = _length;
     _length = length.beats >= 1 ? length : BeatFraction(1, 4);
-    el.style.width = cssCalc(_length.beats, window.beatWidth);
+    el.style.width = cssCalc(_length.beats, window._beatWidth);
     if (_length != oldLength) {
       _onWidthSet();
       return true;
@@ -242,7 +235,7 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
 
   int get _trackCount => 4;
   @override
-  int get canvasHeight => (_trackCount * pixelsPerTrack.value).round();
+  int get _canvasHeight => (_trackCount * pixelsPerTrack.value).round();
 
   final List<Generator> generators = [];
 
@@ -370,7 +363,7 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
         ])
       },
     );
-    Project.instance.pianoRoll.notesComponent = chordPatternData.component(1);
+    Project.instance.pianoRoll.patternData = chordPatternData;
 
     var src = instantiatePattern(chordPatternData, track: 2)
       ..length = BeatFraction(6, 4);
@@ -424,7 +417,13 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
   }
 
   @override
-  CssPxVar get beatWidth => pixelsPerBeat;
+  CssPxVar get _beatWidth => pixelsPerBeat;
+
+  @override
+  BeatFraction get _gridSize => BeatFraction(1, 4);
+
+  @override
+  BeatFraction get renderedLength => BeatFraction(16, 1);
 }
 
 class PatternsCreationAction extends AddRemoveAction<_PatternInstance> {
@@ -471,7 +470,7 @@ class _PatternInstance extends _RollOrTimelineItem {
 
   @override
   void _onWidthSet() {
-    _canvas.width = (_length.beats * this.window.beatWidth.value).ceil();
+    _canvas.width = (_length.beats * this.window._beatWidth.value).ceil();
   }
 
   int _track;
@@ -516,7 +515,7 @@ class _PatternInstance extends _RollOrTimelineItem {
     _draggable =
         Draggable<PatternTransform>(el, () => transform, (tr, pixelOff, ev) {
       var xDiff =
-          BeatFraction((pixelOff.x / timeline.beatWidth.value).round(), 4);
+          BeatFraction((pixelOff.x / timeline._beatWidth.value).round(), 4);
       var minXDiff = timeline.selectedItems.fold<BeatFraction>(
               tr.start,
               (v, p) => p._draggable.savedVar.start < v
@@ -753,10 +752,22 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
   static final pixelsPerKey = CssPxVar('piano-roll-ppk', 20);
   static final pixelsPerBeat = CssPxVar('piano-roll-ppb', 20);
 
-  PatternNotesComponent _notesComponent;
-  PatternNotesComponent get notesComponent => _notesComponent;
-  set notesComponent(PatternNotesComponent notesComponent) {
-    _notesComponent = notesComponent;
+  PatternData _patternData;
+  PatternData get patternData => _patternData;
+  set patternData(PatternData patternData) {
+    if (_patternData != patternData) {
+      _patternData = patternData;
+      reloadData();
+    }
+  }
+
+  int _componentIndex = 1;
+  int get componentIndex => _componentIndex;
+  set componentIndex(int componentIndex) {
+    if (_componentIndex != componentIndex) {
+      _componentIndex = componentIndex;
+      reloadData();
+    }
   }
 
   final List<_PatternInstance> _patterns = [];
@@ -765,6 +776,12 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
 
   PianoRoll() : super(querySelector('#pianoRoll'), 'Piano Roll') {
     _buildPianoKeys();
+  }
+
+  void reloadData() {
+    _items.forEach((n) => n._dispose());
+    _items.clear();
+    length = BeatFraction(4, 1);
   }
 
   void _buildPianoKeys() {
@@ -792,23 +809,24 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
   }
 
   @override
-  CssPxVar get beatWidth => pixelsPerBeat;
+  CssPxVar get _beatWidth => pixelsPerBeat;
 
   @override
-  int get canvasHeight => (8 * 12 * pixelsPerKey.value).round();
+  int get _canvasHeight => (9 * 12 * pixelsPerKey.value).round();
 
   @override
   Iterable<PlaybackNote> notesCache() {
     var _cache = <PlaybackNote>[];
-    _notesComponent.notesWithSwing.forEach((note) {
-      var shift = BeatFraction.washy(0);
-      _cache.add(PlaybackNote(
-        noteInfo: note.info,
-        generator: Project
-            .instance.timeline.generators[0], // TODO local generator variable
-        startInSeconds: timeAt(note.start + shift),
-        endInSeconds: timeAt(note.end + shift),
-      ));
+    patternData.genNotes.forEach((i, comp) {
+      comp.notesWithSwing.forEach((note) {
+        var shift = BeatFraction.washy(0);
+        _cache.add(PlaybackNote(
+          noteInfo: note.info,
+          generator: Project.instance.timeline.generators[i],
+          startInSeconds: timeAt(note.start + shift),
+          endInSeconds: timeAt(note.end + shift),
+        ));
+      });
     });
     return _cache;
   }
@@ -822,12 +840,22 @@ class PianoRoll extends _RollOrTimelineWindow<PianoRollNote> {
   double beatsAt(double seconds) {
     return seconds * (Project.instance.bpm / 60);
   }
+
+  @override
+  BeatFraction get _gridSize => BeatFraction(1, 4);
+
+  @override
+  BeatFraction get renderedLength => length + BeatFraction(4, 1);
 }
 
 class PianoRollNote extends _RollOrTimelineItem {
   PianoRoll get pianoRoll => window as PianoRoll;
 
   PianoRollNote(PianoRoll window) : super(window);
+
+  void _dispose() {
+    el.remove();
+  }
 
   @override
   void _onUpdate() {

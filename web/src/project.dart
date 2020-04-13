@@ -51,7 +51,8 @@ class Project {
   }
 
   void play() {
-    audioAssembler.run(timeline.box, timeline.timeAt(timeline.headPosition));
+    //audioAssembler.run(timeline.box, timeline.timeAt(timeline.headPosition));
+    audioAssembler.run(pianoRoll.box, pianoRoll.timeAt(pianoRoll.headPosition));
   }
 
   void pause() {
