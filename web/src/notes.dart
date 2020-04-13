@@ -8,6 +8,32 @@ class Pitched {
   Pitched(this.coarsePitch);
 }
 
+class CommonPitch {
+  static const _keyNames = [
+    'C',
+    null,
+    'D',
+    null,
+    'E',
+    'F',
+    null,
+    'G',
+    null,
+    'A',
+    null,
+    'B'
+  ];
+
+  final int pitch;
+  final int mod; // pitch % 12
+  String get description => '$name$octave';
+  bool get whiteKey => _keyNames[mod] != null;
+  String get name => _keyNames[mod] ?? _keyNames[mod - 1] + '#';
+  int get octave => (pitch / 12).floor();
+
+  CommonPitch(this.pitch) : mod = pitch % 12;
+}
+
 class NoteInfo extends Pitched {
   double velocity;
 

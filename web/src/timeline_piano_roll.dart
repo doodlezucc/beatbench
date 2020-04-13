@@ -19,6 +19,7 @@ import 'audio_assembler.dart';
 abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     extends Window {
   CssPxVar get _beatWidth;
+  CssPxVar get _cellHeight;
   static final CssPxVar railHeight = CssPxVar('rail-height');
 
   BeatFraction _length = BeatFraction(4, 4);
@@ -273,8 +274,8 @@ abstract class _RollOrTimelineItem<T extends Transform> {
         xDiff = minXDiff;
       }
       var minYDiff = -window._extreme<num>((tr) => tr.y, max: false);
-      var yDiff = max(
-          minYDiff, (pixelOff.y / Timeline.pixelsPerTrack.value + 0.5).floor());
+      var yDiff =
+          max(minYDiff, (pixelOff.y / window._cellHeight.value + 0.5).floor());
 
       window.selectedItems.forEach((p) {
         p.start = p._draggable.savedVar.start + xDiff;
@@ -529,6 +530,8 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
 
   @override
   CssPxVar get _beatWidth => pixelsPerBeat;
+  @override
+  CssPxVar get _cellHeight => pixelsPerTrack;
 
   @override
   BeatFraction get _gridSize => BeatFraction(1, 4);
@@ -812,6 +815,11 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   static final pixelsPerKey = CssPxVar('piano-roll-ppk');
   static final pixelsPerBeat = CssPxVar('piano-roll-ppb');
 
+  static const int _octaveMin = 4;
+  static const int _octaveMax = 7;
+  static int get _pitchMin => _octaveMin * 12;
+  static int get _pitchMax => _octaveMax * 12;
+
   PatternData _patternData;
   PatternData get patternData => _patternData;
   set patternData(PatternData patternData) {
@@ -840,28 +848,19 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
 
   void _buildPianoKeys() {
     var parent = query('.piano-keys');
-    for (var octave = 6; octave >= 4; octave--) {
-      _buildKey('H', octave, true, parent);
-      _buildKey('A#', octave, false, parent);
-      _buildKey('A', octave, true, parent);
-      _buildKey('G#', octave, false, parent);
-      _buildKey('G', octave, true, parent);
-      _buildKey('F#', octave, false, parent);
-      _buildKey('F', octave, true, parent, true);
-      _buildKey('E', octave, true, parent);
-      _buildKey('D#', octave, false, parent);
-      _buildKey('D', octave, true, parent);
-      _buildKey('C#', octave, false, parent);
-      _buildKey('C', octave, true, parent, true);
+    for (var i = _pitchMax; i >= _pitchMin; i--) {
+      var common = CommonPitch(i);
+      _buildKey(common.description, common.whiteKey, parent,
+          common.mod == 0 || common.mod == 5);
     }
   }
 
-  void _buildKey(String name, int octave, bool white, HtmlElement parent,
+  void _buildKey(String description, bool white, HtmlElement parent,
       [bool splitBottom = false]) {
     parent.append(DivElement()
       ..className =
           (white ? 'white' : 'black') + (splitBottom ? ' split-bottom' : '')
-      ..text = '$name$octave');
+      ..text = description);
   }
 
   void reloadData() {
@@ -879,6 +878,8 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
 
   @override
   CssPxVar get _beatWidth => pixelsPerBeat;
+  @override
+  CssPxVar get _cellHeight => pixelsPerKey;
 
   @override
   int get _canvasHeight => (4 * 12 * pixelsPerKey.value).round();
@@ -904,15 +905,15 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   void _drawPreOrientation(CanvasRenderingContext2D ctx) {
     ctx.fillStyle = '#0005';
     ctx.strokeStyle = '#222';
-    for (var o = 0; o <= 3; o++) {
-      var i = o * 12;
+    for (var o = 0; o < _octaveMax - _octaveMin; o++) {
+      var i = o * 12 + 1;
+      _drawLine(ctx, i);
       _drawKey(ctx, i + 1);
       _drawKey(ctx, i + 3);
       _drawKey(ctx, i + 5);
       _drawLine(ctx, i + 7);
       _drawKey(ctx, i + 8);
       _drawKey(ctx, i + 10);
-      _drawLine(ctx, i + 12);
     }
     ctx.stroke();
   }
@@ -962,7 +963,7 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
     _dragSystem.register(_draggable);
 
-    y = pitch;
+    y = toVisual(pitch);
     _silentStart(start);
     _silentLength(length);
   }
@@ -982,11 +983,12 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
     }
   }
 
-  int get visualY => 12 * 7 - y - 1;
+  int toVisual(int pitch) => PianoRoll._pitchMax - pitch;
+  int toPitch(int visual) => PianoRoll._pitchMax - visual;
 
   @override
   set y(int y) {
     _y = max(0, y);
-    el.style.top = cssCalc(visualY, PianoRoll.pixelsPerKey);
+    el.style.top = cssCalc(y, PianoRoll.pixelsPerKey);
   }
 }
