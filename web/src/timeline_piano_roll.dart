@@ -817,8 +817,8 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
 
   static const int _octaveMin = 5;
   static const int _octaveMax = 7;
-  static int get _pitchMin => _octaveMin * 12;
-  static int get _pitchMax => _octaveMax * 12;
+  static int get pitchMin => _octaveMin * 12;
+  static int get pitchMax => _octaveMax * 12;
 
   PatternData _patternData;
   PatternData get patternData => _patternData;
@@ -848,7 +848,7 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
 
   void _buildPianoKeys() {
     var parent = query('.piano-keys');
-    for (var i = _pitchMax; i >= _pitchMin; i--) {
+    for (var i = pitchMax; i >= pitchMin; i--) {
       var common = CommonPitch(i);
       _buildKey(common.description, common.whiteKey, parent,
           common.mod == 0 || common.mod == 5);
@@ -883,7 +883,7 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
 
   @override
   int get _canvasHeight =>
-      ((_pitchMax - _pitchMin + 1) * pixelsPerKey.value).round();
+      ((pitchMax - pitchMin + 1) * pixelsPerKey.value).round();
 
   @override
   Iterable<PlaybackNote> notesCache() {
@@ -952,13 +952,14 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
   PianoRoll get pianoRoll => this.window;
 
   static final DragSystem<Transform> _dragSystem = DragSystem();
+  SpanElement span;
 
   _PianoRollNote(
       PianoRoll window, BeatFraction start, BeatFraction length, int pitch)
       : super(window.query('#notes').append(DivElement()..className = 'note'),
             window) {
     el
-      ..append(SpanElement()..text = 'C#5')
+      ..append(span = SpanElement()..text = 'C#5')
       ..append(stretchElem(false, _dragSystem))
       ..append(stretchElem(true, _dragSystem));
 
@@ -984,12 +985,13 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
     }
   }
 
-  int toVisual(int pitch) => PianoRoll._pitchMax - pitch;
-  int toPitch(int visual) => PianoRoll._pitchMax - visual;
+  int toVisual(int pitch) => PianoRoll.pitchMax - pitch;
+  int toPitch(int visual) => PianoRoll.pitchMax - visual;
 
   @override
   set y(int y) {
     _y = max(0, y);
     el.style.top = cssCalc(y, PianoRoll.pixelsPerKey);
+    span.text = CommonPitch(toPitch(y)).description;
   }
 }
