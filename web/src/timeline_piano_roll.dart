@@ -60,8 +60,8 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
 
   HtmlElement get _scrollArea => query('.right');
 
-  final List<I> items = [];
-  Iterable<I> get selectedItems => items.where((p) => p.selected);
+  final List<I> _items = [];
+  Iterable<I> get selectedItems => _items.where((p) => p.selected);
 
   _RollOrTimelineWindow(HtmlElement element, String title)
       : super(element, title) {
@@ -233,7 +233,7 @@ abstract class _RollOrTimelineItem {
   _RollOrTimelineItem(this.window);
 }
 
-class Timeline extends _RollOrTimelineWindow<PatternInstance> {
+class Timeline extends _RollOrTimelineWindow<_PatternInstance> {
   // UI stuff
   static final pixelsPerBeat = CssPxVar('timeline-ppb', 20);
   static final pixelsPerTrack = CssPxVar('timeline-ppt', 70);
@@ -249,7 +249,7 @@ class Timeline extends _RollOrTimelineWindow<PatternInstance> {
   @override
   Iterable<PlaybackNote> notesCache() {
     var _cache = <TimelinePlaybackNote>[];
-    items.forEach((pat) {
+    _items.forEach((pat) {
       var patternStartTime = timeAt(pat.start);
       var patternEndTime = timeAt(pat.end);
 
@@ -290,12 +290,12 @@ class Timeline extends _RollOrTimelineWindow<PatternInstance> {
   }
 
   void calculateSongLength() {
-    length = items.fold(
+    length = _items.fold(
         BeatFraction.washy(0), (v, pat) => pat.end > v ? pat.end : v);
   }
 
   void cloneSelectedPatterns() {
-    var clones = <PatternInstance>[];
+    var clones = <_PatternInstance>[];
     selectedItems.forEach((p) {
       clones.add(_clonePattern(p)..selected = true);
       p.selected = false;
@@ -303,9 +303,9 @@ class Timeline extends _RollOrTimelineWindow<PatternInstance> {
     History.perform(PatternsCreationAction(this, true, clones));
   }
 
-  PatternInstance _clonePattern(PatternInstance original) {
-    PatternInstance instance;
-    instance = PatternInstance(
+  _PatternInstance _clonePattern(_PatternInstance original) {
+    _PatternInstance instance;
+    instance = _PatternInstance(
         original.data, original.start, original.length, original.track, this);
     instance.contentShift = original.contentShift;
     if (instance.end > length) {
@@ -314,10 +314,10 @@ class Timeline extends _RollOrTimelineWindow<PatternInstance> {
     return instance;
   }
 
-  PatternInstance instantiatePattern(PatternData data,
+  _PatternInstance instantiatePattern(PatternData data,
       {BeatFraction start = const BeatFraction(0, 1), int track = 0}) {
-    PatternInstance instance;
-    instance = PatternInstance(data, start, null, track, this);
+    _PatternInstance instance;
+    instance = _PatternInstance(data, start, null, track, this);
     if (instance.end > length) {
       length = instance.end;
     }
@@ -405,9 +405,9 @@ class Timeline extends _RollOrTimelineWindow<PatternInstance> {
 
   @override
   bool handleSelectAll() {
-    if (items.isNotEmpty) {
-      var doSelect = !items.every((pattern) => pattern.selected);
-      items.forEach((p) {
+    if (_items.isNotEmpty) {
+      var doSelect = !_items.every((pattern) => pattern.selected);
+      _items.forEach((p) {
         p.selected = doSelect;
       });
     }
@@ -424,23 +424,23 @@ class Timeline extends _RollOrTimelineWindow<PatternInstance> {
   CssPxVar get beatWidth => pixelsPerBeat;
 }
 
-class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
+class PatternsCreationAction extends AddRemoveAction<_PatternInstance> {
   final Timeline timeline;
 
   PatternsCreationAction(
-      this.timeline, bool forward, Iterable<PatternInstance> list)
+      this.timeline, bool forward, Iterable<_PatternInstance> list)
       : super(forward, list);
 
   @override
-  void doSingle(PatternInstance object) {
+  void doSingle(_PatternInstance object) {
     object.setExistence(true);
-    timeline.items.add(object);
+    timeline._items.add(object);
   }
 
   @override
-  void undoSingle(PatternInstance object) {
+  void undoSingle(_PatternInstance object) {
     object.setExistence(false);
-    timeline.items.remove(object);
+    timeline._items.remove(object);
   }
 
   @override
@@ -449,7 +449,7 @@ class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
   }
 }
 
-class PatternInstance extends _RollOrTimelineItem {
+class _PatternInstance extends _RollOrTimelineItem {
   BeatFraction _contentShift = BeatFraction(0, 1);
   BeatFraction get contentShift => _contentShift;
   set contentShift(BeatFraction contentShift) {
@@ -486,8 +486,8 @@ class PatternInstance extends _RollOrTimelineItem {
   Draggable<PatternTransform> _draggable;
   static final DragSystem<PatternTransform> _dragSystem = DragSystem();
 
-  PatternInstance(this.data, BeatFraction start, BeatFraction length, int track,
-      Timeline timeline)
+  _PatternInstance(this.data, BeatFraction start, BeatFraction length,
+      int track, Timeline timeline)
       : super(timeline) {
     _input = InputElement(type: 'text')
       ..className = 'shy'
@@ -704,25 +704,25 @@ class PatternTransform {
       );
 }
 
-class PatternTransformAction extends MultipleAction<PatternInstance> {
+class PatternTransformAction extends MultipleAction<_PatternInstance> {
   final PatternTransform diff;
 
-  PatternTransformAction(Iterable<PatternInstance> patterns, this.diff)
+  PatternTransformAction(Iterable<_PatternInstance> patterns, this.diff)
       : super(patterns);
 
   @override
-  void doSingle(PatternInstance object) {
+  void doSingle(_PatternInstance object) {
     object.applyTransform(object.transform + diff);
   }
 
   @override
-  void undoSingle(PatternInstance object) {
+  void undoSingle(_PatternInstance object) {
     object.applyTransform(object.transform - diff);
   }
 }
 
 class TimelinePlaybackNote extends PlaybackNote {
-  final PatternInstance pattern;
+  final _PatternInstance pattern;
 
   TimelinePlaybackNote({
     @required double startInSeconds,
@@ -730,7 +730,12 @@ class TimelinePlaybackNote extends PlaybackNote {
     @required NoteInfo noteInfo,
     @required Generator generator,
     @required this.pattern,
-  });
+  }) : super(
+          startInSeconds: startInSeconds,
+          endInSeconds: endInSeconds,
+          noteInfo: noteInfo,
+          generator: generator,
+        );
 
   @override
   bool operator ==(dynamic other) =>
@@ -751,8 +756,8 @@ class PianoRoll extends _RollOrTimelineWindow {
     _notesComponent = notesComponent;
   }
 
-  final List<PatternInstance> _patterns = [];
-  Iterable<PatternInstance> get selectedPatterns =>
+  final List<_PatternInstance> _patterns = [];
+  Iterable<_PatternInstance> get selectedPatterns =>
       _patterns.where((p) => p.selected);
 
   PianoRoll() : super(querySelector('#pianoRoll'), 'Piano Roll') {
