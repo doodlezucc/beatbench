@@ -38,6 +38,16 @@ abstract class Window {
     _frame.style.top = '${position.y}px';
   }
 
+  Point<num> get size {
+    var rect = _frame.getBoundingClientRect();
+    return Point(rect.width, rect.height);
+  }
+
+  set size(Point<num> size) {
+    _frame.style.width = '${size.x}px';
+    _frame.style.height = '${size.y}px';
+  }
+
   static HtmlElement _createFrame(String title) {
     return DivElement()
       ..className = 'window'

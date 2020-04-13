@@ -92,8 +92,6 @@ input.shy {
 	color: white;
 	overflow: hidden;
 	position: relative;
-	width: 500px;
-	height: 200px;
 }
 
 .scroll-window > .bottom {
@@ -255,6 +253,11 @@ div.window {
 	padding-top: 0;
 	background-color: hsl(0, 0%, 20%);
 	box-shadow: 0 0 20px #000a;
+	width: 600px;
+	height: 500px;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
 }
 div.window.focused {
 	outline: 2px solid #8fa;

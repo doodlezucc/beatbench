@@ -14,7 +14,8 @@ class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
   final Timeline timeline = Timeline()..visible = true;
   final PianoRoll pianoRoll = PianoRoll()
-    ..position = Point<num>(0, 300)
+    ..position = Point(150, 50)
+    ..size = Point(700, 500)
     ..visible = true;
 
   Window _currentWindow;
