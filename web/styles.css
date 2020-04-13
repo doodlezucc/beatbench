@@ -132,6 +132,19 @@ canvas#foreground {
 	overflow: scroll;
 }
 
+.scroll-window > .bottom > .right > div {
+	background-color: hsla(var(--hue), 100%, 60%, 0.6);
+	cursor: pointer;
+	position: absolute;
+}
+.scroll-window > .bottom > .right > div:hover,
+.scroll-window > .bottom > .right > div.dragged {
+	background-color: hsla(var(--hue), 100%, 70%, 0.6);
+}
+.scroll-window > .bottom > .right > div.selected {
+	background-color: hsla(calc(var(--hue) + 20), 100%, 70%, 0.6);
+}
+
 	/* #region RAIL*/
 .scroll-window > .top {
 	width: 100%;
@@ -208,18 +221,9 @@ canvas#foreground {
 	--hue: 24;
 	width: 180px;
 	height: var(--timeline-ppt);
-	background-color: hsla(var(--hue), 100%, 76%, 0.6);
 	display: inline-block;
-	cursor: pointer;
-	position: absolute;
 	border-right: 1px dotted white;
 	box-sizing: border-box;
-}
-#timeline .pattern:hover, #timeline .pattern.dragged {
-	background-color: hsla(var(--hue), 100%, 80%, 0.6);
-}
-#timeline .pattern.selected {
-	background-color: hsla(calc(var(--hue) + 20), 100%, 80%, 0.6);
 }
 #timeline .pattern input {
 	padding: 0 2px;
@@ -332,7 +336,7 @@ button.reload {
 
 	/* #region NOTES*/
 .note {
-	background-color: #ff4242aa;
+	--hue: 0;
 	width: 100px;
 	position: absolute;
 }
