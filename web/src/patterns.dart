@@ -155,18 +155,14 @@ class PatternInstance {
   Draggable<PatternTransform> _draggable;
   static final DragSystem<PatternTransform> _dragSystem = DragSystem();
 
-  PatternInstance(
-    this.data,
-    BeatFraction start,
-    BeatFraction length,
-    int track,
-    void Function() onUpdate,
-  ) : _onUpdate = onUpdate {
+  PatternInstance(this.data, BeatFraction start, BeatFraction length, int track,
+      void Function() onUpdate, Timeline timeline)
+      : _onUpdate = onUpdate {
     _input = InputElement(type: 'text')
       ..className = 'shy'
       ..value = data.name;
 
-    _e = querySelector('#patterns').append(DivElement()
+    _e = timeline.query('#patterns').append(DivElement()
       ..className = 'pattern hidden'
       ..append(_input)
       ..append(

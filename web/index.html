@@ -13,13 +13,16 @@
   <script defer src="main.dart.js"></script>
 </head>
 
-<body style="--timeline-ppb: 20px; --timeline-ppt: 70px; --track-width: 100px">
+<body
+  style="--timeline-ppb: 20px; --timeline-ppt: 70px; --track-width: 100px; --piano-roll-ppb: 100px; --piano-roll-ppk: 50px;">
   <table id="grid"></table>
 
-  <div id="timeline">
-    <div id="top">
+  <div id="windows"></div>
+
+  <div id="pianoRoll" class="scroll-window">
+    <div class="top">
       <div class="top-left"></div>
-      <div id="rail">
+      <div class="rail">
         <div>
           <div id="head">
             <div class="handle"></div>
@@ -27,8 +30,33 @@
         </div>
       </div>
     </div>
-    <div id="bottom">
-      <div id="tracks">
+    <div class="bottom">
+      <div class="piano-keys left"></div>
+      <div id="notes" class="right">
+        <canvas id="foreground"></canvas>
+        <canvas id="background"></canvas>
+        <div class="note">
+          <span>C5</span>
+          <div class="stretch left"></div>
+          <div class="stretch right"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="timeline" class="scroll-window">
+    <div class="top">
+      <div class="top-left"></div>
+      <div class="rail">
+        <div>
+          <div id="head">
+            <div class="handle"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div id="tracks" class="left">
         <div class="track">
           <span>Track 1</span>
         </div>
@@ -42,7 +70,7 @@
           <span>Track 4</span>
         </div>
       </div>
-      <div id="patterns">
+      <div id="patterns" class="right">
         <canvas id="foreground"></canvas>
         <canvas id="background"></canvas>
         <!-- <div class="pattern">

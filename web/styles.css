@@ -6,12 +6,15 @@ body {
 	position: relative;
 	background-color: #3d352e;
 	color: white;
+	box-sizing: border-box;
 
 	--cell-size: 30px;
 	--timeline-ppt: 0;
 	--timeline-ppb: 0;
 	--rail-height: 20px;
 	--track-width: 100px;
+	--piano-roll-ppk: 25px;
+	--key-width: 50px;
 }
 
 .hidden {
@@ -64,7 +67,7 @@ input.shy {
 	margin-right: auto;
 }
 
-td,th {
+#grid td,th {
 	border: 1px solid #444;
 	min-width: var(--cell-size);
 	width: var(--cell-size);
@@ -74,51 +77,109 @@ td,th {
 	background-color: white;
 	transition: 0.15s;
 }
-td:hover {
+#grid td:hover {
 	background-color: #ccc;
 }
-td.filled {
+#grid td.filled {
 	background-color: #444;
 }
+/* #endregion */
+
+/* #region SCROLL WINDOWS*/
+.scroll-window {
+	display: flex;
+	flex-direction: column;
+	color: white;
+	overflow: hidden;
+	position: relative;
+	width: 500px;
+	height: 200px;
+}
+
+.scroll-window > .bottom {
+	display: flex;
+	flex-direction: row;
+	position: relative;
+	overflow: hidden;
+	height: 100%;
+}
+
+.scroll-window canvas {
+	position: absolute;
+	top: calc(-1 * var(--rail-height));
+}
+
+canvas.foreground {
+	z-index: 10;
+	pointer-events: none;
+}
+
+.scroll-window > .top > .top-left {
+	top: 0;
+	left: 0;
+	height: var(--rail-height);
+	z-index: 15;
+	background-color: hsl(0, 0%, 25%);
+	text-align: center;
+}
+
+.scroll-window > .bottom > .left {
+	box-sizing: border-box;
+	position: relative;
+	z-index: 10;
+}
+
+.scroll-window > .bottom > .right {
+	width: 100%;
+	position: relative;
+	overflow: scroll;
+}
+
+	/* #region RAIL*/
+.scroll-window > .top {
+	width: 100%;
+	min-height: var(--rail-height);
+	position: relative;
+}
+
+.scroll-window > .top * {
+	position: absolute;
+}
+
+.rail {
+	width: 100%;
+	height: var(--rail-height);
+	background-color: hsla(0, 0%, 35%, 0.3);
+}
+
+.handle {
+	left: -10px;
+	width: 20px;
+	height: var(--rail-height);
+	border-radius: 5px;
+	border: 2px solid white;
+	box-sizing: border-box;
+	z-index: 5;
+}
+.handle:hover,.handle.dragged {
+	background-color: gray;
+	cursor: pointer;
+}
+	/* #endregion */
 /* #endregion */
 
 /* #region TIMELINE*/
 	/* #region BASIC*/
 #timeline {
 	background-color: #333;
-	display: block;
-	color: white;
-	margin: 5px;
-	overflow: hidden;
-	position: relative;
 }
 
-#timeline #bottom {
-	display: flex;
-	flex-direction: row;
-	position: relative;
-	overflow: hidden;
-	height: 200px;
-}
-
-#timeline canvas {
-	position: absolute;
-	top: calc(-1 * var(--rail-height));
-}
-
-#timeline #foreground {
-	z-index: 10;
-	pointer-events: none;
-}
-
-#top .top-left {
-	top: 0;
-	left: 0;
+#timeline .top .top-left {
 	width: var(--track-width);
-	height: var(--rail-height);
-	z-index: 15;
-	background-color: hsl(0, 0%, 25%);
-	text-align: center;
+}
+
+#timeline .rail {
+	left: var(--track-width);
 }
 	/* #endregion */
 	
@@ -126,9 +187,6 @@ td.filled {
 #timeline #tracks {
 	width: var(--track-width);
 	min-width: var(--track-width);
-	box-sizing: border-box;
-	position: relative;
-	z-index: 10;
 }
 
 #timeline .track {
@@ -150,12 +208,6 @@ td.filled {
 	/* #endregion */
 	
 	/* #region PATTERNS*/
-#timeline #patterns {
-	width: 100%;
-	position: relative;
-	overflow: scroll;
-}
-
 #timeline .pattern {
 	--hue: 24;
 	width: 180px;
@@ -167,7 +219,7 @@ td.filled {
 	border-right: 1px dotted white;
 	box-sizing: border-box;
 }
-#timeline .pattern:hover,#timeline .pattern.dragged {
+#timeline .pattern:hover, #timeline .pattern.dragged {
 	background-color: hsla(var(--hue), 100%, 80%, 0.6);
 }
 #timeline .pattern.selected {
@@ -190,42 +242,13 @@ td.filled {
 	position: static;
 }
 	/* #endregion */
-	
-	/* #region RAIL*/
-#top {
-	width: 100%;
-	height: var(--rail-height);
-	position: relative;
-}
-
-#top * {
-	position: absolute;
-}
-
-#rail {
-	left: var(--track-width);
-	width: 100%;
-	height: var(--rail-height);
-	background-color: hsla(0, 0%, 35%, 0.3);
-}
-
-.handle {
-	left: -10px;
-	width: 20px;
-	height: var(--rail-height);
-	border-radius: 5px;
-	border: 2px solid white;
-	box-sizing: border-box;
-	z-index: 5;
-}
-.handle:hover,.handle.dragged {
-	background-color: gray;
-	cursor: pointer;
-}
-/* #endregion */
 /* #endregion */
 
 /* #region WINDOWS*/
+#windows {
+	position: absolute;
+}
+
 div.window {
 	position: absolute;
 	padding: 5px;
@@ -256,4 +279,55 @@ button.reload {
 	margin-left: auto;
 	padding: 0 5px;
 }
+/* #endregion */
+
+/* #region PIANO ROLL*/
+	/* #region BASIC*/
+#pianoRoll {
+	background-color: black;
+}
+
+#pianoRoll .top .top-left {
+	width: var(--key-width);
+}
+
+#pianoRoll .rail {
+	left: var(--key-width);
+}
+	/* #endregion */
+
+	/* #region KEYS*/
+.piano-keys {
+	min-width: var(--key-width);
+	width: var(--key-width);
+	display: flex;
+	flex-direction: column;
+}
+
+.piano-keys > * {
+	text-shadow: 0 0 5px #000a;
+	padding: 0 5px;
+}
+
+.piano-keys > *, .note {
+	height: 100px;
+	max-height: var(--piano-roll-ppk);
+	line-height: var(--piano-roll-ppk);
+}
+
+.piano-keys > .white {
+	background-color: #aaa;
+}
+
+.piano-keys > .black {
+	background-color: #444;
+}
+	/* #endregion */
+
+	/* #region NOTES*/
+.note {
+	background-color: #ff4242aa;
+	width: 100px;
+}
+	/* #endregion */
 /* #endregion */

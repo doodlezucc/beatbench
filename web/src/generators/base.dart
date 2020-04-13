@@ -104,7 +104,7 @@ abstract class Generator {
   Generator(AudioContext ctx, GeneratorInterface interface)
       : node = ctx.createGain()..connectNode(ctx.destination),
         _interface = interface {
-    _interface._init(this);
+    _interface?._init(this);
   }
 
   void noteEvent(NoteInfo note, double when, NoteSignal signal);

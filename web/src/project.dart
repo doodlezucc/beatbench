@@ -7,12 +7,16 @@ import 'generators/base.dart';
 import 'generators/drums.dart';
 import 'history.dart';
 import 'midi_typing.dart';
+import 'piano_roll.dart';
 import 'timeline.dart';
 import 'windows.dart';
 
 class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
-  final Timeline timeline = Timeline();
+  final Timeline timeline = Timeline()..visible = true;
+  final PianoRoll pianoRoll = PianoRoll()
+    ..position = Point<num>(0, 300)
+    ..visible = true;
 
   Window _currentWindow;
   Window get currentWindow => _currentWindow;

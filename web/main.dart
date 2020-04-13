@@ -4,8 +4,8 @@ import 'src/generators/oscillator/oscillator.dart';
 import 'src/project.dart';
 
 void main() {
-  //initStuff();
-  generatorDemo();
+  initStuff();
+  //generatorDemo();
   _listenToCssReload();
 }
 
