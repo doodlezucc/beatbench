@@ -14,7 +14,7 @@ class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
   final Timeline timeline = Timeline()..visible = true;
   final PianoRoll pianoRoll = PianoRoll()
-    ..position = Point(150, 50)
+    ..position = Point(50, 10)
     ..size = Point(700, 500)
     ..visible = true;
 
@@ -52,8 +52,12 @@ class Project {
   }
 
   void play() {
-    //audioAssembler.run(timeline.box, timeline.timeAt(timeline.headPosition));
-    audioAssembler.run(pianoRoll.box, pianoRoll.timeAt(pianoRoll.headPosition));
+    if (currentWindow is Timeline) {
+      audioAssembler.run(timeline.box, timeline.timeAt(timeline.headPosition));
+    } else {
+      audioAssembler.run(
+          pianoRoll.box, pianoRoll.timeAt(pianoRoll.headPosition));
+    }
   }
 
   void pause() {

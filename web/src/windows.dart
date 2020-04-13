@@ -3,6 +3,8 @@ import 'dart:html';
 import 'project.dart';
 
 abstract class Window {
+  static final List<Window> _stack = [];
+
   HtmlElement _element;
   HtmlElement get element => _element;
   final HtmlElement _frame;
@@ -12,11 +14,22 @@ abstract class Window {
     _frame.querySelector('.title').text = title;
   }
 
+  static void _reloadLayering() {
+    for (var i = 0; i < _stack.length; i++) {
+      _stack[i]._frame.style.zIndex = (i * 10).toString();
+    }
+  }
+
   bool get isFocused => Project.instance.currentWindow == this;
   void focus() {
     var old = Project.instance.currentWindow;
     if (old != null) old._setFocus(false);
     Project.instance.currentWindow = this;
+    if (visible) {
+      _stack.remove(this);
+      _stack.add(this);
+      _reloadLayering();
+    }
     visible = true;
     _setFocus(true);
   }
@@ -29,7 +42,15 @@ abstract class Window {
 
   set visible(bool v) {
     var parent = document.querySelector('#windows');
-    v ? parent.append(_frame) : _frame.remove();
+    if (v && !visible) {
+      _stack.add(this);
+      _reloadLayering();
+      parent.append(_frame);
+    } else if (!v && visible) {
+      _stack.remove(this);
+      _reloadLayering();
+      _frame.remove();
+    }
   }
 
   Point<num> get position => _frame.getBoundingClientRect().topLeft;
@@ -61,6 +82,7 @@ abstract class Window {
   Window(HtmlElement element, String title) : _frame = _createFrame(title) {
     _element = _frame.append(element);
     visible = false;
+    _frame.onMouseDown.listen((e) => focus());
   }
 
   bool handleKeyDown(KeyEvent event) => false;
