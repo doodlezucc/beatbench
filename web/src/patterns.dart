@@ -4,6 +4,7 @@ import 'generators/base.dart';
 import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
+import 'utils.dart';
 
 abstract class PatternDataComponent {
   final StreamController _streamController = StreamController.broadcast(
@@ -16,19 +17,22 @@ abstract class PatternDataComponent {
 }
 
 class PatternNotesComponent extends PatternDataComponent {
-  final List<Note> _notes;
+  List<Note> _notes;
   final double _swing = 0.5;
   Iterable<Note> get notesWithSwing =>
-      _notes.map((n) => n.cloneKeepInfo(start: n.start.swingify(_swing)));
+      notes.map((n) => n.cloneKeepInfo(start: n.start.swingify(_swing)));
 
-  Iterable<Note> get notes => Iterable.castFrom(_notes);
+  Iterable<Note> get notes => _notes;
+  set notes(Iterable<Note> notes) {
+    _notes = notes.toList();
+    _streamController.add('set');
+  }
 
   PatternNotesComponent(Iterable<Note> notes) : _notes = notes.toList();
 
   @override
   BeatFraction length() {
-    return notes.fold(
-        BeatFraction.washy(0), (v, n) => n.end.beats > v.beats ? n.end : v);
+    return extreme<Note, BeatFraction>(notes, (n) => n.end, max: true);
   }
 }
 

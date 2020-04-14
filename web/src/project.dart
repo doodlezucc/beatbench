@@ -44,7 +44,7 @@ class Project {
     _init();
 
     _pianoRoll = PianoRoll()
-      ..position = Point(100, 100)
+      ..position = Point(200, 100)
       ..size = Point(700, 500)
       ..visible = true;
   }

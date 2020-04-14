@@ -942,6 +942,10 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   Iterable<Note> getNotes() {
     return _items.map((i) => i.note);
   }
+
+  void applyToComponent() {
+    component.notes = getNotes();
+  }
 }
 
 class _PianoRollNote extends _RollOrTimelineItem<Transform> {
@@ -979,6 +983,8 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
     } else {
       note = Note(pitch: pitch, start: start, length: length);
     }
+
+    pianoRoll.applyToComponent();
 
     if (end > pianoRoll.bw.length) {
       pianoRoll.bw.length = end;
