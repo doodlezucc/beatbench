@@ -331,7 +331,7 @@ abstract class _RollOrTimelineItem<T extends Transform> {
   }
 
   BeatFraction _leftStretch(BeatFraction diff) {
-    var minDiff = window._extreme((i) => i.start, max: true) * -1;
+    var minDiff = window._extreme((i) => i.start, max: false) * -1;
     if (diff < minDiff) diff = minDiff;
 
     window.selectedItems.forEach((p) {
@@ -938,7 +938,7 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   PlaybackBoxWindow get bw => Project.instance.patternView;
 
   @override
-  BeatFraction get gridSize => BeatFraction(1, 1);
+  BeatFraction get gridSize => BeatFraction(1, 4);
 
   Iterable<Note> getNotes() {
     return _items.map((i) => i.note);
