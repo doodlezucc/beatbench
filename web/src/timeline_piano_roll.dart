@@ -339,7 +339,7 @@ abstract class _RollOrTimelineItem<T extends Transform> {
 
     window.selectedItems.forEach((p) {
       if (p._silentLength(p._draggable.savedVar.length - diff)) {
-        p._silentStart(p._draggable.savedVar.start + diff);
+        p.start = p._draggable.savedVar.start + diff;
       }
     });
   }
