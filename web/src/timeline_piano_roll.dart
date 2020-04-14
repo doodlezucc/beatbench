@@ -753,7 +753,7 @@ class Transform {
   Transform(this.start, this.length, this.y);
 
   @override
-  bool operator ==(dynamic other) => other is PatternTransform
+  bool operator ==(dynamic other) => other is Transform
       ? start == other.start && length == other.length && y == other.y
       : false;
 
