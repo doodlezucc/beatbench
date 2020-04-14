@@ -271,7 +271,6 @@ abstract class _RollOrTimelineItem<T extends Transform> {
     _draggable = Draggable<T>(el, () => transform, (tr, pixelOff, ev) {
       var xDiff = BeatFraction.round(
           pixelOff.x / window.beatWidth.value, window.gridSize);
-      print(xDiff);
       var minXDiff = window._extreme((tr) => tr.start, max: false) * -1;
       if (xDiff < minXDiff) {
         xDiff = minXDiff;
@@ -307,21 +306,22 @@ abstract class _RollOrTimelineItem<T extends Transform> {
       (tr, off, ev) {
         var diff =
             BeatFraction.round(off.x / window.beatWidth.value, window.gridSize);
+        // diff maximum: lengthOld - 1
         var maxDiff =
-            window._extreme((i) => i.length, max: false) - BeatFraction(1, 4);
+            window._extreme((i) => i.length, max: false) - window.gridSize;
         if (right) {
           if (diff < maxDiff * -1) diff = maxDiff * -1;
           window.selectedItems.forEach((p) {
             p.length = p._draggable.savedVar.length + diff;
           });
         } else {
-          // diff maximum: lengthOld - 1
           if (diff > maxDiff) diff = maxDiff;
-          _leftStretch(diff);
+          diff = _leftStretch(diff);
         }
         if (diff.numerator == 0) return;
         if (ev.detail == 1) {
           // register reversible action
+          print(diff);
           History.registerDoneAction(TransformAction(
               window.selectedItems.toList(growable: false), transform - tr));
         }
@@ -330,7 +330,7 @@ abstract class _RollOrTimelineItem<T extends Transform> {
     return out;
   }
 
-  void _leftStretch(BeatFraction diff) {
+  BeatFraction _leftStretch(BeatFraction diff) {
     var minDiff = window._extreme((i) => i.start, max: true) * -1;
     if (diff < minDiff) diff = minDiff;
 
@@ -339,6 +339,8 @@ abstract class _RollOrTimelineItem<T extends Transform> {
         p.start = p._draggable.savedVar.start + diff;
       }
     });
+
+    return diff;
   }
 }
 
@@ -666,7 +668,7 @@ class _PatternInstance extends _RollOrTimelineItem<PatternTransform> {
   Timeline get timeline => this.window;
 
   @override
-  void _leftStretch(BeatFraction diff) {
+  BeatFraction _leftStretch(BeatFraction diff) {
     // diff minimum: -contentShiftOld
     var minDiff = timeline._extreme<BeatFraction>(
             (i) => (i as PatternTransform).contentShift,
@@ -682,6 +684,8 @@ class _PatternInstance extends _RollOrTimelineItem<PatternTransform> {
         p._draw();
       }
     });
+
+    return diff;
   }
 
   @override
