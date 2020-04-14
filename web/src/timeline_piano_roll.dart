@@ -113,10 +113,13 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
   PlaybackBoxWindow get bw;
 
   void _playheadFromPixels(MouseEvent e) {
+    var m = (4 / gridSize.beats).round();
     bw.headPosition = BeatFraction(
-        ((e.client.x - query('.rail').documentOffset.x) / beatWidth.value)
+        ((m / 4) *
+                (e.page.x - query('.rail').documentOffset.x) /
+                beatWidth.value)
             .floor(),
-        4);
+        m);
   }
 
   T _extreme<T>(dynamic Function(Transform tr) variable,
@@ -927,7 +930,7 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   PlaybackBoxWindow get bw => Project.instance.patternView;
 
   @override
-  BeatFraction get gridSize => BeatFraction(1, 4);
+  BeatFraction get gridSize => BeatFraction(1, 1);
 }
 
 class _PianoRollNote extends _RollOrTimelineItem<Transform> {

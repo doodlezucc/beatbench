@@ -7,6 +7,8 @@ body {
 	background-color: #3d352e;
 	color: white;
 	box-sizing: border-box;
+	margin: 0;
+	padding: 5px;
 
 	--cell-size: 30px;
 	--rail-height: 0;
@@ -16,7 +18,6 @@ body {
 	--piano-roll-ppk: 0;
 	--key-width: 50px;
 }
-
 .hidden {
 	display: none !important;
 }
