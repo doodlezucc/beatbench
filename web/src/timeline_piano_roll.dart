@@ -321,7 +321,6 @@ abstract class _RollOrTimelineItem<T extends Transform> {
         if (diff.numerator == 0) return;
         if (ev.detail == 1) {
           // register reversible action
-          print(diff);
           History.registerDoneAction(TransformAction(
               window.selectedItems.toList(growable: false), transform - tr));
         }
@@ -847,8 +846,8 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   static final pixelsPerKey = CssPxVar('piano-roll-ppk');
   static final pixelsPerBeat = CssPxVar('piano-roll-ppb');
 
-  static const int _octaveMin = 5;
-  static const int _octaveMax = 7;
+  static const int _octaveMin = 2;
+  static const int _octaveMax = 8;
   static int get pitchMin => _octaveMin * 12;
   static int get pitchMax => _octaveMax * 12;
 
@@ -867,6 +866,10 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
 
   PianoRoll() : super(querySelector('#pianoRoll'), 'Piano Roll') {
     _buildPianoKeys();
+    Future.microtask(() {
+      _scrollArea.scrollTop =
+          (((_octaveMax - 7) * 12 + 5) * pixelsPerKey.value).round();
+    });
   }
 
   void _buildPianoKeys() {
@@ -961,7 +964,7 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
       : super(window.query('#notes').append(DivElement()..className = 'note'),
             window) {
     el
-      ..append(span = SpanElement()..text = 'C#5')
+      ..append(span = SpanElement())
       ..append(stretchElem(false, _dragSystem))
       ..append(stretchElem(true, _dragSystem));
 
