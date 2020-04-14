@@ -58,7 +58,7 @@ class Note {
       : info = NoteInfo(pitch);
   Note._withInfo(this.info, this.start, this.length);
 
-  Note cloneKeepInfo({int pitch, BeatFraction start, BeatFraction length}) {
+  Note cloneKeepInfo({BeatFraction start, BeatFraction length}) {
     return Note._withInfo(info, start ?? this.start, length ?? this.length);
   }
 

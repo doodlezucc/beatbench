@@ -235,11 +235,19 @@ abstract class _RollOrTimelineItem<T extends Transform> {
 
   void _onWidthSet() {}
 
-  BeatFraction get end => start + length;
-
   int _y;
   int get y => _y;
-  set y(int y);
+  set y(int y) {
+    if (_y != y) {
+      _y = y;
+      _onYSet();
+      _onUpdate();
+    }
+  }
+
+  void _onYSet() {}
+
+  BeatFraction get end => start + length;
 
   bool _selected = false;
   bool get selected => _selected;
@@ -638,9 +646,9 @@ class _PatternInstance extends _RollOrTimelineItem<PatternTransform> {
 
     _dragSystem.register(_draggable);
 
-    y = track;
     _silentStart(start);
     _silentLength(length ?? data.length().ceilTo(2));
+    y = track;
     _draw();
 
     data.listenToEdits((ev) {
@@ -731,8 +739,7 @@ class _PatternInstance extends _RollOrTimelineItem<PatternTransform> {
   }
 
   @override
-  set y(int y) {
-    _y = max(0, y);
+  void _onYSet() {
     el.style.top = cssCalc(_y, Timeline.pixelsPerTrack);
   }
 }
@@ -931,6 +938,10 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
 
   @override
   BeatFraction get gridSize => BeatFraction(1, 1);
+
+  Iterable<Note> getNotes() {
+    return _items.map((i) => i.note);
+  }
 }
 
 class _PianoRollNote extends _RollOrTimelineItem<Transform> {
@@ -938,6 +949,7 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
   static final DragSystem<Transform> _dragSystem = DragSystem();
   SpanElement span;
+  Note note;
 
   _PianoRollNote(
       PianoRoll window, BeatFraction start, BeatFraction length, int pitch)
@@ -950,9 +962,9 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
     _dragSystem.register(_draggable);
 
-    y = toVisual(pitch);
     _silentStart(start);
     _silentLength(length);
+    y = toVisual(pitch);
   }
 
   void _dispose() {
@@ -961,8 +973,15 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
   @override
   void _onUpdate() {
+    var pitch = toPitch(y);
+    if (note != null && note.coarsePitch == pitch) {
+      note = note.cloneKeepInfo(start: start, length: length);
+    } else {
+      note = Note(pitch: pitch, start: start, length: length);
+    }
+
     if (end > pianoRoll.bw.length) {
-      Project.instance.patternView.length = end;
+      pianoRoll.bw.length = end;
     } else if (end < pianoRoll.bw.length) {
       Project.instance.patternView.calculateLength();
     } else {
@@ -974,8 +993,7 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
   int toPitch(int visual) => PianoRoll.pitchMax - visual;
 
   @override
-  set y(int y) {
-    _y = max(0, y);
+  void _onYSet() {
     el.style.top = cssCalc(y, PianoRoll.pixelsPerKey);
     span.text = CommonPitch(toPitch(y)).description;
   }
