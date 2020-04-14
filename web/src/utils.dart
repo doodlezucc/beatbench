@@ -34,7 +34,10 @@ class CssPxVar {
 String cssCalc(num m, CssPxVar v) => 'calc($m * var(${v.name}))';
 
 T extreme<I, T>(Iterable<I> items, dynamic Function(I i) variable,
-    {@required bool max}) {
+    {@required bool max, T ifNone}) {
+  if (items.isEmpty) {
+    return ifNone;
+  }
   var out = variable(items.first);
   for (var i = 1; i < items.length; i++) {
     var v = variable(items.elementAt(i));

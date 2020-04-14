@@ -41,7 +41,7 @@ class PatternView extends Window with PlaybackBoxWindow {
   void calculateLength() {
     length = extreme<PatternNotesComponent, BeatFraction>(
         patternData.genNotes.values, (comp) => comp.length(),
-        max: true);
+        max: true, ifNone: BeatFraction(1, 1));
   }
 
   Iterable<PlaybackNote> notesCache() {

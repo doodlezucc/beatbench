@@ -123,16 +123,11 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
   }
 
   T _extreme<T>(dynamic Function(Transform tr) variable,
-      {@required bool max, bool onlyDragged = true}) {
+      {@required bool max, bool onlyDragged = true, T ifNone}) {
     var list = onlyDragged ? selectedItems : _items;
-    var out = variable(_getTransform(list.first, onlyDragged));
-    for (var i = 1; i < list.length; i++) {
-      var v = variable(_getTransform(list.elementAt(i), onlyDragged));
-      if ((max && v > out) || (!max && v < out)) {
-        out = v;
-      }
-    }
-    return out;
+    return extreme<I, T>(
+        list, (item) => variable(_getTransform(item, onlyDragged)),
+        max: max, ifNone: ifNone);
   }
 
   Transform _getTransform(I item, bool dragged) =>
@@ -414,8 +409,8 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance>
   }
 
   void calculateSongLength() {
-    length =
-        _extreme((tr) => tr.start + tr.length, max: true, onlyDragged: false);
+    length = _extreme((tr) => tr.start + tr.length,
+        max: true, onlyDragged: false, ifNone: BeatFraction(1, 1));
   }
 
   void cloneSelectedPatterns() {
