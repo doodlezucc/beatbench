@@ -7,16 +7,16 @@ import 'generators/base.dart';
 import 'generators/drums.dart';
 import 'history.dart';
 import 'midi_typing.dart';
+import 'pattern_view.dart';
 import 'timeline_piano_roll.dart';
 import 'windows.dart';
 
 class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
   final Timeline timeline = Timeline()..visible = true;
-  final PianoRoll pianoRoll = PianoRoll()
-    ..position = Point(50, 10)
-    ..size = Point(700, 500)
-    ..visible = true;
+
+  PianoRoll _pianoRoll;
+  PianoRoll get pianoRoll => _pianoRoll;
 
   Window _currentWindow;
   Window get currentWindow => _currentWindow;
@@ -31,7 +31,10 @@ class Project {
     timeline.onNewTempo();
   }
 
-  Generator get selectedGenerator => timeline.generators[0];
+  final GeneratorList _generators = GeneratorList();
+  GeneratorList get generators => _generators;
+
+  final PatternView patternView = PatternView();
 
   static Project _instance;
   static Project get instance => _instance;
@@ -39,6 +42,11 @@ class Project {
   Project() {
     _instance = this;
     _init();
+
+    _pianoRoll = PianoRoll()
+      ..position = Point(50, 10)
+      ..size = Point(700, 500)
+      ..visible = true;
   }
 
   void createDemo() async {
@@ -117,7 +125,7 @@ class Project {
         }
         var info = MidiTyping.generateNoteInfo(e.key, true);
         if (info != null) {
-          selectedGenerator.noteEvent(
+          generators.selected.noteEvent(
               info, audioAssembler.ctx.currentTime, NoteSignal.NOTE_START);
         }
       }
@@ -125,7 +133,7 @@ class Project {
     document.onKeyUp.listen((e) {
       var info = MidiTyping.getExistingNoteInfo(e.key);
       if (info != null) {
-        selectedGenerator.noteEvent(
+        generators.selected.noteEvent(
             info, audioAssembler.ctx.currentTime, NoteSignal.NOTE_END);
       }
     });

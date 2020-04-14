@@ -1,5 +1,7 @@
 import 'dart:html';
 
+import 'package:meta/meta.dart';
+
 class CssPxVar {
   final String name;
   double _value;
@@ -30,3 +32,15 @@ class CssPxVar {
 }
 
 String cssCalc(num m, CssPxVar v) => 'calc($m * var(${v.name}))';
+
+T extreme<I, T>(Iterable<I> items, dynamic Function(I i) variable,
+    {@required bool max}) {
+  var out = variable(items.first);
+  for (var i = 1; i < items.length; i++) {
+    var v = variable(items.elementAt(i));
+    if ((max && v > out) || (!max && v < out)) {
+      out = v;
+    }
+  }
+  return out;
+}

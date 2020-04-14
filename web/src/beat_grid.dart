@@ -11,13 +11,15 @@ class BeatGrid {
   final int _height = 4;
   final PatternData data;
   Drums drums;
+  PatternNotesComponent _comp;
 
   BeatGrid(this._e, this.drums)
-      : data = PatternData('Beat Grid', {0: PatternNotesComponent([])}) {
+      : data = PatternData('Beat Grid', {drums: PatternNotesComponent([])}) {
+    _comp = data.component(drums);
     _createGrid();
     data.listenToEdits((msg) {
       _e.querySelectorAll('.filled').classes.toggle('filled', false);
-      data.component(0).notes.forEach((n) {
+      data.component(drums).notes.forEach((n) {
         _e.children[_height - (n.coarsePitch - 60) - 1]
             .children[(4 * n.start.beats).round()].classes
             .toggle('filled', true);
@@ -53,14 +55,14 @@ class BeatGrid {
   void _setData(int x, int y, bool active, bool undoable) {
     if (active) {
       History.perform(
-          NotesComponentAction(data.component(0), true, [
+          NotesComponentAction(_comp, true, [
             _quickNote(x, y),
           ]),
           undoable);
     } else {
       History.perform(
-          NotesComponentAction(data.component(0), false, [
-            data.component(0).notes.singleWhere((n) =>
+          NotesComponentAction(_comp, false, [
+            _comp.notes.singleWhere((n) =>
                 n.start.numerator == x && n.coarsePitch == Note.octave(y, 5)),
           ]),
           undoable);
@@ -76,7 +78,7 @@ class BeatGrid {
       Note(pitch: Note.octave(y, 5), start: BeatFraction(x, 16));
 
   void swaggyBeat() {
-    History.perform(NotesComponentAction(data.component(0), true, <Note>[
+    History.perform(NotesComponentAction(_comp, true, <Note>[
       // Kick
       _quickNote(0, 0),
       _quickNote(3, 0),

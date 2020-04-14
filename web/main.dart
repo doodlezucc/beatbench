@@ -1,11 +1,9 @@
 import 'dart:html';
 
-import 'src/generators/oscillator/oscillator.dart';
 import 'src/project.dart';
 
 void main() {
   initStuff();
-  //generatorDemo();
   _listenToCssReload();
 }
 
@@ -19,12 +17,6 @@ void _listenToCssReload() {
 
 void _reloadCss() {
   querySelectorAll<LinkElement>('link').forEach((link) => link.href += '');
-}
-
-void generatorDemo() {
-  var project = Project();
-  project.timeline.generators
-      .add(Oscillator(project.audioAssembler.ctx)..interface.focus());
 }
 
 void initStuff() async {

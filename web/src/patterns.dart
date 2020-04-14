@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'generators/base.dart';
 import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
@@ -54,19 +55,20 @@ class NotesComponentAction extends AddRemoveAction<Note> {
 }
 
 class PatternData {
-  final Map<int, PatternNotesComponent> _genNotes = {};
-  Map<int, PatternNotesComponent> get genNotes => Map.unmodifiable(_genNotes);
+  final Map<Generator, PatternNotesComponent> _genNotes = {};
+  Map<Generator, PatternNotesComponent> get genNotes =>
+      Map.unmodifiable(_genNotes);
   String name;
 
-  PatternData(this.name, Map<int, PatternNotesComponent> genNotes) {
+  PatternData(this.name, Map<Generator, PatternNotesComponent> genNotes) {
     _genNotes.addAll(genNotes);
   }
 
-  PatternNotesComponent component(int gen) {
+  PatternNotesComponent component(Generator gen) {
     return _genNotes[gen];
   }
 
-  Map<int, PatternNotesComponent> notes() => Map.unmodifiable(_genNotes);
+  Map<Generator, PatternNotesComponent> notes() => Map.unmodifiable(_genNotes);
 
   BeatFraction length() {
     return _genNotes.values.fold(BeatFraction.washy(0), (v, n) {
