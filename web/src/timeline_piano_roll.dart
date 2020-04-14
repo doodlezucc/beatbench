@@ -269,8 +269,9 @@ abstract class _RollOrTimelineItem<T extends Transform> {
       }
     });
     _draggable = Draggable<T>(el, () => transform, (tr, pixelOff, ev) {
-      var xDiff =
-          BeatFraction((pixelOff.x / window.beatWidth.value).round(), 4);
+      var xDiff = BeatFraction.round(
+          pixelOff.x / window.beatWidth.value, window.gridSize);
+      print(xDiff);
       var minXDiff = window._extreme((tr) => tr.start, max: false) * -1;
       if (xDiff < minXDiff) {
         xDiff = minXDiff;
@@ -304,7 +305,8 @@ abstract class _RollOrTimelineItem<T extends Transform> {
       out,
       () => transform,
       (tr, off, ev) {
-        var diff = BeatFraction((off.x / window.beatWidth.value).round(), 4);
+        var diff =
+            BeatFraction.round(off.x / window.beatWidth.value, window.gridSize);
         var maxDiff =
             window._extreme((i) => i.length, max: false) - BeatFraction(1, 4);
         if (right) {
