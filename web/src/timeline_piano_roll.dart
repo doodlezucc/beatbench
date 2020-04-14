@@ -894,6 +894,7 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
     _items.clear();
     _items.addAll(_comp.notes.map(
         (n) => _PianoRollNote(this, n.start, n.length, n.info.coarsePitch)));
+    applyToComponent();
   }
 
   @override
