@@ -15,21 +15,6 @@ class PatternView extends Window with PlaybackBoxWindow {
   @override
   PlaybackBox get box => _box;
 
-  BeatFraction _length = BeatFraction(4, 4);
-  @override
-  BeatFraction get length => _length;
-  set length(BeatFraction l) {
-    var min = BeatFraction(4, 4);
-    if (l < min) l = min;
-    _length = l;
-    box.length = timeAt(l);
-    Project.instance.pianoRoll.drawOrientation();
-    box.thereAreChanges();
-    if (headPosition > length) {
-      headPosition = BeatFraction.washy(headPosition.beats % length.beats);
-    }
-  }
-
   PatternData _patternData;
   PatternData get patternData => _patternData;
   set patternData(PatternData patternData) {
@@ -83,7 +68,17 @@ class PatternView extends Window with PlaybackBoxWindow {
 
   @override
   void drawForeground(double ghost) {
-    Project.instance.pianoRoll.drawForeground(ghost);
+    Project.instance.pianoRoll.drawFg(headPosition.beats, ghost);
+  }
+
+  @override
+  void drawOrientation() {
+    Project.instance.pianoRoll.drawBg();
+  }
+
+  @override
+  void onHeadSet(BeatFraction head) {
+    Project.instance.pianoRoll.windowHeadSet(head);
   }
 }
 

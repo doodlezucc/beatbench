@@ -64,7 +64,7 @@ class Project {
       audioAssembler.run(timeline.box, timeline.timeAt(timeline.headPosition));
     } else {
       audioAssembler.run(
-          pianoRoll.box, pianoRoll.timeAt(pianoRoll.headPosition));
+          patternView.box, patternView.timeAt(patternView.headPosition));
     }
   }
 
