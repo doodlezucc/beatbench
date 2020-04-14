@@ -30,7 +30,6 @@ class Oscillator extends Generator {
 
   @override
   void noteEvent(NoteInfo info, double when, NoteSignal signal) {
-    //print('Received ${signal.noteOn} on ${info.coarsePitch}');
     if (_nodes.containsKey(info)) {
       _nodes[info].stop(when);
     }

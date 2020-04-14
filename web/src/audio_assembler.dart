@@ -100,8 +100,10 @@ class PlaybackBox {
         }
       }
     });
+    var smallValue = 0.0001;
     _cache.forEach((pn) {
-      var signal = pn.startInSeconds <= now && pn.endInSeconds > now
+      var signal = pn.startInSeconds <= now + smallValue &&
+              pn.endInSeconds > now + smallValue
           ? NoteSignal.NOTE_RESUME
           : NoteSignal.NOTE_END;
       //print('Refresh');
@@ -218,7 +220,8 @@ class PlaybackBox {
 
   bool _sendNoteEvent(PlaybackNote pn, double when, NoteSignal sig,
       {bool force = false}) {
-    //print('${pn.noteInfo.coarsePitch} / ${sig.noteOn}');
+    //var common = CommonPitch(pn.noteInfo.coarsePitch);
+    //print('${common.description} / ${sig.noteOn}');
     var key = _sentSignals.keys.firstWhere((n) => n == pn, orElse: () => null);
     if (key != null) {
       if (_sentSignals[key].sig.noteOn == sig.noteOn) return false;
