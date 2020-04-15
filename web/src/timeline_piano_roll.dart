@@ -80,7 +80,7 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
   _RollOrTimelineWindow(HtmlElement element, String title)
       : super(element, title) {
     _canvasBg = query('#background')
-      ..onClick.listen((e) {
+      ..onMouseDown.listen((e) {
         if (!(e.shiftKey || e.ctrlKey)) {
           if (selectedItems.isNotEmpty) {
             selectedItems.forEach((i) => i.selected = false);
@@ -814,7 +814,7 @@ class PatternTransform extends Transform {
 class TransformAction<T extends _RollOrTimelineItem> extends MultipleAction<T> {
   final dynamic diff;
 
-  TransformAction(Iterable<T> patterns, this.diff) : super(patterns);
+  TransformAction(Iterable<T> items, this.diff) : super(items);
 
   @override
   void doSingle(T object) {
@@ -902,8 +902,7 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   void reloadData() {
     _items.forEach((n) => n._dispose());
     _items.clear();
-    _items.addAll(_comp.notes.map(
-        (n) => _PianoRollNote(this, n.start, n.length, n.info.coarsePitch)));
+    _items.addAll(_comp.notes.map((n) => _PianoRollNote(this, n)));
     applyToComponent();
   }
 
@@ -962,10 +961,22 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
     component.notes = getNotes();
   }
 
+  void onNoteAction(Note note, bool create) {
+    if (create) {
+      var prn = _PianoRollNote(this, note)..selected;
+      _items.add(prn);
+      prn.selected = true;
+    } else {
+      var prn = _items.singleWhere((i) => i.note.matches(note));
+      prn._dispose();
+      _items.remove(prn);
+    }
+  }
+
   @override
   void _addItem(BeatFraction start, int y) {
-    _items.add(_PianoRollNote(this, start, BeatFraction(1, 4), toPitch(y)));
-    applyToComponent();
+    History.perform(NotesComponentAction(component, true,
+        [Note(pitch: toPitch(y), start: start, length: BeatFraction(1, 4))]));
   }
 
   static int toVisual(int pitch) => PianoRoll.pitchMax - pitch;
@@ -979,8 +990,7 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
   SpanElement span;
   Note note;
 
-  _PianoRollNote(
-      PianoRoll window, BeatFraction start, BeatFraction length, int pitch)
+  _PianoRollNote(PianoRoll window, this.note)
       : super(window.query('#notes').append(DivElement()..className = 'note'),
             window) {
     el
@@ -990,9 +1000,9 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
     _dragSystem.register(_draggable);
 
-    _silentStart(start);
-    _silentLength(length);
-    y = PianoRoll.toVisual(pitch);
+    _silentStart(note.start);
+    _silentLength(note.length);
+    y = PianoRoll.toVisual(note.coarsePitch);
   }
 
   void _dispose() {

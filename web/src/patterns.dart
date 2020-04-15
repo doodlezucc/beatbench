@@ -4,6 +4,8 @@ import 'generators/base.dart';
 import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
+import 'project.dart';
+import 'timeline_piano_roll.dart';
 import 'utils.dart';
 
 abstract class PatternDataComponent {
@@ -42,14 +44,22 @@ class NotesComponentAction extends AddRemoveAction<Note> {
   NotesComponentAction(this.component, bool forward, Iterable<Note> notes)
       : super(forward, notes);
 
+  PianoRoll get _pianoRoll => Project.instance.pianoRoll;
+
   @override
   void doSingle(Note object) {
+    if (_pianoRoll.component == component) {
+      _pianoRoll.onNoteAction(object, true);
+    }
     component._notes.add(object);
   }
 
   @override
   void undoSingle(Note object) {
-    component._notes.remove(object);
+    if (_pianoRoll.component == component) {
+      _pianoRoll.onNoteAction(object, false);
+    }
+    component._notes.removeWhere(object.matches);
   }
 
   @override

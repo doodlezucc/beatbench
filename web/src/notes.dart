@@ -44,8 +44,8 @@ class Note {
   final NoteInfo info;
   int get coarsePitch => info.coarsePitch;
 
-  BeatFraction start;
-  BeatFraction length;
+  final BeatFraction start;
+  final BeatFraction length;
 
   BeatFraction get end => start + length;
 
@@ -61,6 +61,11 @@ class Note {
   Note cloneKeepInfo({BeatFraction start, BeatFraction length}) {
     return Note._withInfo(info, start ?? this.start, length ?? this.length);
   }
+
+  bool matches(Note other) =>
+      coarsePitch == other.coarsePitch &&
+      start == other.start &&
+      length == other.length;
 
   static const int C = 0;
   static const int D = 2;
