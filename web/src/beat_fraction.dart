@@ -16,6 +16,10 @@ class BeatFraction {
       : this((beats * gridSize.numerator * gridSize.denominator / 4).round(),
             gridSize.denominator);
 
+  BeatFraction.floor(double beats, BeatFraction gridSize)
+      : this((beats * gridSize.numerator * gridSize.denominator / 4).floor(),
+            gridSize.denominator);
+
   BeatFraction operator +(BeatFraction other) {
     if (isWashy || other.isWashy) {
       return BeatFraction.washy(beats + other.beats);

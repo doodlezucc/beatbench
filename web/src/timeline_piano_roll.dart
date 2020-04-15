@@ -82,9 +82,12 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     _canvasBg = query('#background')
       ..onClick.listen((e) {
         if (!(e.shiftKey || e.ctrlKey)) {
-          selectedItems.forEach((i) => i.selected = false);
-          _addItem(BeatFraction.round(e.offset.x / beatWidth.value, gridSize),
-              ((e.offset.y - railHeight.value) / _cellHeight.value).floor());
+          if (selectedItems.isNotEmpty) {
+            selectedItems.forEach((i) => i.selected = false);
+          } else {
+            _addItem(BeatFraction.floor(e.offset.x / beatWidth.value, gridSize),
+                ((e.offset.y - railHeight.value) / _cellHeight.value).floor());
+          }
         }
       });
     _canvasFg = query('#foreground');
