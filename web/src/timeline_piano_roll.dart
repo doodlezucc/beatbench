@@ -81,7 +81,11 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
       : super(element, title) {
     _canvasBg = query('#background')
       ..onClick.listen((e) {
-        selectedItems.forEach((i) => i.selected = false);
+        if (!(e.shiftKey || e.ctrlKey)) {
+          selectedItems.forEach((i) => i.selected = false);
+          _addItem(BeatFraction.round(e.offset.x / beatWidth.value, gridSize),
+              ((e.offset.y - railHeight.value) / _cellHeight.value).floor());
+        }
       });
     _canvasFg = query('#foreground');
     drawBg();
@@ -103,6 +107,8 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
     });
   }
 
+  void _addItem(BeatFraction start, int y);
+
   void _onScroll() {
     //e.style.top = (-query('#right').scrollTop).toString() + 'px';
     query('#head').parent.style.left =
@@ -113,13 +119,9 @@ abstract class _RollOrTimelineWindow<I extends _RollOrTimelineItem>
   PlaybackBoxWindow get bw;
 
   void _playheadFromPixels(MouseEvent e) {
-    var m = (4 / gridSize.beats).round();
-    bw.headPosition = BeatFraction(
-        ((m / 4) *
-                (e.page.x - query('.rail').documentOffset.x) /
-                beatWidth.value)
-            .floor(),
-        m);
+    bw.headPosition = BeatFraction.round(
+        (e.page.x - query('.rail').documentOffset.x) / beatWidth.value,
+        gridSize);
   }
 
   T _extreme<T>(dynamic Function(Transform tr) variable,
@@ -568,6 +570,11 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance>
 
   @override
   void onHeadSet(BeatFraction head) => windowHeadSet(head);
+
+  @override
+  void _addItem(BeatFraction start, int y) {
+    // TODO: implement _addItem
+  }
 }
 
 class PatternsCreationAction extends AddRemoveAction<_PatternInstance> {
@@ -951,6 +958,15 @@ class PianoRoll extends _RollOrTimelineWindow<_PianoRollNote> {
   void applyToComponent() {
     component.notes = getNotes();
   }
+
+  @override
+  void _addItem(BeatFraction start, int y) {
+    _items.add(_PianoRollNote(this, start, BeatFraction(1, 4), toPitch(y)));
+    applyToComponent();
+  }
+
+  static int toVisual(int pitch) => PianoRoll.pitchMax - pitch;
+  static int toPitch(int visual) => PianoRoll.pitchMax - visual;
 }
 
 class _PianoRollNote extends _RollOrTimelineItem<Transform> {
@@ -973,16 +989,17 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
     _silentStart(start);
     _silentLength(length);
-    y = toVisual(pitch);
+    y = PianoRoll.toVisual(pitch);
   }
 
   void _dispose() {
     el.remove();
   }
 
+  int get pitch => PianoRoll.toPitch(y);
+
   @override
   void _onUpdate() {
-    var pitch = toPitch(y);
     if (note != null && note.coarsePitch == pitch) {
       note = note.cloneKeepInfo(start: start, length: length);
     } else {
@@ -1000,12 +1017,9 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
     }
   }
 
-  int toVisual(int pitch) => PianoRoll.pitchMax - pitch;
-  int toPitch(int visual) => PianoRoll.pitchMax - visual;
-
   @override
   void _onYSet() {
     el.style.top = cssCalc(y, PianoRoll.pixelsPerKey);
-    span.text = CommonPitch(toPitch(y)).description;
+    span.text = CommonPitch(pitch).description;
   }
 }
