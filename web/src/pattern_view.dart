@@ -47,13 +47,13 @@ class PatternView extends Window with PlaybackBoxWindow {
   Iterable<PlaybackNote> notesCache() {
     var _cache = <PlaybackNote>[];
     patternData.genNotes.forEach((gen, comp) {
-      comp.notesWithSwing.forEach((note) {
-        var shift = BeatFraction.washy(0);
+      var swing = comp.swing;
+      comp.notes.forEach((note) {
         _cache.add(PlaybackNote(
-          noteInfo: note.info,
+          noteInfo: note.createInfo(),
           generator: gen,
-          startInSeconds: timeAt(note.start + shift),
-          endInSeconds: timeAt(note.end + shift),
+          startInSeconds: timeAt(note.start.swingify(swing)),
+          endInSeconds: timeAt(note.end.swingify(swing)),
         ));
       });
     });

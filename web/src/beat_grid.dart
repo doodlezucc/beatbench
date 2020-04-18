@@ -20,7 +20,7 @@ class BeatGrid {
     data.listenToEdits((msg) {
       _e.querySelectorAll('.filled').classes.toggle('filled', false);
       data.component(drums).notes.forEach((n) {
-        _e.children[_height - (n.coarsePitch - 60) - 1]
+        _e.children[_height - (n.pitch - 60) - 1]
             .children[(4 * n.start.beats).round()].classes
             .toggle('filled', true);
       });
@@ -62,8 +62,8 @@ class BeatGrid {
     } else {
       History.perform(
           NotesComponentAction(_comp, false, [
-            _comp.notes.singleWhere((n) =>
-                n.start.numerator == x && n.coarsePitch == Note.octave(y, 5)),
+            _comp.notes.singleWhere(
+                (n) => n.start.numerator == x && n.pitch == Note.octave(y, 5)),
           ]),
           undoable);
     }

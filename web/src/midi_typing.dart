@@ -9,7 +9,7 @@ class MidiTyping {
     }
     var pitch = _getPitch(key, qwertz);
     if (pitch != null) {
-      var info = NoteInfo(Note.octave(pitch, 4));
+      var info = NoteInfo(Note.octave(pitch, 4), 1);
       _infos[key] = info;
       return info;
     }

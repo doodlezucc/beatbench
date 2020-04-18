@@ -382,17 +382,21 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance>
 
       var notes = pat.data.notes();
       notes.forEach((gen, patNotesComp) {
-        patNotesComp.notesWithSwing.forEach((note) {
-          var noteStartBeats = note.start.beats - pat.contentShift.beats;
+        var swing = patNotesComp.swing;
+        patNotesComp.notes.forEach((note) {
+          var noteStart = note.start.swingify(swing);
+          var noteStartBeats = noteStart.beats - pat.contentShift.beats;
+
           var noteEndBeats = note.end.beats - pat.contentShift.beats;
+
           if (noteEndBeats >= 0 && noteStartBeats < pat.length.beats) {
             // note must play at SOME point...
             var shift = pat.start - pat.contentShift;
             _cache.add(TimelinePlaybackNote(
-              noteInfo: note.info,
+              noteInfo: note.createInfo(),
               generator: gen,
               startInSeconds: (noteStartBeats > 0)
-                  ? timeAt(note.start + shift)
+                  ? timeAt(noteStart + shift)
                   : patternStartTime,
               endInSeconds: (noteEndBeats < pat.length.beats)
                   ? timeAt(note.end + shift)
@@ -708,8 +712,8 @@ class _PatternInstance extends _RollOrTimelineItem<PatternTransform> {
     var maxPitch = 0;
     data.genNotes.values.forEach((component) {
       component.notes.forEach((n) {
-        if (n.coarsePitch > maxPitch) maxPitch = n.coarsePitch;
-        if (n.coarsePitch < minPitch) minPitch = n.coarsePitch;
+        if (n.pitch > maxPitch) maxPitch = n.pitch;
+        if (n.pitch < minPitch) minPitch = n.pitch;
       });
     });
 
@@ -723,7 +727,7 @@ class _PatternInstance extends _RollOrTimelineItem<PatternTransform> {
         ctx.fillRect(
             Timeline.pixelsPerBeat.value * (n.start - contentShift).beats,
             Timeline.pixelsPerTrack.value -
-                (n.coarsePitch - minPitch + 1) * noteHeight,
+                (n.pitch - minPitch + 1) * noteHeight,
             Timeline.pixelsPerBeat.value * n.length.beats - 1,
             noteHeight);
       });
@@ -988,7 +992,7 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
   static final DragSystem<Transform> _dragSystem = DragSystem();
   SpanElement span;
-  Note note;
+  final Note note;
 
   _PianoRollNote(PianoRoll window, this.note)
       : super(window.query('#notes').append(DivElement()..className = 'note'),
@@ -1002,7 +1006,7 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
     _silentStart(note.start);
     _silentLength(note.length);
-    y = PianoRoll.toVisual(note.coarsePitch);
+    y = PianoRoll.toVisual(note.pitch);
   }
 
   void _dispose() {
@@ -1013,11 +1017,9 @@ class _PianoRollNote extends _RollOrTimelineItem<Transform> {
 
   @override
   void _onUpdate() {
-    if (note != null && note.coarsePitch == pitch) {
-      note = note.cloneKeepInfo(start: start, length: length);
-    } else {
-      note = Note(pitch: pitch, start: start, length: length);
-    }
+    note.start = start;
+    note.length = length;
+    note.pitch = pitch;
 
     pianoRoll.applyToComponent();
 

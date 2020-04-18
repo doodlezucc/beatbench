@@ -2,12 +2,6 @@ import 'package:meta/meta.dart';
 
 import 'beat_fraction.dart';
 
-class Pitched {
-  int coarsePitch;
-
-  Pitched(this.coarsePitch);
-}
-
 class CommonPitch {
   static const _keyNames = [
     'C',
@@ -34,38 +28,32 @@ class CommonPitch {
   CommonPitch(this.pitch) : mod = pitch % 12;
 }
 
-class NoteInfo extends Pitched {
-  double velocity;
+class NoteInfo {
+  final int coarsePitch;
+  final double velocity;
 
-  NoteInfo(int coarsePitch) : super(coarsePitch);
+  const NoteInfo(this.coarsePitch, this.velocity);
 }
 
 class Note {
-  final NoteInfo info;
-  int get coarsePitch => info.coarsePitch;
+  int pitch;
 
-  final BeatFraction start;
-  final BeatFraction length;
+  BeatFraction start;
+  BeatFraction length;
 
   BeatFraction get end => start + length;
 
   static int octave(int tone, int octave) => tone + octave * 12;
 
   Note(
-      {@required int pitch,
+      {@required this.pitch,
       this.start = const BeatFraction(0, 4),
-      this.length = const BeatFraction(1, 16)})
-      : info = NoteInfo(pitch);
-  Note._withInfo(this.info, this.start, this.length);
-
-  Note cloneKeepInfo({BeatFraction start, BeatFraction length}) {
-    return Note._withInfo(info, start ?? this.start, length ?? this.length);
-  }
+      this.length = const BeatFraction(1, 16)});
 
   bool matches(Note other) =>
-      coarsePitch == other.coarsePitch &&
-      start == other.start &&
-      length == other.length;
+      pitch == other.pitch && start == other.start && length == other.length;
+
+  NoteInfo createInfo() => NoteInfo(pitch, 1);
 
   static const int C = 0;
   static const int D = 2;
