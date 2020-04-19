@@ -233,7 +233,12 @@ class PlaybackBox {
       }
     } else if (!sig.noteOn) return false;
     _sentSignals[key ?? pn] = _SentSignal(sig, when);
-    pn.generator.noteEvent(pn.noteInfo, when, sig);
+
+    if (sig.noteOn) {
+      pn.generator.noteStart(pn.noteInfo, when, sig.isResumed);
+    } else {
+      pn.generator.noteEnd(pn.noteInfo.coarsePitch, when);
+    }
     //print('sent');
     return true;
   }

@@ -95,19 +95,47 @@ abstract class GeneratorInterface<G extends Generator> extends Window {
   Element query(String selectors) => element.querySelector(selectors);
 }
 
-abstract class Generator {
-  final GainNode node;
-  final GeneratorInterface _interface;
-  GeneratorInterface get visible => _interface.visible ? _interface : null;
-  GeneratorInterface get interface => _interface;
+abstract class Generator<T extends NoteNodeChain> extends ContextDependent
+    with NodeChain {
+  final GainNode _gain;
+  final List<T> _playingNodes = [];
+  Iterable<T> get playingNodes => _playingNodes;
 
-  Generator(AudioContext ctx, GeneratorInterface interface)
-      : node = ctx.createGain()..connectNode(ctx.destination),
-        _interface = interface {
+  final GeneratorInterface _interface;
+  GeneratorInterface get interface => _interface;
+  GeneratorInterface get visible => _interface.visible ? _interface : null;
+
+  Generator(BaseAudioContext ctx, GeneratorInterface interface)
+      : _interface = interface,
+        _gain = ctx.createGain()..connectNode(ctx.destination),
+        super(ctx) {
     _interface?._init(this);
+    chainEnd.connectNode(_gain);
   }
 
-  void noteEvent(NoteInfo note, double when, NoteSignal signal);
+  T _getNode(int pitch) => _playingNodes
+      .firstWhere((node) => node.info.coarsePitch == pitch, orElse: () => null);
+
+  void noteStart(NoteInfo note, double when, bool resume) {
+    noteEnd(note.coarsePitch, when);
+    var node = createNode(note, resume);
+    if (node != null) {
+      node.chainEnd.connectNode(chainStart);
+      _playingNodes.add(node);
+      node.start(when);
+    }
+  }
+
+  void noteEnd(int pitch, double when) {
+    var playingNode = _getNode(pitch);
+    if (playingNode != null) {
+      playingNode.stop(when);
+      _playingNodes.remove(playingNode);
+    }
+  }
+
+  T createNode(NoteInfo info, bool resume);
+
   String get name;
 }
 
@@ -120,4 +148,26 @@ class NoteSignal {
   static const NoteSignal NOTE_START = NoteSignal(true, false);
   static const NoteSignal NOTE_RESUME = NoteSignal(true, true);
   static const NoteSignal NOTE_END = NoteSignal(false, false);
+}
+
+// Container of connected AudioNodes
+mixin NodeChain {
+  AudioNode get chainStart => chain.first;
+  AudioNode get chainEnd => chain.last;
+
+  List<AudioNode> get chain;
+}
+
+abstract class ContextDependent {
+  final BaseAudioContext ctx;
+  ContextDependent(this.ctx);
+}
+
+abstract class NoteNodeChain extends ContextDependent with NodeChain {
+  final NoteInfo info;
+
+  NoteNodeChain(this.info, BaseAudioContext ctx) : super(ctx);
+
+  void start(double when);
+  void stop(double when);
 }

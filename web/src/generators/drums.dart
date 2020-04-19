@@ -8,26 +8,48 @@ import '../notes.dart';
 import 'base.dart';
 
 class Drums extends Generator {
-  Map<int, DrumSample> drumSamples;
+  final GainNode gain;
+  final Map<int, DrumSample> drumSamples;
 
-  Drums(this.drumSamples, {@required AudioContext ctx}) : super(ctx, null) {
-    node.gain.value = 0.5;
-  }
-
-  @override
-  void noteEvent(NoteInfo note, double when, NoteSignal signal) {
-    if (signal == NoteSignal.NOTE_START) {
-      if (drumSamples.containsKey(note.coarsePitch)) {
-        node.context.createBufferSource()
-          ..connectNode(node)
-          ..buffer = drumSamples[note.coarsePitch].buffer
-          ..start(when);
-      }
-    }
-  }
+  Drums(this.drumSamples, BaseAudioContext ctx)
+      : gain = ctx.createGain()..gain.value = 0.5,
+        super(ctx, null);
 
   @override
   String get name => 'Fragile Drums';
+
+  @override
+  NoteNodeChain createNode(NoteInfo info, bool resume) {
+    if (resume) {
+      return null; // Don't play a sound when note is resumed
+    }
+    if (drumSamples.containsKey(info.coarsePitch)) {
+      return _DrumPlayingNode(info, ctx, drumSamples[info.coarsePitch].buffer);
+    }
+    return null;
+  }
+
+  @override
+  List<AudioNode> get chain => [gain];
+}
+
+class _DrumPlayingNode extends NoteNodeChain {
+  final AudioBufferSourceNode source;
+
+  _DrumPlayingNode(NoteInfo info, BaseAudioContext ctx, AudioBuffer buffer)
+      : source = ctx.createBufferSource()..buffer = buffer,
+        super(info, ctx);
+
+  @override
+  void start(double when) {
+    source.start(when);
+  }
+
+  @override
+  void stop(double when) {}
+
+  @override
+  List<AudioNode> get chain => [source];
 }
 
 class DrumSample {
@@ -51,7 +73,7 @@ class PresetDrums {
             name: 'Open Hihat',
             path: 'Cymatics - Lofi Open Hihat 2.wav',
             ctx: ctx),
-      }, ctx: ctx);
+      }, ctx);
 
   static Future<DrumSample> load(
       {@required AudioContext ctx, String name, @required String path}) async {

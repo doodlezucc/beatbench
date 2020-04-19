@@ -458,7 +458,7 @@ class Timeline extends _RollOrTimelineWindow<_PatternInstance>
 
   void demoFromBeatGrid(BeatGrid grid) {
     var drums = grid.drums;
-    var osc = Oscillator(grid.drums.node.context);
+    var osc = Oscillator(grid.drums.gain.context);
     History.perform(GeneratorCreationAction(true, [drums, osc]));
     var gridPatternData = grid.data;
     var crashPatternData = PatternData(

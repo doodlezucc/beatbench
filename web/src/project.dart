@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'audio_assembler.dart';
 import 'beat_grid.dart';
-import 'generators/base.dart';
 import 'generators/drums.dart';
 import 'history.dart';
 import 'midi_typing.dart';
@@ -123,19 +122,13 @@ class Project {
             e.preventDefault();
             return togglePlayPause();
         }
-        var info = MidiTyping.generateNoteInfo(e.key, true);
-        if (info != null) {
-          generators.selected.noteEvent(
-              info, audioAssembler.ctx.currentTime, NoteSignal.NOTE_START);
-        }
+        MidiTyping.sendNoteEvent(e.key, true, true, generators.selected,
+            audioAssembler.ctx.currentTime);
       }
     });
     document.onKeyUp.listen((e) {
-      var info = MidiTyping.getExistingNoteInfo(e.key);
-      if (info != null) {
-        generators.selected.noteEvent(
-            info, audioAssembler.ctx.currentTime, NoteSignal.NOTE_END);
-      }
+      MidiTyping.sendNoteEvent(e.key, true, false, generators.selected,
+          audioAssembler.ctx.currentTime);
     });
   }
 }

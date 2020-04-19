@@ -5,8 +5,8 @@ import 'dart:web_audio';
 import '../../notes.dart';
 import '../base.dart';
 
-class Oscillator extends Generator {
-  final Map<NoteInfo, OscillatorNode> _nodes = {};
+class Oscillator extends Generator<_OscNoteNode> {
+  final GainNode gain;
   static const shapeTypes = ['sine', 'square', 'sawtooth', 'triangle'];
 
   @override
@@ -16,36 +16,55 @@ class Oscillator extends Generator {
   String get type => _type;
   void setType(int typeIndex, [bool isUserInteraction = false]) {
     _type = shapeTypes[typeIndex];
-    _nodes.forEach((note, node) {
-      node.type = _type;
+    playingNodes.forEach((node) {
+      node.oscNode.type = _type;
     });
     if (!isUserInteraction) {
       visible?.shapeSelect?.selectedIndex = typeIndex;
     }
   }
 
-  Oscillator(AudioContext ctx) : super(ctx, _OscillatorInterface()) {
-    node.gain.value = 0.1;
-  }
-
-  @override
-  void noteEvent(NoteInfo info, double when, NoteSignal signal) {
-    if (_nodes.containsKey(info)) {
-      _nodes[info].stop(when);
-    }
-    if (signal.noteOn) {
-      var freq = 440 * pow(2, (info.coarsePitch - 69) / 12);
-      //print('Frequency: $freq');
-      _nodes[info] = node.context.createOscillator()
-        ..type = type
-        ..frequency.value = freq
-        ..connectNode(node)
-        ..start2(when);
-    }
+  Oscillator(BaseAudioContext ctx)
+      : gain = ctx.createGain(),
+        super(ctx, _OscillatorInterface()) {
+    gain.gain.value = 0.1;
   }
 
   @override
   String get name => 'My Little Cheap Oscillator';
+
+  @override
+  List<AudioNode> get chain => [gain];
+
+  @override
+  _OscNoteNode createNode(NoteInfo note, bool resume) =>
+      _OscNoteNode(this, note, ctx);
+}
+
+class _OscNoteNode extends NoteNodeChain {
+  final OscillatorNode oscNode;
+
+  _OscNoteNode(Oscillator osc, NoteInfo info, BaseAudioContext ctx)
+      : oscNode = ctx.createOscillator(),
+        super(info, ctx) {
+    var freq = 440 * pow(2, (info.coarsePitch - 69) / 12);
+    oscNode
+      ..type = osc.type
+      ..frequency.value = freq;
+  }
+
+  @override
+  List<AudioNode> get chain => [oscNode];
+
+  @override
+  void start(double when) {
+    oscNode.start2(when);
+  }
+
+  @override
+  void stop(double when) {
+    oscNode.stop(when);
+  }
 }
 
 class _OscillatorInterface extends GeneratorInterface<Oscillator> {

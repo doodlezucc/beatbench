@@ -1,25 +1,24 @@
+import 'generators/base.dart';
 import 'notes.dart';
 
 class MidiTyping {
-  static final Map<String, NoteInfo> _infos = {};
+  static final List<int> _playingPitches = [];
 
-  static NoteInfo generateNoteInfo(String key, bool qwertz) {
-    if (_infos.containsKey(key)) {
-      return null;
-    }
+  static void sendNoteEvent(
+      String key, bool qwertz, bool start, Generator generator, double when) {
     var pitch = _getPitch(key, qwertz);
-    if (pitch != null) {
-      var info = NoteInfo(Note.octave(pitch, 4), 1);
-      _infos[key] = info;
-      return info;
-    }
-    return null;
-  }
+    if (pitch == null) return;
 
-  static NoteInfo getExistingNoteInfo(String key) {
-    var info = _infos[key];
-    _infos.remove(key);
-    return info;
+    pitch += 4 * 12;
+
+    if (start) {
+      if (_playingPitches.contains(pitch)) return;
+      generator.noteStart(NoteInfo(pitch, 1), when, false);
+      _playingPitches.add(pitch);
+    } else {
+      _playingPitches.remove(pitch);
+      generator.noteEnd(pitch, when);
+    }
   }
 
   static int _getPitch(String key, bool qwertz) {
