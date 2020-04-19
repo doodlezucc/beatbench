@@ -99,7 +99,7 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
     with NodeChain {
   final GainNode _gain;
   final List<T> _playingNodes = [];
-  Iterable<T> get playingNodes => _playingNodes;
+  Iterable<T> get playingNodes => _playingNodes.toList(growable: false);
 
   final GeneratorInterface _interface;
   GeneratorInterface get interface => _interface;
@@ -137,17 +137,6 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
   T createNode(NoteInfo info, bool resume);
 
   String get name;
-}
-
-class NoteSignal {
-  final bool noteOn;
-  final bool isResumed;
-
-  const NoteSignal(this.noteOn, this.isResumed);
-
-  static const NoteSignal NOTE_START = NoteSignal(true, false);
-  static const NoteSignal NOTE_RESUME = NoteSignal(true, true);
-  static const NoteSignal NOTE_END = NoteSignal(false, false);
 }
 
 // Container of connected AudioNodes

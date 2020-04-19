@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 
 import 'generators/base.dart';
 import 'notes.dart';
+import 'project.dart';
 
 class Specs {
   final int sampleRate = 44100;
@@ -34,13 +35,6 @@ class AudioAssembler {
   }
 }
 
-class _SentSignal {
-  final NoteSignal sig;
-  final double time;
-
-  _SentSignal(this.sig, this.time);
-}
-
 class PlaybackBox {
   final List<PlaybackNote> _cache = [];
 
@@ -51,7 +45,6 @@ class PlaybackBox {
   Timer _videoTimer;
   AudioContext _ctx;
   bool _running = false;
-  final Map<PlaybackNote, _SentSignal> _sentSignals = {};
   bool _shouldUpdateCache = true;
 
   double _length = 1;
@@ -92,30 +85,41 @@ class PlaybackBox {
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     var now = time % length;
 
-    _sentSignals.forEach((pn, sentSig) {
-      if (sentSig.sig.noteOn) {
-        if (!_cache.contains(pn)) {
-          // Note is still playing although it doesn't exist... dewit.
-          _sendNoteEvent(pn, _ctx.currentTime, NoteSignal.NOTE_END);
-        }
-      }
-    });
+    var idealPitchesPlaying = {for (var g in generators) g: <NoteInfo>[]};
+
     var smallValue = 0.0001;
     _cache.forEach((pn) {
-      var signal = pn.startInSeconds <= now + smallValue &&
-              pn.endInSeconds > now + smallValue
-          ? NoteSignal.NOTE_RESUME
-          : NoteSignal.NOTE_END;
-      //print('Refresh');
-      _sendNoteEvent(pn, _ctx.currentTime, signal);
+      if (pn.startInSeconds <= now + smallValue &&
+          pn.endInSeconds > now + smallValue) {
+        idealPitchesPlaying[pn.generator].add(pn.noteInfo);
+      }
+    });
+
+    generators.forEach((generator) {
+      // Stop playing notes which should not play
+      generator.playingNodes.forEach((playingNoteNode) {
+        if (!idealPitchesPlaying[generator].any(
+            (info) => info.coarsePitch == playingNoteNode.info.coarsePitch)) {
+          generator.noteEnd(playingNoteNode.info.coarsePitch, _ctx.currentTime);
+        }
+      });
+      // Start notes which should play
+      idealPitchesPlaying[generator].forEach((info) {
+        if (!generator.playingNodes
+            .any((node) => node.info.coarsePitch == info.coarsePitch)) {
+          generator.noteStart(info, _ctx.currentTime, true);
+        }
+      });
     });
   }
 
+  Iterable<Generator> get generators => Project.instance.generators.list;
+
   void _sendStopNotes() {
-    _sentSignals.forEach((pn, sig) {
-      if (sig.sig.noteOn) {
-        _sendNoteEvent(pn, _ctx.currentTime, NoteSignal.NOTE_END, force: true);
-      }
+    generators.forEach((generator) {
+      generator.playingNodes.forEach((playingNoteNode) {
+        generator.noteEnd(playingNoteNode.info.coarsePitch, _ctx.currentTime);
+      });
     });
   }
 
@@ -180,7 +184,6 @@ class PlaybackBox {
     _videoTimer.cancel();
 
     _sendStopNotes();
-    _sentSignals.clear();
 
     if (onStop != null) onStop();
   }
@@ -218,24 +221,12 @@ class PlaybackBox {
     }
   }
 
-  bool _sendNoteEvent(PlaybackNote pn, double when, NoteSignal sig,
-      {bool force = false}) {
-    //var common = CommonPitch(pn.noteInfo.coarsePitch);
-    //print('${common.description} / ${sig.noteOn}');
-    var key = _sentSignals.keys.firstWhere((n) => n == pn, orElse: () => null);
-    if (key != null) {
-      if (_sentSignals[key].sig.noteOn == sig.noteOn) return false;
-      if (when < _sentSignals[key].time) {
-        if (force) {
-          return _sendNoteEvent(pn, _sentSignals[key].time, sig);
-        }
-        return false;
-      }
-    } else if (!sig.noteOn) return false;
-    _sentSignals[key ?? pn] = _SentSignal(sig, when);
-
-    if (sig.noteOn) {
-      pn.generator.noteStart(pn.noteInfo, when, sig.isResumed);
+  bool _sendNoteEvent(PlaybackNote pn, double when, bool noteOn,
+      {bool force = false, bool isResumed = false}) {
+    var common = CommonPitch(pn.noteInfo.coarsePitch);
+    print('${common.description} / ${noteOn}');
+    if (noteOn) {
+      pn.generator.noteStart(pn.noteInfo, when, isResumed);
     } else {
       pn.generator.noteEnd(pn.noteInfo.coarsePitch, when);
     }
@@ -252,10 +243,10 @@ class PlaybackBox {
 
     _cache.forEach((pn) {
       if (pn.startInSeconds >= from && pn.startInSeconds < to) {
-        _sendNoteEvent(pn, when + pn.startInSeconds, NoteSignal.NOTE_START);
+        _sendNoteEvent(pn, when + pn.startInSeconds, true);
       }
       if (pn.endInSeconds >= from && pn.endInSeconds < to) {
-        _sendNoteEvent(pn, when + pn.endInSeconds, NoteSignal.NOTE_END);
+        _sendNoteEvent(pn, when + pn.endInSeconds, false);
       }
     });
   }

@@ -86,6 +86,8 @@ class GeneratorList {
   final List<Generator> _list = [];
   final int _selected = 1;
   Generator get selected => _list[_selected];
+
+  Iterable<Generator> get list => _list;
 }
 
 class GeneratorCreationAction extends AddRemoveAction<Generator> {
