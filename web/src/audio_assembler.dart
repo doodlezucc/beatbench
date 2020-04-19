@@ -100,14 +100,15 @@ class PlaybackBox {
       generator.playingNodes.forEach((playingNoteNode) {
         if (!idealPitchesPlaying[generator].any(
             (info) => info.coarsePitch == playingNoteNode.info.coarsePitch)) {
-          generator.noteEnd(playingNoteNode.info.coarsePitch, _ctx.currentTime);
+          _sendNoteOff(
+              generator, playingNoteNode.info.coarsePitch, _ctx.currentTime);
         }
       });
       // Start notes which should play
       idealPitchesPlaying[generator].forEach((info) {
         if (!generator.playingNodes
             .any((node) => node.info.coarsePitch == info.coarsePitch)) {
-          generator.noteStart(info, _ctx.currentTime, true);
+          _sendNoteOn(generator, info, _ctx.currentTime);
         }
       });
     });
@@ -221,15 +222,24 @@ class PlaybackBox {
     }
   }
 
-  bool _sendNoteEvent(PlaybackNote pn, double when, bool noteOn,
-      {bool force = false, bool isResumed = false}) {
-    var common = CommonPitch(pn.noteInfo.coarsePitch);
+  void _debugNoteEvent(Generator gen, int pitch, double when, bool noteOn,
+      {bool isResumed = false}) {
+    var common = CommonPitch(pitch);
     print('${common.description} / ${noteOn}');
-    if (noteOn) {
-      pn.generator.noteStart(pn.noteInfo, when, isResumed);
-    } else {
-      pn.generator.noteEnd(pn.noteInfo.coarsePitch, when);
-    }
+  }
+
+  bool _sendNoteOn(Generator gen, NoteInfo info, double when,
+      {bool isResumed = false}) {
+    _debugNoteEvent(gen, info.coarsePitch, when, true);
+    gen.noteStart(info, when, isResumed);
+    //print('sent');
+    return true;
+  }
+
+  bool _sendNoteOff(Generator gen, int pitch, double when,
+      {bool isResumed = false}) {
+    _debugNoteEvent(gen, pitch, when, false);
+    gen.noteEnd(pitch, when);
     //print('sent');
     return true;
   }
@@ -243,10 +253,11 @@ class PlaybackBox {
 
     _cache.forEach((pn) {
       if (pn.startInSeconds >= from && pn.startInSeconds < to) {
-        _sendNoteEvent(pn, when + pn.startInSeconds, true);
+        _sendNoteOn(pn.generator, pn.noteInfo, when + pn.startInSeconds);
       }
       if (pn.endInSeconds >= from && pn.endInSeconds < to) {
-        _sendNoteEvent(pn, when + pn.endInSeconds, false);
+        _sendNoteOff(
+            pn.generator, pn.noteInfo.coarsePitch, when + pn.endInSeconds);
       }
     });
   }
