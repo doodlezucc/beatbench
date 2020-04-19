@@ -6,9 +6,10 @@ import 'beat_grid.dart';
 import 'generators/drums.dart';
 import 'history.dart';
 import 'midi_typing.dart';
-import 'pattern_view.dart';
-import 'timeline_piano_roll.dart';
-import 'windows.dart';
+import 'windows/pattern_view.dart';
+import 'windows/piano_roll.dart';
+import 'windows/timeline.dart';
+import 'windows/windows.dart';
 
 class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
@@ -16,12 +17,6 @@ class Project {
 
   PianoRoll _pianoRoll;
   PianoRoll get pianoRoll => _pianoRoll;
-
-  Window _currentWindow;
-  Window get currentWindow => _currentWindow;
-  set currentWindow(Window currentWindow) {
-    _currentWindow = currentWindow;
-  }
 
   double _bpm;
   double get bpm => _bpm;
@@ -55,11 +50,11 @@ class Project {
     grid.swaggyBeat();
 
     timeline.demoFromBeatGrid(grid);
-    _currentWindow = timeline;
+    timeline.focus();
   }
 
   void play() {
-    if (currentWindow is Timeline) {
+    if (Window.focusedWindow is Timeline) {
       audioAssembler.run(timeline.box, timeline.timeAt(timeline.headPosition));
     } else {
       audioAssembler.run(
@@ -104,19 +99,19 @@ class Project {
             History.redo();
             return e.preventDefault();
           case 65: // a
-            if (_currentWindow.handleSelectAll()) e.preventDefault();
+            if (Window.focusedWindow.handleSelectAll()) e.preventDefault();
             return;
         }
       } else if (e.altKey) {
         switch (e.keyCode) {
           case 67: // c
-            if (_currentWindow.handleClone()) e.preventDefault();
+            if (Window.focusedWindow.handleClone()) e.preventDefault();
             return;
         }
       } else {
         switch (e.keyCode) {
           case 8: // backspace
-            if (_currentWindow.handleDelete()) e.preventDefault();
+            if (Window.focusedWindow.handleDelete()) e.preventDefault();
             return;
           case 32: // space
             e.preventDefault();

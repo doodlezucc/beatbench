@@ -5,7 +5,7 @@ import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart';
 
 import '../notes.dart';
-import '../windows.dart';
+import '../windows/windows.dart';
 
 abstract class GeneratorInterface<G extends Generator> extends Window {
   GeneratorInterface() : super(DivElement()..className = 'generator', '');

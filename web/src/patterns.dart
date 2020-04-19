@@ -5,8 +5,8 @@ import 'history.dart';
 import 'notes.dart';
 import 'beat_fraction.dart';
 import 'project.dart';
-import 'timeline_piano_roll.dart';
 import 'utils.dart';
+import 'windows/piano_roll.dart';
 
 abstract class PatternDataComponent {
   final StreamController _streamController = StreamController.broadcast(

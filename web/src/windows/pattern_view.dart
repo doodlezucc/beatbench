@@ -1,13 +1,13 @@
 import 'dart:html';
 
-import 'audio_assembler.dart';
-import 'beat_fraction.dart';
-import 'generators/base.dart';
-import 'history.dart';
-import 'patterns.dart';
-import 'project.dart';
-import 'timeline_piano_roll.dart';
-import 'utils.dart';
+import '../audio_assembler.dart';
+import '../beat_fraction.dart';
+import '../generators/base.dart';
+import '../history.dart';
+import '../patterns.dart';
+import '../project.dart';
+import '../utils.dart';
+import 'specific_windows.dart';
 import 'windows.dart';
 
 class PatternView extends Window with PlaybackBoxWindow {

@@ -1,9 +1,8 @@
 import 'dart:html';
 
-import 'project.dart';
-
 abstract class Window {
   static final List<Window> _stack = [];
+  static Window get focusedWindow => _stack.last;
 
   HtmlElement _element;
   HtmlElement get element => _element;
@@ -20,11 +19,10 @@ abstract class Window {
     }
   }
 
-  bool get isFocused => Project.instance.currentWindow == this;
+  bool get isFocused => focusedWindow == this;
   void focus() {
-    var old = Project.instance.currentWindow;
+    var old = _stack.last;
     if (old != null) old._setFocus(false);
-    Project.instance.currentWindow = this;
     if (visible) {
       _stack.remove(this);
       _stack.add(this);
