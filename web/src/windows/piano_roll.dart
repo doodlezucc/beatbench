@@ -116,13 +116,14 @@ class PianoRoll extends RollOrTimelineWindow<_PianoRollNote> {
 
   void onNoteAction(Note note, bool create) {
     if (create) {
-      var prn = _PianoRollNote(this, note)..selected;
+      var prn = _PianoRollNote(this, note);
       items.add(prn);
       prn.selected = true;
     } else {
       var prn = items.singleWhere((i) => i.note.matches(note));
       prn._dispose();
       items.remove(prn);
+      bw.box.thereAreChanges();
     }
   }
 
