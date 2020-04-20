@@ -128,6 +128,15 @@ class PianoRoll extends RollOrTimelineWindow<_PianoRollNote> {
   }
 
   @override
+  bool handleDelete() {
+    if (selectedItems.isNotEmpty) {
+      History.perform(NotesComponentAction(component, false,
+          selectedItems.map((pn) => pn.note).toList(growable: false)));
+    }
+    return true;
+  }
+
+  @override
   void addItem(BeatFraction start, int y) {
     History.perform(NotesComponentAction(component, true,
         [Note(pitch: toPitch(y), start: start, length: BeatFraction(1, 4))]));
