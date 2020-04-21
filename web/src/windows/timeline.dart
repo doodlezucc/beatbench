@@ -352,7 +352,7 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
     // diff minimum: -contentShiftOld
     var minDiff = timeline.extremeItem<BeatFraction>(
             (i) => (i as PatternTransform).contentShift,
-            max: true) *
+            max: false) *
         -1;
 
     if (diff < minDiff) diff = minDiff;
