@@ -132,9 +132,8 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
     var crashPatternData = PatternData(
       'Crash!',
       {
-        drums: PatternNotesComponent([
-          Note(pitch: Note.octave(Note.D + 1, 5)),
-        ])
+        drums: PatternNotesComponent()
+          ..addNote(pitch: Note.octave(Note.D + 1, 5))
       },
     );
     for (var i = 0; i < 4; i++) {
@@ -144,31 +143,29 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
 
     var chordPatternData = PatternData(
       'My Little Cheap Oscillator',
-      {
-        osc: PatternNotesComponent([
-          // Cmaj7
-          _demoChordNote(Note.C, 0),
-          _demoChordNote(Note.G, 0),
-          _demoChordNote(Note.E, 0),
-          _demoChordNote(Note.B, 0),
-          // E7
-          _demoChordNote(Note.D + 12, 1),
-          _demoChordNote(Note.E, 1),
-          _demoChordNote(Note.G + 1, 1),
-          _demoChordNote(Note.B, 1),
-          // Fmaj7
-          _demoChordNote(Note.F, 2),
-          _demoChordNote(Note.A, 2),
-          _demoChordNote(Note.C, 2),
-          _demoChordNote(Note.E + 12, 2),
-          // G7
-          _demoChordNote(Note.G, 3),
-          _demoChordNote(Note.B, 3),
-          _demoChordNote(Note.F, 3),
-          _demoChordNote(Note.D, 3),
-        ])
-      },
+      {osc: PatternNotesComponent()},
     );
+    var comp = chordPatternData.component(osc);
+    // Cmaj7
+    _demoChordNote(comp, Note.C, 0);
+    _demoChordNote(comp, Note.G, 0);
+    _demoChordNote(comp, Note.E, 0);
+    _demoChordNote(comp, Note.B, 0);
+    // E7
+    _demoChordNote(comp, Note.D + 12, 1);
+    _demoChordNote(comp, Note.E, 1);
+    _demoChordNote(comp, Note.G + 1, 1);
+    _demoChordNote(comp, Note.B, 1);
+    // Fmaj7
+    _demoChordNote(comp, Note.F, 2);
+    _demoChordNote(comp, Note.A, 2);
+    _demoChordNote(comp, Note.C, 2);
+    _demoChordNote(comp, Note.E + 12, 2);
+    // G7
+    _demoChordNote(comp, Note.G, 3);
+    _demoChordNote(comp, Note.B, 3);
+    _demoChordNote(comp, Note.F, 3);
+    _demoChordNote(comp, Note.D, 3);
     Project.instance.patternView.patternData = chordPatternData;
 
     var src = instantiatePattern(chordPatternData, track: 2)
@@ -191,10 +188,11 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
     //calculateSongLength();
   }
 
-  Note _demoChordNote(int tone, int start) => Note(
-      pitch: Note.octave(tone, 5),
-      start: BeatFraction(start, 1),
-      length: BeatFraction(1, 1));
+  void _demoChordNote(PatternNotesComponent comp, int tone, int start) =>
+      comp.addNote(
+          pitch: Note.octave(tone, 5),
+          start: BeatFraction(start, 1),
+          length: BeatFraction(1, 1));
 
   @override
   bool handleDelete() {

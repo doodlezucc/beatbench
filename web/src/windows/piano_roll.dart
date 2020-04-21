@@ -137,8 +137,8 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
 
   @override
   void addItem(BeatFraction start, int y) {
-    History.perform(NotesComponentAction(component, true,
-        [Note(pitch: toPitch(y), start: start, length: BeatFraction(1, 4))]));
+    component.addNote(
+        start: start, length: BeatFraction(1, 4), pitch: toPitch(y));
   }
 
   static int toVisual(int pitch) => PianoRoll.pitchMax - pitch;

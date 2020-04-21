@@ -14,7 +14,7 @@ class BeatGrid {
   PatternNotesComponent _comp;
 
   BeatGrid(this._e, this.drums)
-      : data = PatternData('Beat Grid', {drums: PatternNotesComponent([])}) {
+      : data = PatternData('Beat Grid', {drums: PatternNotesComponent()}) {
     _comp = data.component(drums);
     _createGrid();
     data.listenToEdits((msg) {
@@ -75,7 +75,7 @@ class BeatGrid {
   }
 
   Note _quickNote(int x, int y) =>
-      Note(pitch: Note.octave(y, 5), start: BeatFraction(x, 16));
+      Note(_comp, pitch: Note.octave(y, 5), start: BeatFraction(x, 16));
 
   void swaggyBeat() {
     History.perform(NotesComponentAction(_comp, true, <Note>[

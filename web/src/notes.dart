@@ -1,6 +1,7 @@
 import 'package:meta/meta.dart';
 
 import 'beat_fraction.dart';
+import 'patterns.dart';
 import 'project.dart';
 import 'transformable.dart';
 import 'windows/piano_roll.dart';
@@ -39,9 +40,10 @@ class NoteInfo {
 }
 
 class Note with Transformable {
+  final PatternNotesComponent comp;
   static int octave(int tone, int octave) => tone + octave * 12;
 
-  Note(
+  Note(this.comp,
       {@required int pitch,
       start = const BeatFraction(0, 4),
       length = const BeatFraction(1, 16)}) {
@@ -63,6 +65,7 @@ class Note with Transformable {
   @override
   void onTransformed() {
     _pianoRollRef?.onUpdate();
+    comp.streamController.add('transformed');
   }
 
   PianoRollNote get _pianoRollRef => Project.instance.pianoRoll.items

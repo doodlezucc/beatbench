@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+
 import 'generators/base.dart';
 import 'history.dart';
 import 'notes.dart';
@@ -9,23 +11,33 @@ import 'utils.dart';
 import 'windows/piano_roll.dart';
 
 abstract class PatternDataComponent {
-  final StreamController _streamController = StreamController.broadcast(
+  final StreamController streamController = StreamController.broadcast(
     sync: true,
     //onListen: () => print('hello there?'),
   );
-  Stream get stream => _streamController.stream;
+  Stream get stream => streamController.stream;
 
   BeatFraction length();
 }
 
 class PatternNotesComponent extends PatternDataComponent {
-  final List<Note> _notes;
+  final List<Note> _notes = [];
   final double _swing = 0.5;
   double get swing => _swing;
 
   Iterable<Note> get notes => _notes;
 
-  PatternNotesComponent(Iterable<Note> notes) : _notes = notes.toList();
+  void addNote({
+    BeatFraction start = const BeatFraction(0, 1),
+    BeatFraction length = const BeatFraction(1, 16),
+    @required int pitch,
+    bool reversibleAction = true,
+  }) {
+    History.perform(
+        NotesComponentAction(this, true,
+            [Note(this, start: start, length: length, pitch: pitch)]),
+        reversibleAction);
+  }
 
   @override
   BeatFraction length() {
@@ -59,7 +71,7 @@ class NotesComponentAction extends AddRemoveAction<Note> {
 
   @override
   void onExecuted(bool didAdd) {
-    component._streamController.add(didAdd);
+    component.streamController.add(didAdd);
   }
 }
 
