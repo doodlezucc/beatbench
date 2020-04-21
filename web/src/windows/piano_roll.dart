@@ -169,6 +169,9 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
     el.remove();
   }
 
+  @override
+  bool get invertVerticalDragging => true;
+
   int get pitch => note.y;
 
   void onUpdate() {

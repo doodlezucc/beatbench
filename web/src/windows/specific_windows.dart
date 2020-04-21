@@ -200,7 +200,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
     onYSet();
   }
 
-  void onYSet() {}
+  void onYSet();
 
   bool _selected = false;
   bool get selected => _selected;
@@ -210,6 +210,8 @@ abstract class RollOrTimelineItem<T extends Transform> {
   }
 
   Draggable<T> draggable;
+
+  bool get invertVerticalDragging => false;
 
   RollOrTimelineItem(this.el, this.window) {
     el.onMouseDown.listen((e) {
@@ -228,8 +230,13 @@ abstract class RollOrTimelineItem<T extends Transform> {
         xDiff = minXDiff;
       }
       var minYDiff = -window.extremeItem<num>((tr) => tr.y, max: false);
-      var yDiff =
-          max(minYDiff, (pixelOff.y / window.cellHeight.value + 0.5).floor());
+      var yDiff = max(
+          minYDiff,
+          ((invertVerticalDragging ? -1 : 1) *
+                      pixelOff.y /
+                      window.cellHeight.value +
+                  0.5)
+              .floor());
 
       window.selectedItems.forEach((p) {
         p.tr.start = p.draggable.savedVar.start + xDiff;
