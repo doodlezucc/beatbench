@@ -19,15 +19,11 @@ abstract class PatternDataComponent {
 }
 
 class PatternNotesComponent extends PatternDataComponent {
-  List<Note> _notes;
+  final List<Note> _notes;
   final double _swing = 0.5;
   double get swing => _swing;
 
   Iterable<Note> get notes => _notes;
-  set notes(Iterable<Note> notes) {
-    _notes = notes.toList();
-    _streamController.add('set');
-  }
 
   PatternNotesComponent(Iterable<Note> notes) : _notes = notes.toList();
 
@@ -58,7 +54,7 @@ class NotesComponentAction extends AddRemoveAction<Note> {
     if (_pianoRoll.component == component) {
       _pianoRoll.onNoteAction(object, false);
     }
-    component._notes.removeWhere(object.matches);
+    component._notes.removeWhere((n) => object == n);
   }
 
   @override

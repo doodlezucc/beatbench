@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 import '../audio_assembler.dart';
 import '../beat_fraction.dart';
 import '../drag.dart';
+import '../transformable.dart';
 import '../utils.dart';
 import 'windows.dart';
 import '../history.dart';
@@ -129,7 +130,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
   }
 
   Transform _getTransform(I item, bool dragged) =>
-      dragged ? item.draggable.savedVar : item.transform;
+      dragged ? item.draggable.savedVar : item.tr.transform;
 
   void drawFg(double head, double ghost) {
     var l = renderedLength;
@@ -191,56 +192,15 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
 abstract class RollOrTimelineItem<T extends Transform> {
   final RollOrTimelineWindow window;
   final HtmlElement el;
+  Transformable<T> get tr;
 
-  BeatFraction _start;
-  BeatFraction get start => _start;
-  set start(BeatFraction start) {
-    if (silentStart(start)) onUpdate();
-  }
-
-  bool silentStart(BeatFraction start) {
-    var oldStart = _start;
-    _start = start.beats >= 0 ? start : BeatFraction(0, 1);
-    el.style.left = cssCalc(_start.beats, window.beatWidth);
-    return _start != oldStart;
-  }
-
-  void onUpdate();
-
-  BeatFraction _length;
-  BeatFraction get length => _length;
-  set length(BeatFraction length) {
-    if (silentLength(length)) {
-      onUpdate();
-    }
-  }
-
-  bool silentLength(BeatFraction length) {
-    var oldLength = _length;
-    _length = length.beats >= 1 ? length : BeatFraction(1, 4);
-    el.style.width = cssCalc(_length.beats, window.beatWidth);
-    if (_length != oldLength) {
-      onWidthSet();
-      return true;
-    }
-    return false;
-  }
-
-  void onWidthSet() {}
-
-  int _y;
-  int get y => _y;
-  set y(int y) {
-    if (_y != y) {
-      _y = y;
-      onYSet();
-      onUpdate();
-    }
+  void itemPosition() {
+    el.style.left = cssCalc(tr.start.beats, window.beatWidth);
+    el.style.width = cssCalc(tr.length.beats, window.beatWidth);
+    onYSet();
   }
 
   void onYSet() {}
-
-  BeatFraction get end => start + length;
 
   bool _selected = false;
   bool get selected => _selected;
@@ -250,12 +210,6 @@ abstract class RollOrTimelineItem<T extends Transform> {
   }
 
   Draggable<T> draggable;
-  T get transform => Transform(start, length, y) as T;
-  void applyTransform(T transform) {
-    start = transform.start;
-    length = transform.length;
-    y = transform.y;
-  }
 
   RollOrTimelineItem(this.el, this.window) {
     el.onMouseDown.listen((e) {
@@ -266,7 +220,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
         selected = true;
       }
     });
-    draggable = Draggable<T>(el, () => transform, (tr, pixelOff, ev) {
+    draggable = Draggable<T>(el, () => tr.transform, (srcTr, pixelOff, ev) {
       var xDiff = BeatFraction.round(
           pixelOff.x / window.beatWidth.value, window.gridSize);
       var minXDiff = window.extremeItem((tr) => tr.start, max: false) * -1;
@@ -278,14 +232,13 @@ abstract class RollOrTimelineItem<T extends Transform> {
           max(minYDiff, (pixelOff.y / window.cellHeight.value + 0.5).floor());
 
       window.selectedItems.forEach((p) {
-        p.start = p.draggable.savedVar.start + xDiff;
-        p.y = p.draggable.savedVar.y + yDiff;
+        p.tr.start = p.draggable.savedVar.start + xDiff;
+        p.tr.y = p.draggable.savedVar.y + yDiff;
       });
 
       if (ev.detail == 1) {
-        if (tr != transform) {
-          History.registerDoneAction(TransformAction(
-              window.selectedItems.toList(growable: false), transform - tr));
+        if (srcTr != tr.transform) {
+          _registerTransformAction(tr.transform - srcTr);
         } else if (pixelOff.x == 0 && pixelOff.y == 0) {
           if (!ev.shiftKey) {
             window.selectedItems.forEach((p) => p.selected = false);
@@ -296,12 +249,17 @@ abstract class RollOrTimelineItem<T extends Transform> {
     });
   }
 
+  void _registerTransformAction(Transform diff) {
+    History.registerDoneAction(TransformAction(
+        window.selectedItems.map((i) => i.tr).toList(growable: false), diff));
+  }
+
   DivElement stretchElem(bool right, DragSystem<T> dragSystem) {
     var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
     dragSystem.register(Draggable<T>(
       out,
-      () => transform,
-      (tr, off, ev) {
+      () => tr.transform,
+      (srcTr, off, ev) {
         var diff =
             BeatFraction.round(off.x / window.beatWidth.value, window.gridSize);
         // diff maximum: lengthOld - 1
@@ -310,7 +268,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
         if (right) {
           if (diff < maxDiff * -1) diff = maxDiff * -1;
           window.selectedItems.forEach((p) {
-            p.length = p.draggable.savedVar.length + diff;
+            p.tr.length = p.draggable.savedVar.length + diff;
           });
         } else {
           if (diff > maxDiff) diff = maxDiff;
@@ -319,8 +277,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
         if (diff.numerator == 0) return;
         if (ev.detail == 1) {
           // register reversible action
-          History.registerDoneAction(TransformAction(
-              window.selectedItems.toList(growable: false), transform - tr));
+          _registerTransformAction(tr.transform - srcTr);
         }
       },
     ));
@@ -332,84 +289,10 @@ abstract class RollOrTimelineItem<T extends Transform> {
     if (diff < minDiff) diff = minDiff;
 
     window.selectedItems.forEach((p) {
-      if (p.silentLength(p.draggable.savedVar.length - diff)) {
-        p.start = p.draggable.savedVar.start + diff;
-      }
+      p.tr.length = p.draggable.savedVar.length - diff;
+      p.tr.start = p.draggable.savedVar.start + diff;
     });
 
     return diff;
-  }
-}
-
-class Transform {
-  final BeatFraction start;
-  final BeatFraction length;
-  final int y;
-
-  Transform(this.start, this.length, this.y);
-
-  @override
-  bool operator ==(dynamic other) => other is Transform
-      ? start == other.start && length == other.length && y == other.y
-      : false;
-
-  Transform operator +(Transform o) => Transform(
-        start + o.start,
-        length + o.length,
-        y + o.y,
-      );
-
-  Transform operator -(Transform o) => Transform(
-        start - o.start,
-        length - o.length,
-        y - o.y,
-      );
-}
-
-class PatternTransform extends Transform {
-  final BeatFraction contentShift;
-
-  PatternTransform(
-      BeatFraction start, BeatFraction length, this.contentShift, int track)
-      : super(start, length, track);
-
-  @override
-  bool operator ==(dynamic other) => other is PatternTransform
-      ? start == other.start &&
-          length == other.length &&
-          contentShift == other.contentShift &&
-          y == other.y
-      : false;
-
-  @override
-  PatternTransform operator +(dynamic o) => PatternTransform(
-        start + o.start,
-        length + o.length,
-        contentShift + o.contentShift,
-        y + o.y,
-      );
-
-  @override
-  PatternTransform operator -(dynamic o) => PatternTransform(
-        start - o.start,
-        length - o.length,
-        contentShift - o.contentShift,
-        y - o.y,
-      );
-}
-
-class TransformAction<T extends RollOrTimelineItem> extends MultipleAction<T> {
-  final dynamic diff;
-
-  TransformAction(Iterable<T> items, this.diff) : super(items);
-
-  @override
-  void doSingle(T object) {
-    object.applyTransform(object.transform + diff);
-  }
-
-  @override
-  void undoSingle(T object) {
-    object.applyTransform(object.transform - diff);
   }
 }

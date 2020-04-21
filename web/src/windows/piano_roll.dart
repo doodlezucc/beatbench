@@ -6,10 +6,11 @@ import '../history.dart';
 import '../notes.dart';
 import '../patterns.dart';
 import '../project.dart';
+import '../transformable.dart';
 import '../utils.dart';
 import 'specific_windows.dart';
 
-class PianoRoll extends RollOrTimelineWindow<_PianoRollNote> {
+class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
   static final pixelsPerKey = CssPxVar('piano-roll-ppk');
   static final pixelsPerBeat = CssPxVar('piano-roll-ppb');
 
@@ -26,6 +27,8 @@ class PianoRoll extends RollOrTimelineWindow<_PianoRollNote> {
       reloadData();
     }
   }
+
+  final _allRollNotes = <PianoRollNote>[];
 
   PianoRoll() : super(querySelector('#pianoRoll'), 'Piano Roll') {
     _buildPianoKeys();
@@ -55,8 +58,7 @@ class PianoRoll extends RollOrTimelineWindow<_PianoRollNote> {
   void reloadData() {
     items.forEach((n) => n._dispose());
     items.clear();
-    items.addAll(_comp.notes.map((n) => _PianoRollNote(this, n)));
-    applyToComponent();
+    items.addAll(_comp.notes.map((n) => PianoRollNote(this, n)));
   }
 
   @override
@@ -110,17 +112,14 @@ class PianoRoll extends RollOrTimelineWindow<_PianoRollNote> {
     return items.map((i) => i.note);
   }
 
-  void applyToComponent() {
-    component.notes = getNotes();
-  }
-
   void onNoteAction(Note note, bool create) {
     if (create) {
-      var prn = _PianoRollNote(this, note);
+      var prn = _allRollNotes.firstWhere((pn) => pn.note == note,
+          orElse: () => PianoRollNote(this, note));
       items.add(prn);
       prn.selected = true;
     } else {
-      var prn = items.singleWhere((i) => i.note.matches(note));
+      var prn = items.singleWhere((i) => i.note == note);
       prn._dispose();
       items.remove(prn);
       bw.box.thereAreChanges();
@@ -146,14 +145,14 @@ class PianoRoll extends RollOrTimelineWindow<_PianoRollNote> {
   static int toPitch(int visual) => PianoRoll.pitchMax - visual;
 }
 
-class _PianoRollNote extends RollOrTimelineItem<Transform> {
+class PianoRollNote extends RollOrTimelineItem<Transform> {
   PianoRoll get pianoRoll => this.window;
 
   static final DragSystem<Transform> _dragSystem = DragSystem();
   SpanElement span;
   final Note note;
 
-  _PianoRollNote(PianoRoll window, this.note)
+  PianoRollNote(PianoRoll window, this.note)
       : super(window.query('#notes').append(DivElement()..className = 'note'),
             window) {
     el
@@ -163,28 +162,21 @@ class _PianoRollNote extends RollOrTimelineItem<Transform> {
 
     _dragSystem.register(draggable);
 
-    silentStart(note.start);
-    silentLength(note.length);
-    y = PianoRoll.toVisual(note.pitch);
+    itemPosition();
   }
 
   void _dispose() {
     el.remove();
   }
 
-  int get pitch => PianoRoll.toPitch(y);
+  int get pitch => note.y;
 
-  @override
   void onUpdate() {
-    note.start = start;
-    note.length = length;
-    note.pitch = pitch;
+    itemPosition();
 
-    pianoRoll.applyToComponent();
-
-    if (end > pianoRoll.bw.length) {
-      pianoRoll.bw.length = end;
-    } else if (end < pianoRoll.bw.length) {
+    if (note.end > pianoRoll.bw.length) {
+      pianoRoll.bw.length = note.end;
+    } else if (note.end < pianoRoll.bw.length) {
       Project.instance.patternView.calculateLength();
     } else {
       pianoRoll.bw.box.thereAreChanges();
@@ -193,7 +185,10 @@ class _PianoRollNote extends RollOrTimelineItem<Transform> {
 
   @override
   void onYSet() {
-    el.style.top = cssCalc(y, PianoRoll.pixelsPerKey);
+    el.style.top = cssCalc(PianoRoll.toVisual(pitch), PianoRoll.pixelsPerKey);
     span.text = CommonPitch(pitch).description;
   }
+
+  @override
+  Transformable<Transform> get tr => note;
 }

@@ -1,6 +1,9 @@
 import 'package:meta/meta.dart';
 
 import 'beat_fraction.dart';
+import 'project.dart';
+import 'transformable.dart';
+import 'windows/piano_roll.dart';
 
 class CommonPitch {
   static const _keyNames = [
@@ -35,25 +38,19 @@ class NoteInfo {
   const NoteInfo(this.coarsePitch, this.velocity);
 }
 
-class Note {
-  int pitch;
-
-  BeatFraction start;
-  BeatFraction length;
-
-  BeatFraction get end => start + length;
-
+class Note with Transformable {
   static int octave(int tone, int octave) => tone + octave * 12;
 
   Note(
-      {@required this.pitch,
-      this.start = const BeatFraction(0, 4),
-      this.length = const BeatFraction(1, 16)});
+      {@required int pitch,
+      start = const BeatFraction(0, 4),
+      length = const BeatFraction(1, 16)}) {
+    y = pitch;
+    this.start = start;
+    this.length = length;
+  }
 
-  bool matches(Note other) =>
-      pitch == other.pitch && start == other.start && length == other.length;
-
-  NoteInfo createInfo() => NoteInfo(pitch, 1);
+  NoteInfo createInfo() => NoteInfo(y, 1);
 
   static const int C = 0;
   static const int D = 2;
@@ -62,4 +59,12 @@ class Note {
   static const int G = 7;
   static const int A = 9;
   static const int B = 11;
+
+  @override
+  void onTransformed() {
+    _pianoRollRef?.onUpdate();
+  }
+
+  PianoRollNote get _pianoRollRef => Project.instance.pianoRoll.items
+      .firstWhere((pn) => pn.note == this, orElse: () => null);
 }

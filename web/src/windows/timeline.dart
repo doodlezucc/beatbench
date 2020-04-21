@@ -13,6 +13,7 @@ import '../history.dart';
 import '../notes.dart';
 import '../patterns.dart';
 import '../project.dart';
+import '../transformable.dart';
 import '../utils.dart';
 import 'pattern_view.dart';
 import 'specific_windows.dart';
@@ -276,26 +277,27 @@ class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
   }
 }
 
-class PatternInstance extends RollOrTimelineItem<PatternTransform> {
+class PatternInstance extends RollOrTimelineItem<PatternTransform>
+    with Transformable<PatternTransform> {
   BeatFraction _contentShift = BeatFraction(0, 1);
   BeatFraction get contentShift => _contentShift;
   set contentShift(BeatFraction contentShift) {
     if (_contentShift != contentShift) {
       _contentShift = contentShift;
       _draw();
-      onUpdate();
+      onTransformed();
     }
   }
 
   @override
   set length(BeatFraction length) {
     super.length = length;
-    _draw();
+    updateCanvasWidth();
   }
 
-  @override
-  void onWidthSet() {
+  void updateCanvasWidth() {
     _canvas.width = (length.beats * this.window.beatWidth.value).ceil();
+    _draw();
   }
 
   final PatternData data;
@@ -325,16 +327,14 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform> {
 
     _dragSystem.register(draggable);
 
-    silentStart(start);
-    silentLength(length ?? data.length().ceilTo(2));
-    y = track;
-    _draw();
+    applyTransform(PatternTransform(
+        start, length ?? data.length().ceilTo(2), BeatFraction(0, 1), track));
 
     data.listenToEdits((ev) {
       if (!el.classes.contains('hidden')) {
         //print('EDIT: $ev');
         _draw();
-        onUpdate();
+        onTransformed();
       }
     });
 
@@ -358,11 +358,10 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform> {
     if (diff < minDiff) diff = minDiff;
 
     timeline.selectedItems.forEach((p) {
-      if (p.silentLength(p.draggable.savedVar.length - diff)) {
-        p.silentStart(p.draggable.savedVar.start + diff);
-        p.contentShift = p.draggable.savedVar.contentShift + diff;
-        p._draw();
-      }
+      p.length = p.draggable.savedVar.length - diff;
+
+      p.start = p.draggable.savedVar.start + diff;
+      p.contentShift = p.draggable.savedVar.contentShift + diff;
     });
 
     return diff;
@@ -371,6 +370,13 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform> {
   @override
   PatternTransform get transform =>
       PatternTransform(start, length, contentShift, y);
+  @override
+  void applyTransform(PatternTransform transform) {
+    contentShift = transform.contentShift;
+    super.applyTransform(transform);
+    updateCanvasWidth();
+    itemPosition();
+  }
 
   void _draw() {
     var ctx = _canvas.context2D;
@@ -379,8 +385,8 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform> {
     var maxPitch = 0;
     data.genNotes.values.forEach((component) {
       component.notes.forEach((n) {
-        if (n.pitch > maxPitch) maxPitch = n.pitch;
-        if (n.pitch < minPitch) minPitch = n.pitch;
+        if (n.y > maxPitch) maxPitch = n.y;
+        if (n.y < minPitch) minPitch = n.y;
       });
     });
 
@@ -393,8 +399,7 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform> {
       component.notes.forEach((n) {
         ctx.fillRect(
             Timeline.pixelsPerBeat.value * (n.start - contentShift).beats,
-            Timeline.pixelsPerTrack.value -
-                (n.pitch - minPitch + 1) * noteHeight,
+            Timeline.pixelsPerTrack.value - (n.y - minPitch + 1) * noteHeight,
             Timeline.pixelsPerBeat.value * n.length.beats - 1,
             noteHeight);
       });
@@ -402,14 +407,9 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform> {
   }
 
   @override
-  void applyTransform(PatternTransform transform) {
-    super.applyTransform(transform);
-    contentShift = transform.contentShift;
-    y = transform.y;
-  }
+  void onTransformed() {
+    itemPosition();
 
-  @override
-  void onUpdate() {
     if (end > timeline.length) {
       timeline.length = end;
     } else if (end < timeline.length) {
@@ -423,6 +423,9 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform> {
   void onYSet() {
     el.style.top = cssCalc(y, Timeline.pixelsPerTrack);
   }
+
+  @override
+  Transformable<PatternTransform> get tr => this;
 }
 
 class TimelinePlaybackNote extends PlaybackNote {
@@ -446,4 +449,36 @@ class TimelinePlaybackNote extends PlaybackNote {
       generator == other.generator &&
       noteInfo == other.noteInfo &&
       pattern == other.pattern;
+}
+
+class PatternTransform extends Transform {
+  final BeatFraction contentShift;
+
+  PatternTransform(
+      BeatFraction start, BeatFraction length, this.contentShift, int track)
+      : super(start, length, track);
+
+  @override
+  bool operator ==(dynamic other) => other is PatternTransform
+      ? start == other.start &&
+          length == other.length &&
+          contentShift == other.contentShift &&
+          y == other.y
+      : false;
+
+  @override
+  PatternTransform operator +(dynamic o) => PatternTransform(
+        start + o.start,
+        length + o.length,
+        contentShift + o.contentShift,
+        y + o.y,
+      );
+
+  @override
+  PatternTransform operator -(dynamic o) => PatternTransform(
+        start - o.start,
+        length - o.length,
+        contentShift - o.contentShift,
+        y - o.y,
+      );
 }
