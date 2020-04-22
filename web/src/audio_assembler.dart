@@ -9,7 +9,7 @@ import 'project.dart';
 
 class Specs {
   final int sampleRate = 44100;
-  final int schedulingMs = 50;
+  final int schedulingMs = 100;
   final int frameDuration = 20; // 50fps
 }
 
@@ -81,34 +81,39 @@ class PlaybackBox {
       @required this.onStop,
       @required this.getNotes});
 
-  void _correctPlayingNotes() {
-    var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
+  static const double _smallValue = 0.0001;
+
+  void _correctPlayingNotes({bool firstRun = false}) {
+    var time = _positionOnStart;
+    if (!firstRun) {
+      time += _ctx.currentTime - _contextTimeOnStart;
+    }
     var now = time % length;
 
-    var idealPitchesPlaying = {for (var g in generators) g: <NoteInfo>[]};
+    var idealPlayingNotes = {for (var g in generators) g: <PlaybackNote>[]};
 
-    var smallValue = 0.0001;
     _cache.forEach((pn) {
-      if (pn.startInSeconds <= now + smallValue &&
-          pn.endInSeconds > now + smallValue) {
-        idealPitchesPlaying[pn.generator].add(pn.noteInfo);
+      if (pn.startInSeconds <= now + _smallValue &&
+          pn.endInSeconds > now + _smallValue) {
+        idealPlayingNotes[pn.generator].add(pn);
       }
     });
 
     generators.forEach((generator) {
       // Stop playing notes which should not play
       generator.playingNodes.forEach((playingNoteNode) {
-        if (!idealPitchesPlaying[generator].any(
-            (info) => info.coarsePitch == playingNoteNode.info.coarsePitch)) {
+        if (!idealPlayingNotes[generator].any((pn) =>
+            pn.noteInfo.coarsePitch == playingNoteNode.info.coarsePitch)) {
           _sendNoteOff(
               generator, playingNoteNode.info.coarsePitch, _ctx.currentTime);
         }
       });
       // Start notes which should play
-      idealPitchesPlaying[generator].forEach((info) {
+      idealPlayingNotes[generator].forEach((pn) {
         if (!generator.playingNodes
-            .any((node) => node.info.coarsePitch == info.coarsePitch)) {
-          _sendNoteOn(generator, info, _ctx.currentTime, isResumed: true);
+            .any((node) => node.info.coarsePitch == pn.noteInfo.coarsePitch)) {
+          _sendNoteOn(generator, pn.noteInfo, _ctx.currentTime,
+              isResumed: !firstRun);
         }
       });
     });
@@ -172,13 +177,13 @@ class PlaybackBox {
         _bufferTo(ctx.currentTime - _contextTimeOnStart + scheduleAhead);
       },
     );
-    _contextTimeOnStart = ctx.currentTime;
-    _bufferedSeconds = 0;
+    _bufferedSeconds = _smallValue;
     _positionOnStart = start;
 
     _forceUpdateCache();
-    _correctPlayingNotes();
-    _bufferTo(scheduleAhead);
+    _contextTimeOnStart = ctx.currentTime;
+    _correctPlayingNotes(firstRun: true);
+    _bufferTo(scheduleAhead, onlyOff: true);
   }
 
   void stopPlayback() {
@@ -211,28 +216,27 @@ class PlaybackBox {
     var buffLength = seconds - _bufferedSeconds;
     var startMod = (_bufferedSeconds + _positionOnStart) % length;
     var end = startMod + buffLength;
+    var ctxTime = _ctx.currentTime;
     _bufferRegion(startMod, end,
-        onlyOff: onlyOff,
-        wrap: ((_ctx.currentTime - _contextTimeOnStart + _positionOnStart) /
-                    length)
-                .floor() <
-            ((_bufferedSeconds + _positionOnStart) / length).floor());
+        ctxTime: ctxTime, onlyOff: onlyOff, wrap: false);
     if (end >= length) {
       // Wrap to start
-      _bufferRegion(0, end % length, onlyOff: onlyOff, wrap: true);
+      _bufferRegion(startMod - length, end - length,
+          ctxTime: ctxTime, onlyOff: onlyOff, wrap: true);
     }
     _bufferedSeconds = seconds;
   }
 
   void _debugNoteEvent(Generator gen, int pitch, double when, bool noteOn,
       {bool isResumed = false}) {
-    //var common = CommonPitch(pitch);
-    //print('${common.description} / ${noteOn}');
+    var common = CommonPitch(pitch);
+    print('${gen.runtimeType}: ${common.description} / ${noteOn}' +
+        (isResumed ? ' (resumed)' : ''));
   }
 
   bool _sendNoteOn(Generator gen, NoteInfo info, double when,
       {bool isResumed = false}) {
-    _debugNoteEvent(gen, info.coarsePitch, when, true);
+    _debugNoteEvent(gen, info.coarsePitch, when, true, isResumed: isResumed);
     gen.noteStart(info, when, isResumed);
     //print('sent');
     return true;
@@ -247,20 +251,20 @@ class PlaybackBox {
   }
 
   void _bufferRegion(double from, double to,
-      {bool wrap = false, bool onlyOff = false}) {
-    var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
-    var when = _ctx.currentTime - (time % length);
+      {@required double ctxTime, bool wrap = false, bool onlyOff = false}) {
+    var time = _positionOnStart + ctxTime - _contextTimeOnStart;
+    var loopStart = ctxTime - (time % length);
     if (wrap) {
-      when += length;
+      loopStart += length;
     }
 
     _cache.forEach((pn) {
       if (!onlyOff && pn.startInSeconds >= from && pn.startInSeconds < to) {
-        _sendNoteOn(pn.generator, pn.noteInfo, when + pn.startInSeconds);
+        _sendNoteOn(pn.generator, pn.noteInfo, loopStart + pn.startInSeconds);
       }
       if (pn.endInSeconds >= from && pn.endInSeconds < to) {
         _sendNoteOff(
-            pn.generator, pn.noteInfo.coarsePitch, when + pn.endInSeconds);
+            pn.generator, pn.noteInfo.coarsePitch, loopStart + pn.endInSeconds);
       }
     });
   }

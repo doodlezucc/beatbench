@@ -24,6 +24,9 @@ class Oscillator extends Generator<_OscNoteNode> {
     }
   }
 
+  double attack = 0.005;
+  double release = 0.005;
+
   Oscillator(BaseAudioContext ctx)
       : gain = ctx.createGain()..gain.value = 0.1,
         super(ctx, _OscillatorInterface());
@@ -40,28 +43,37 @@ class Oscillator extends Generator<_OscNoteNode> {
 }
 
 class _OscNoteNode extends NoteNodeChain {
+  final Oscillator osc;
   final OscillatorNode oscNode;
+  final GainNode gain;
 
-  _OscNoteNode(Oscillator osc, NoteInfo info, BaseAudioContext ctx)
+  _OscNoteNode(this.osc, NoteInfo info, BaseAudioContext ctx)
       : oscNode = ctx.createOscillator(),
+        gain = ctx.createGain(),
         super(info, ctx) {
     var freq = 440 * pow(2, (info.coarsePitch - 69) / 12);
     oscNode
       ..type = osc.type
-      ..frequency.value = freq;
+      ..frequency.value = freq
+      ..connectNode(gain);
   }
 
   @override
-  List<AudioNode> get chain => [oscNode];
+  List<AudioNode> get chain => [oscNode, gain];
 
   @override
   void start(double when) {
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(1, when + osc.attack);
     oscNode.start2(when);
   }
 
   @override
   void stop(double when) {
-    oscNode.stop(when);
+    var end = when + osc.release;
+    gain.gain.setValueAtTime(1, when);
+    gain.gain.linearRampToValueAtTime(0, end);
+    oscNode.stop(end);
   }
 }
 
