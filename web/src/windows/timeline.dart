@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:meta/meta.dart';
 
 import '../audio_assembler.dart';
-import '../beat_fraction.dart';
+import '../bar_fraction.dart';
 import '../beat_grid.dart';
 import '../drag.dart';
 import '../generators/base.dart';
@@ -79,7 +79,7 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   }
 
   @override
-  double timeAt(BeatFraction bf) {
+  double timeAt(BarFraction bf) {
     return bf.beats / (Project.instance.bpm / 60);
   }
 
@@ -90,7 +90,7 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
 
   void calculateSongLength() {
     length = extremeItem((tr) => tr.start + tr.length,
-        max: true, onlyDragged: false, ifNone: BeatFraction(1, 1));
+        max: true, onlyDragged: false, ifNone: BarFraction(1, 1));
   }
 
   void cloneSelectedPatterns() {
@@ -114,7 +114,7 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   }
 
   PatternInstance instantiatePattern(PatternData data,
-      {BeatFraction start = const BeatFraction(0, 1), int track = 0}) {
+      {BarFraction start = const BarFraction(0, 1), int track = 0}) {
     PatternInstance instance;
     instance = PatternInstance(data, start, null, track, this);
     if (instance.end > length) {
@@ -137,7 +137,7 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
       },
     );
     for (var i = 0; i < 4; i++) {
-      instantiatePattern(gridPatternData, start: BeatFraction(i, 1));
+      instantiatePattern(gridPatternData, start: BarFraction(i, 1));
     }
     instantiatePattern(crashPatternData, track: 1);
 
@@ -169,20 +169,20 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
     Project.instance.patternView.patternData = chordPatternData;
 
     var src = instantiatePattern(chordPatternData, track: 2)
-      ..length = BeatFraction(6, 4);
+      ..length = BarFraction(6, 4);
     History.perform(PatternsCreationAction(this, true, [
       _clonePattern(src)
-        ..start = BeatFraction(6, 4)
-        ..contentShift = BeatFraction(8, 4)
-        ..length = BeatFraction(2, 4),
+        ..start = BarFraction(6, 4)
+        ..contentShift = BarFraction(8, 4)
+        ..length = BarFraction(2, 4),
       _clonePattern(src)
-        ..start = BeatFraction(9, 4)
-        ..contentShift = BeatFraction(0, 4)
-        ..length = BeatFraction(3, 4),
+        ..start = BarFraction(9, 4)
+        ..contentShift = BarFraction(0, 4)
+        ..length = BarFraction(3, 4),
       _clonePattern(src)
-        ..start = BeatFraction(12, 4)
-        ..contentShift = BeatFraction(12, 4)
-        ..length = BeatFraction(3, 4),
+        ..start = BarFraction(12, 4)
+        ..contentShift = BarFraction(12, 4)
+        ..length = BarFraction(3, 4),
     ]));
 
     //calculateSongLength();
@@ -191,8 +191,8 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   void _demoChordNote(PatternNotesComponent comp, int tone, int start) =>
       comp.addNote(
           pitch: Note.octave(tone, 5),
-          start: BeatFraction(start, 1),
-          length: BeatFraction(1, 1));
+          start: BarFraction(start, 1),
+          length: BarFraction(1, 1));
 
   @override
   bool handleDelete() {
@@ -226,10 +226,10 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   CssPxVar get cellHeight => pixelsPerTrack;
 
   @override
-  BeatFraction get gridSize => BeatFraction(1, 4);
+  BarFraction get gridSize => BarFraction(1, 4);
 
   @override
-  BeatFraction get renderedLength => length + BeatFraction(16, 1);
+  BarFraction get renderedLength => length + BarFraction(16, 1);
 
   @override
   PlaybackBoxWindow get bw => this;
@@ -242,10 +242,10 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   PlaybackBox get box => _box;
 
   @override
-  void onHeadSet(BeatFraction head) => windowHeadSet(head);
+  void onHeadSet(BarFraction head) => windowHeadSet(head);
 
   @override
-  void addItem(BeatFraction start, int y) {
+  void addItem(BarFraction start, int y) {
     // TODO: implement _addItem
   }
 }
@@ -277,9 +277,9 @@ class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
 
 class PatternInstance extends RollOrTimelineItem<PatternTransform>
     with Transformable<PatternTransform> {
-  BeatFraction _contentShift = BeatFraction(0, 1);
-  BeatFraction get contentShift => _contentShift;
-  set contentShift(BeatFraction contentShift) {
+  BarFraction _contentShift = BarFraction(0, 1);
+  BarFraction get contentShift => _contentShift;
+  set contentShift(BarFraction contentShift) {
     if (_contentShift != contentShift) {
       _contentShift = contentShift;
       _draw();
@@ -288,7 +288,7 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
   }
 
   @override
-  set length(BeatFraction length) {
+  set length(BarFraction length) {
     super.length = length;
     updateCanvasWidth();
   }
@@ -305,7 +305,7 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
 
   static final DragSystem<PatternTransform> _dragSystem = DragSystem();
 
-  PatternInstance(this.data, BeatFraction start, BeatFraction length, int track,
+  PatternInstance(this.data, BarFraction start, BarFraction length, int track,
       Timeline timeline)
       : super(
             timeline
@@ -326,7 +326,7 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
     _dragSystem.register(draggable);
 
     applyTransform(PatternTransform(
-        start, length ?? data.length().ceilTo(2), BeatFraction(0, 1), track));
+        start, length ?? data.length().ceilTo(2), BarFraction(0, 1), track));
 
     data.listenToEdits((ev) {
       if (!el.classes.contains('hidden')) {
@@ -346,9 +346,9 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
   Timeline get timeline => this.window;
 
   @override
-  BeatFraction leftStretch(BeatFraction diff) {
+  BarFraction leftStretch(BarFraction diff) {
     // diff minimum: -contentShiftOld
-    var minDiff = timeline.extremeItem<BeatFraction>(
+    var minDiff = timeline.extremeItem<BarFraction>(
             (i) => (i as PatternTransform).contentShift,
             max: false) *
         -1;
@@ -450,10 +450,10 @@ class TimelinePlaybackNote extends PlaybackNote {
 }
 
 class PatternTransform extends Transform {
-  final BeatFraction contentShift;
+  final BarFraction contentShift;
 
   PatternTransform(
-      BeatFraction start, BeatFraction length, this.contentShift, int track)
+      BarFraction start, BarFraction length, this.contentShift, int track)
       : super(start, length, track);
 
   @override

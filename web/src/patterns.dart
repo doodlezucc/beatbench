@@ -5,7 +5,7 @@ import 'package:meta/meta.dart';
 import 'generators/base.dart';
 import 'history.dart';
 import 'notes.dart';
-import 'beat_fraction.dart';
+import 'bar_fraction.dart';
 import 'project.dart';
 import 'utils.dart';
 import 'windows/piano_roll.dart';
@@ -17,7 +17,7 @@ abstract class PatternDataComponent {
   );
   Stream get stream => streamController.stream;
 
-  BeatFraction length();
+  BarFraction length();
 }
 
 class PatternNotesComponent extends PatternDataComponent {
@@ -28,8 +28,8 @@ class PatternNotesComponent extends PatternDataComponent {
   Iterable<Note> get notes => _notes;
 
   void addNote({
-    BeatFraction start = const BeatFraction(0, 1),
-    BeatFraction length = const BeatFraction(1, 16),
+    BarFraction start = const BarFraction(0, 1),
+    BarFraction length = const BarFraction(1, 16),
     @required int pitch,
     bool reversibleAction = true,
   }) {
@@ -40,8 +40,8 @@ class PatternNotesComponent extends PatternDataComponent {
   }
 
   @override
-  BeatFraction length() {
-    return extreme<Note, BeatFraction>(notes, (n) => n.end, max: true);
+  BarFraction length() {
+    return extreme<Note, BarFraction>(notes, (n) => n.end, max: true);
   }
 }
 
@@ -91,8 +91,8 @@ class PatternData {
 
   Map<Generator, PatternNotesComponent> notes() => Map.unmodifiable(_genNotes);
 
-  BeatFraction length() {
-    return _genNotes.values.fold(BeatFraction.washy(0), (v, n) {
+  BarFraction length() {
+    return _genNotes.values.fold(BarFraction.washy(0), (v, n) {
       var l = n.length();
       return l.beats > v.beats ? l : v;
     });

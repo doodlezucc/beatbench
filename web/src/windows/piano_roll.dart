@@ -1,6 +1,6 @@
 import 'dart:html';
 
-import '../beat_fraction.dart';
+import '../bar_fraction.dart';
 import '../drag.dart';
 import '../history.dart';
 import '../notes.dart';
@@ -100,13 +100,13 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
   }
 
   @override
-  BeatFraction get renderedLength => bw.length + BeatFraction(4, 1);
+  BarFraction get renderedLength => bw.length + BarFraction(4, 1);
 
   @override
   PlaybackBoxWindow get bw => Project.instance.patternView;
 
   @override
-  BeatFraction get gridSize => BeatFraction(1, 4);
+  BarFraction get gridSize => BarFraction(1, 4);
 
   Iterable<Note> getNotes() {
     return items.map((i) => i.note);
@@ -136,9 +136,9 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
   }
 
   @override
-  void addItem(BeatFraction start, int y) {
+  void addItem(BarFraction start, int y) {
     component.addNote(
-        start: start, length: BeatFraction(1, 4), pitch: toPitch(y));
+        start: start, length: BarFraction(1, 4), pitch: toPitch(y));
   }
 
   static int toVisual(int pitch) => PianoRoll.pitchMax - pitch;

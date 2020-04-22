@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import 'beat_fraction.dart';
+import 'bar_fraction.dart';
 import 'patterns.dart';
 import 'project.dart';
 import 'transformable.dart';
@@ -45,8 +45,8 @@ class Note with Transformable {
 
   Note(this.comp,
       {@required int pitch,
-      start = const BeatFraction(0, 4),
-      length = const BeatFraction(1, 16)}) {
+      start = const BarFraction(0, 4),
+      length = const BarFraction(1, 16)}) {
     y = pitch;
     this.start = start;
     this.length = length;

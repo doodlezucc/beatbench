@@ -1,9 +1,9 @@
-import 'beat_fraction.dart';
+import 'bar_fraction.dart';
 import 'history.dart';
 
 class Transform {
-  final BeatFraction start;
-  final BeatFraction length;
+  final BarFraction start;
+  final BarFraction length;
   final int y;
 
   Transform(this.start, this.length, this.y);
@@ -27,20 +27,20 @@ class Transform {
 }
 
 mixin Transformable<T extends Transform> {
-  BeatFraction _start;
-  BeatFraction _length;
+  BarFraction _start;
+  BarFraction _length;
   int _y;
 
-  BeatFraction get start => _start;
-  set start(BeatFraction start) {
+  BarFraction get start => _start;
+  set start(BarFraction start) {
     if (_start != start) {
       _start = start;
       onTransformed();
     }
   }
 
-  BeatFraction get length => _length;
-  set length(BeatFraction length) {
+  BarFraction get length => _length;
+  set length(BarFraction length) {
     if (_length != length) {
       _length = length;
       onTransformed();
@@ -55,7 +55,7 @@ mixin Transformable<T extends Transform> {
     }
   }
 
-  BeatFraction get end => start + length;
+  BarFraction get end => start + length;
 
   void applyTransform(T transform) {
     _start = transform.start;

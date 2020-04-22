@@ -1,81 +1,81 @@
-class BeatFraction {
+class BarFraction {
   final int numerator;
   final int denominator;
   final double beats;
   bool get isWashy => denominator == 0;
 
-  const BeatFraction(this.numerator, this.denominator)
+  const BarFraction(this.numerator, this.denominator)
       : beats = 4 * numerator / denominator;
 
-  const BeatFraction.washy(this.beats)
+  const BarFraction.washy(this.beats)
       : numerator = 0,
         denominator = 0;
 
   // round 0.5 : (1/3) => (3/12)
-  BeatFraction.round(double beats, BeatFraction gridSize)
+  BarFraction.round(double beats, BarFraction gridSize)
       : this((beats * gridSize.numerator * gridSize.denominator / 4).round(),
             gridSize.denominator);
 
-  BeatFraction.floor(double beats, BeatFraction gridSize)
+  BarFraction.floor(double beats, BarFraction gridSize)
       : this((beats * gridSize.numerator * gridSize.denominator / 4).floor(),
             gridSize.denominator);
 
-  BeatFraction operator +(BeatFraction other) {
+  BarFraction operator +(BarFraction other) {
     if (isWashy || other.isWashy) {
-      return BeatFraction.washy(beats + other.beats);
+      return BarFraction.washy(beats + other.beats);
     }
     if (denominator == other.denominator) {
-      return BeatFraction(numerator + other.numerator, denominator);
+      return BarFraction(numerator + other.numerator, denominator);
     }
-    return BeatFraction(
+    return BarFraction(
         numerator * other.denominator + other.numerator * denominator,
         denominator * other.denominator);
     // 1/2 + 1/8 = (8+2)/(16) = 10/16 = 5/8 !!!
   }
 
-  BeatFraction operator -(BeatFraction other) {
+  BarFraction operator -(BarFraction other) {
     return this + other * -1;
   }
 
-  BeatFraction operator *(num m) {
+  BarFraction operator *(num m) {
     if (isWashy) {
-      return BeatFraction.washy(beats * m);
+      return BarFraction.washy(beats * m);
     }
-    return BeatFraction(numerator * m, denominator);
+    return BarFraction(numerator * m, denominator);
   }
 
-  BeatFraction ceilTo(int denom) {
-    return BeatFraction(
+  BarFraction ceilTo(int denom) {
+    return BarFraction(
         ((denom * numerator / denominator).ceil() * denominator / denom).ceil(),
         denominator);
   }
 
-  BeatFraction swingify(double amount) {
+  BarFraction swingify(double amount) {
     if (amount > 0 && beats % 0.5 >= 0.25) {
       var source = beats % 0.25;
       var off = amount / 8 + source / (1 + amount);
-      return BeatFraction.washy(((beats * 4).floor() / 4) + off);
+      return BarFraction.washy(((beats * 4).floor() / 4) + off);
     }
     return this;
   }
 
   @override
   bool operator ==(dynamic other) =>
-      (other is BeatFraction) ? beats == other.beats : false;
+      (other is BarFraction) ? beats == other.beats : false;
 
-  bool operator >(BeatFraction other) {
+  bool operator >(BarFraction other) {
     return beats > other.beats;
   }
 
-  bool operator >=(BeatFraction other) {
+  bool operator >=(BarFraction other) {
     return beats >= other.beats;
   }
 
-  bool operator <(BeatFraction other) {
+  bool operator <(BarFraction other) {
     return beats < other.beats;
   }
 
-  bool operator <=(BeatFraction other) {
+  bool operator <=(BarFraction other) {
     return beats <= other.beats;
   }
 

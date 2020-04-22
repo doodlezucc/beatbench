@@ -1,7 +1,7 @@
 import 'dart:html';
 
 import '../audio_assembler.dart';
-import '../beat_fraction.dart';
+import '../bar_fraction.dart';
 import '../generators/base.dart';
 import '../history.dart';
 import '../patterns.dart';
@@ -39,9 +39,9 @@ class PatternView extends Window with PlaybackBoxWindow {
   }
 
   void calculateLength() {
-    length = extreme<PatternNotesComponent, BeatFraction>(
+    length = extreme<PatternNotesComponent, BarFraction>(
         patternData.genNotes.values, (comp) => comp.length(),
-        max: true, ifNone: BeatFraction(1, 1));
+        max: true, ifNone: BarFraction(1, 1));
   }
 
   Iterable<PlaybackNote> notesCache() {
@@ -61,7 +61,7 @@ class PatternView extends Window with PlaybackBoxWindow {
   }
 
   @override
-  double timeAt(BeatFraction bf) => bf.beats / (Project.instance.bpm / 60);
+  double timeAt(BarFraction bf) => bf.beats / (Project.instance.bpm / 60);
 
   @override
   double beatsAt(double seconds) => seconds * (Project.instance.bpm / 60);
@@ -77,7 +77,7 @@ class PatternView extends Window with PlaybackBoxWindow {
   }
 
   @override
-  void onHeadSet(BeatFraction head) {
+  void onHeadSet(BarFraction head) {
     Project.instance.pianoRoll.windowHeadSet(head);
   }
 }

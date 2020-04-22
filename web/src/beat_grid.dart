@@ -3,7 +3,7 @@ import 'dart:html';
 import 'generators/drums.dart';
 import 'history.dart';
 import 'notes.dart';
-import 'beat_fraction.dart';
+import 'bar_fraction.dart';
 import 'patterns.dart';
 
 class BeatGrid {
@@ -75,7 +75,7 @@ class BeatGrid {
   }
 
   Note _quickNote(int x, int y) =>
-      Note(_comp, pitch: Note.octave(y, 5), start: BeatFraction(x, 16));
+      Note(_comp, pitch: Note.octave(y, 5), start: BarFraction(x, 16));
 
   void swaggyBeat() {
     History.perform(NotesComponentAction(_comp, true, <Note>[

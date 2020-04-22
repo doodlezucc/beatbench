@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:meta/meta.dart';
 
 import '../audio_assembler.dart';
-import '../beat_fraction.dart';
+import '../bar_fraction.dart';
 import '../drag.dart';
 import '../transformable.dart';
 import '../utils.dart';
@@ -14,27 +14,27 @@ import '../history.dart';
 mixin PlaybackBoxWindow on Window {
   PlaybackBox get box;
 
-  BeatFraction get length => _length;
-  BeatFraction _length = BeatFraction(4, 4);
-  set length(BeatFraction l) {
-    var min = BeatFraction(4, 4);
+  BarFraction get length => _length;
+  BarFraction _length = BarFraction(4, 4);
+  set length(BarFraction l) {
+    var min = BarFraction(4, 4);
     if (l < min) l = min;
     _length = l;
     box.length = timeAt(l);
     drawOrientation();
     box.thereAreChanges();
     if (headPosition > length) {
-      headPosition = BeatFraction.washy(headPosition.beats % length.beats);
+      headPosition = BarFraction.washy(headPosition.beats % length.beats);
     }
   }
 
-  BeatFraction _headPosition = BeatFraction(0, 1);
-  BeatFraction get headPosition => _headPosition;
-  set headPosition(BeatFraction headPosition) {
+  BarFraction _headPosition = BarFraction(0, 1);
+  BarFraction get headPosition => _headPosition;
+  set headPosition(BarFraction headPosition) {
     if (headPosition > length) {
       headPosition = length;
     } else if (headPosition.numerator < 0) {
-      headPosition = BeatFraction(0, 4);
+      headPosition = BarFraction(0, 4);
     }
     if (headPosition != _headPosition) {
       _headPosition = headPosition;
@@ -44,11 +44,11 @@ mixin PlaybackBoxWindow on Window {
     }
   }
 
-  void onHeadSet(BeatFraction head);
+  void onHeadSet(BarFraction head);
   void drawForeground(double ghost);
   void drawOrientation();
 
-  double timeAt(BeatFraction songLength);
+  double timeAt(BarFraction songLength);
   double beatsAt(double time);
 
   void onNewTempo() {
@@ -61,7 +61,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
   CssPxVar get cellHeight;
   static final CssPxVar railHeight = CssPxVar('rail-height');
 
-  BeatFraction get renderedLength;
+  BarFraction get renderedLength;
 
   CanvasElement canvasFg;
   CanvasElement canvasBg;
@@ -79,7 +79,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
           if (selectedItems.isNotEmpty) {
             selectedItems.forEach((i) => i.selected = false);
           } else {
-            addItem(BeatFraction.floor(e.offset.x / beatWidth.value, gridSize),
+            addItem(BarFraction.floor(e.offset.x / beatWidth.value, gridSize),
                 ((e.offset.y - railHeight.value) / cellHeight.value).floor());
           }
         }
@@ -104,7 +104,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
     });
   }
 
-  void addItem(BeatFraction start, int y);
+  void addItem(BarFraction start, int y);
 
   void _onScroll() {
     //e.style.top = (-query('#right').scrollTop).toString() + 'px';
@@ -116,7 +116,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
   PlaybackBoxWindow get bw;
 
   void _playheadFromPixels(MouseEvent e) {
-    bw.headPosition = BeatFraction.round(
+    bw.headPosition = BarFraction.round(
         (e.page.x - query('.rail').documentOffset.x) / beatWidth.value,
         gridSize);
   }
@@ -155,7 +155,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
     ctx.stroke();
   }
 
-  BeatFraction get gridSize;
+  BarFraction get gridSize;
   CssPxVar get beatWidth;
 
   void drawBg() {
@@ -184,7 +184,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
 
   int get canvasHeight;
 
-  void windowHeadSet(BeatFraction head) {
+  void windowHeadSet(BarFraction head) {
     query('#head').style.left = cssCalc(head.beats, beatWidth);
   }
 }
@@ -223,7 +223,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
       }
     });
     draggable = Draggable<T>(el, () => tr.transform, (srcTr, pixelOff, ev) {
-      var xDiff = BeatFraction.round(
+      var xDiff = BarFraction.round(
           pixelOff.x / window.beatWidth.value, window.gridSize);
       var minXDiff = window.extremeItem((tr) => tr.start, max: false) * -1;
       if (xDiff < minXDiff) {
@@ -268,7 +268,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
       () => tr.transform,
       (srcTr, off, ev) {
         var diff =
-            BeatFraction.round(off.x / window.beatWidth.value, window.gridSize);
+            BarFraction.round(off.x / window.beatWidth.value, window.gridSize);
         // diff maximum: lengthOld - 1
         var maxDiff =
             window.extremeItem((i) => i.length, max: false) - window.gridSize;
@@ -291,7 +291,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
     return out;
   }
 
-  BeatFraction leftStretch(BeatFraction diff) {
+  BarFraction leftStretch(BarFraction diff) {
     var minDiff = window.extremeItem((i) => i.start, max: false) * -1;
     if (diff < minDiff) diff = minDiff;
 
