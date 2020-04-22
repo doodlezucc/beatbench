@@ -176,11 +176,15 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
   }
 
   void sendNoteOn() {
+    if (Project.instance.audioAssembler.isRunning) return;
+
     pianoRoll.component.generator
         .noteStart(note.createInfo(), ctx.currentTime, false);
   }
 
   void sendNoteOff(int pitch) {
+    if (Project.instance.audioAssembler.isRunning) return;
+
     pianoRoll.component.generator.noteEnd(pitch, ctx.currentTime);
   }
 
