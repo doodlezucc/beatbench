@@ -9,7 +9,7 @@ import 'project.dart';
 
 class Specs {
   final int sampleRate = 44100;
-  final int schedulingMs = 100;
+  final int schedulingMs = 50;
   final int frameDuration = 20; // 50fps
 }
 
@@ -108,10 +108,11 @@ class PlaybackBox {
       idealPitchesPlaying[generator].forEach((info) {
         if (!generator.playingNodes
             .any((node) => node.info.coarsePitch == info.coarsePitch)) {
-          _sendNoteOn(generator, info, _ctx.currentTime);
+          _sendNoteOn(generator, info, _ctx.currentTime, isResumed: true);
         }
       });
     });
+    print('Call me genius');
   }
 
   Iterable<Generator> get generators => Project.instance.generators.list;
@@ -166,6 +167,8 @@ class PlaybackBox {
         if (_shouldUpdateCache) {
           _forceUpdateCache();
           _correctPlayingNotes();
+          _bufferedSeconds = ctx.currentTime - _contextTimeOnStart;
+          _bufferTo(_bufferedSeconds, onlyOff: true);
         }
         _bufferTo(ctx.currentTime - _contextTimeOnStart + scheduleAhead);
       },
@@ -175,8 +178,8 @@ class PlaybackBox {
     _positionOnStart = start;
 
     _forceUpdateCache();
-    _bufferTo(scheduleAhead);
     _correctPlayingNotes();
+    _bufferTo(scheduleAhead);
   }
 
   void stopPlayback() {
@@ -202,30 +205,30 @@ class PlaybackBox {
     print('Updated cache');
   }
 
-  void _bufferTo(double seconds) {
-    if (seconds > _bufferedSeconds) {
-      var buffLength = seconds - _bufferedSeconds;
-      var startMod = (_bufferedSeconds + _positionOnStart) % length;
-      var end = startMod + buffLength;
-      _bufferRegion(startMod, end,
-          wrap: ((_ctx.currentTime - _contextTimeOnStart + _positionOnStart) /
-                      length)
-                  .floor() <
-              ((_bufferedSeconds + _positionOnStart) / length).floor());
-      if (end >= length) {
-        // Wrap to start
-        _bufferRegion(0, end % length, wrap: true);
-      }
-      _bufferedSeconds = seconds;
-    } else {
-      print('nah');
+  void _bufferTo(double seconds, {bool onlyOff = false}) {
+    if (seconds <= _bufferedSeconds && !onlyOff) {
+      print('Buffering already buffered stuff');
     }
+    var buffLength = seconds - _bufferedSeconds;
+    var startMod = (_bufferedSeconds + _positionOnStart) % length;
+    var end = startMod + buffLength;
+    _bufferRegion(startMod, end,
+        onlyOff: onlyOff,
+        wrap: ((_ctx.currentTime - _contextTimeOnStart + _positionOnStart) /
+                    length)
+                .floor() <
+            ((_bufferedSeconds + _positionOnStart) / length).floor());
+    if (end >= length) {
+      // Wrap to start
+      _bufferRegion(0, end % length, onlyOff: onlyOff, wrap: true);
+    }
+    _bufferedSeconds = seconds;
   }
 
   void _debugNoteEvent(Generator gen, int pitch, double when, bool noteOn,
       {bool isResumed = false}) {
-    var common = CommonPitch(pitch);
-    print('${common.description} / ${noteOn}');
+    //var common = CommonPitch(pitch);
+    //print('${common.description} / ${noteOn}');
   }
 
   bool _sendNoteOn(Generator gen, NoteInfo info, double when,
@@ -244,7 +247,8 @@ class PlaybackBox {
     return true;
   }
 
-  void _bufferRegion(double from, double to, {bool wrap = false}) {
+  void _bufferRegion(double from, double to,
+      {bool wrap = false, bool onlyOff = false}) {
     var time = _positionOnStart + _ctx.currentTime - _contextTimeOnStart;
     var when = _ctx.currentTime - (time % length);
     if (wrap) {
@@ -252,7 +256,7 @@ class PlaybackBox {
     }
 
     _cache.forEach((pn) {
-      if (pn.startInSeconds >= from && pn.startInSeconds < to) {
+      if (!onlyOff && pn.startInSeconds >= from && pn.startInSeconds < to) {
         _sendNoteOn(pn.generator, pn.noteInfo, when + pn.startInSeconds);
       }
       if (pn.endInSeconds >= from && pn.endInSeconds < to) {
