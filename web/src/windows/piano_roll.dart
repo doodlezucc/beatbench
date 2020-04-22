@@ -44,17 +44,49 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
     var parent = query('.piano-keys');
     for (var i = pitchMax; i >= pitchMin; i--) {
       var common = CommonPitch(i);
-      _buildKey(common.description, common.whiteKey, parent,
+      _buildKey(common.description, common.whiteKey, parent, i,
           common.mod == 0 || common.mod == 5);
     }
   }
 
-  void _buildKey(String description, bool white, HtmlElement parent,
+  void _buildKey(String description, bool white, HtmlElement parent, int pitch,
       [bool splitBottom = false]) {
-    parent.append(DivElement()
+    DivElement keyEl;
+    parent.append(keyEl = DivElement()
       ..className =
           (white ? 'white' : 'black') + (splitBottom ? ' split-bottom' : '')
-      ..text = description);
+      ..text = description
+      ..onMouseDown.listen((e) => _keyOn(pitch, e, keyEl))
+      ..onMouseEnter.listen((e) {
+        if (e.buttons > 0) {
+          _keyOn(pitch, e, keyEl);
+        }
+      }));
+  }
+
+  DivElement _keyElemAtPitch(int pitch) =>
+      query('.piano-keys').children[pitchMax - pitch];
+
+  void setKeyVisuallyPlaying(int pitch, bool v) {
+    _keyElemAtPitch(pitch).classes.toggle('playing', v);
+  }
+
+  void _keyOn(int pitch, MouseEvent e, DivElement keyEl) {
+    StreamSubscription subUp;
+    StreamSubscription subOut;
+    sendNoteOn(NoteInfo(pitch, 1));
+    subUp = keyEl.onMouseUp.listen((e) {
+      subUp.cancel();
+      _keyOff(pitch);
+    });
+    subOut = keyEl.onMouseOut.listen((e) {
+      subOut.cancel();
+      _keyOff(pitch);
+    });
+  }
+
+  void _keyOff(int pitch) {
+    sendNoteOff(pitch);
   }
 
   void reloadData() {
@@ -145,6 +177,14 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
 
   static int toVisual(int pitch) => PianoRoll.pitchMax - pitch;
   static int toPitch(int visual) => PianoRoll.pitchMax - visual;
+
+  void sendNoteOn(NoteInfo info) {
+    component.generator.noteStart(info, ctx.currentTime, false);
+  }
+
+  void sendNoteOff(int pitch) {
+    component.generator.noteEnd(pitch, ctx.currentTime);
+  }
 }
 
 class PianoRollNote extends RollOrTimelineItem<Transform> {
@@ -178,14 +218,13 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
   void sendNoteOn() {
     if (Project.instance.audioAssembler.isRunning) return;
 
-    pianoRoll.component.generator
-        .noteStart(note.createInfo(), ctx.currentTime, false);
+    pianoRoll.sendNoteOn(note.createInfo());
   }
 
   void sendNoteOff(int pitch) {
     if (Project.instance.audioAssembler.isRunning) return;
 
-    pianoRoll.component.generator.noteEnd(pitch, ctx.currentTime);
+    pianoRoll.sendNoteOff(pitch);
   }
 
   void _dispose() {

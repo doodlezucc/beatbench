@@ -327,7 +327,11 @@ button.reload {
 }
 
 .piano-keys > .black {
-	background-color: #444;
+	background-color: #666;
+}
+
+.piano-keys > .playing {
+	background-color: hsl(0, 60%, 57%);
 }
 
 .piano-keys > .split-bottom {

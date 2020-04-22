@@ -5,6 +5,8 @@ import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart';
 
 import '../notes.dart';
+import '../project.dart';
+import '../windows/piano_roll.dart';
 import '../windows/windows.dart';
 
 abstract class GeneratorInterface<G extends Generator> extends Window {
@@ -116,6 +118,9 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
   T _getNode(int pitch) => _playingNodes
       .firstWhere((node) => node.info.coarsePitch == pitch, orElse: () => null);
 
+  PianoRoll get _pianoRoll => Project.instance.pianoRoll;
+  bool get _activeInPianoRoll => _pianoRoll.component.generator == this;
+
   void noteStart(NoteInfo note, double when, bool resume) {
     noteEnd(note.coarsePitch, when);
     var node = createNode(note, resume);
@@ -124,6 +129,9 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
       _playingNodes.add(node);
       node.start(when);
     }
+    if (_activeInPianoRoll) {
+      _pianoRoll.setKeyVisuallyPlaying(note.coarsePitch, true);
+    }
   }
 
   void noteEnd(int pitch, double when) {
@@ -131,6 +139,10 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
     if (playingNode != null) {
       playingNode.stop(when);
       _playingNodes.remove(playingNode);
+
+      if (_activeInPianoRoll) {
+        _pianoRoll.setKeyVisuallyPlaying(pitch, false);
+      }
     }
   }
 
