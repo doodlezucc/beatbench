@@ -45,7 +45,7 @@ class Note with Transformable {
 
   Note(this.comp,
       {@required int pitch,
-      start = const BarFraction(0, 4),
+      start = const BarFraction.zero(),
       length = const BarFraction(1, 16)}) {
     y = pitch;
     this.start = start;

@@ -114,7 +114,7 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   }
 
   PatternInstance instantiatePattern(PatternData data,
-      {BarFraction start = const BarFraction(0, 1), int track = 0}) {
+      {BarFraction start = const BarFraction.zero(), int track = 0}) {
     PatternInstance instance;
     instance = PatternInstance(data, start, null, track, this);
     if (instance.end > length) {
@@ -277,7 +277,7 @@ class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
 
 class PatternInstance extends RollOrTimelineItem<PatternTransform>
     with Transformable<PatternTransform> {
-  BarFraction _contentShift = BarFraction(0, 1);
+  BarFraction _contentShift = const BarFraction.zero();
   BarFraction get contentShift => _contentShift;
   set contentShift(BarFraction contentShift) {
     if (_contentShift != contentShift) {
@@ -325,8 +325,8 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
 
     _dragSystem.register(draggable);
 
-    applyTransform(PatternTransform(
-        start, length ?? data.length().ceilTo(2), BarFraction(0, 1), track));
+    applyTransform(PatternTransform(start, length ?? data.length().ceilTo(2),
+        const BarFraction.zero(), track));
 
     data.listenToEdits((ev) {
       if (!el.classes.contains('hidden')) {

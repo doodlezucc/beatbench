@@ -11,6 +11,11 @@ class BarFraction {
       : numerator = 0,
         denominator = 0;
 
+  const BarFraction.zero()
+      : beats = 0,
+        numerator = 0,
+        denominator = 1;
+
   // round 0.5 : (1/3) => (3/12)
   BarFraction.round(double beats, BarFraction gridSize)
       : this((beats * gridSize.numerator * gridSize.denominator / 4).round(),

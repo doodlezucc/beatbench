@@ -28,13 +28,13 @@ mixin PlaybackBoxWindow on Window {
     }
   }
 
-  BarFraction _headPosition = BarFraction(0, 1);
+  BarFraction _headPosition = const BarFraction.zero();
   BarFraction get headPosition => _headPosition;
   set headPosition(BarFraction headPosition) {
     if (headPosition > length) {
       headPosition = length;
     } else if (headPosition.numerator < 0) {
-      headPosition = BarFraction(0, 4);
+      headPosition = const BarFraction.zero();
     }
     if (headPosition != _headPosition) {
       _headPosition = headPosition;

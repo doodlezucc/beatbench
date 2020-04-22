@@ -28,7 +28,7 @@ class PatternNotesComponent extends PatternDataComponent {
   Iterable<Note> get notes => _notes;
 
   void addNote({
-    BarFraction start = const BarFraction(0, 1),
+    BarFraction start = const BarFraction.zero(),
     BarFraction length = const BarFraction(1, 16),
     @required int pitch,
     bool reversibleAction = true,
