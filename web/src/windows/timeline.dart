@@ -57,7 +57,7 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
 
           var noteEndBeats = note.end.beats - pat.contentShift.beats;
 
-          if (noteEndBeats >= 0 && noteStartBeats < pat.length.beats) {
+          if (noteEndBeats > 0 && noteStartBeats < pat.length.beats) {
             // note must play at SOME point...
             var shift = pat.start - pat.contentShift;
             cache.add(TimelinePlaybackNote(
