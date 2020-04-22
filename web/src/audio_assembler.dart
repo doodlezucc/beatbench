@@ -112,7 +112,6 @@ class PlaybackBox {
         }
       });
     });
-    print('Call me genius');
   }
 
   Iterable<Generator> get generators => Project.instance.generators.list;

@@ -114,26 +114,28 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   }
 
   PatternInstance instantiatePattern(PatternData data,
-      {BarFraction start = const BarFraction.zero(), int track = 0}) {
+      {BarFraction start = const BarFraction.zero(),
+      int track = 0,
+      bool reversible = false}) {
     PatternInstance instance;
     instance = PatternInstance(data, start, null, track, this);
     if (instance.end > length) {
       length = instance.end;
     }
-    History.perform(PatternsCreationAction(this, true, [instance]));
+    History.perform(PatternsCreationAction(this, true, [instance]), reversible);
     return instance;
   }
 
   void demoFromBeatGrid(BeatGrid grid) {
     var drums = grid.drums;
     var osc = Oscillator(grid.drums.gain.context);
-    History.perform(GeneratorCreationAction(true, [drums, osc]));
+    History.perform(GeneratorCreationAction(true, [drums, osc]), false);
     var gridPatternData = grid.data;
     var crashPatternData = PatternData(
       'Crash!',
       {
         drums: PatternNotesComponent()
-          ..addNote(pitch: Note.octave(Note.D + 1, 5))
+          ..addNote(pitch: Note.octave(Note.D + 1, 5), actionReversible: false)
       },
     );
     for (var i = 0; i < 4; i++) {
@@ -170,20 +172,22 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
 
     var src = instantiatePattern(chordPatternData, track: 2)
       ..length = BarFraction(6, 4);
-    History.perform(PatternsCreationAction(this, true, [
-      _clonePattern(src)
-        ..start = BarFraction(6, 4)
-        ..contentShift = BarFraction(8, 4)
-        ..length = BarFraction(2, 4),
-      _clonePattern(src)
-        ..start = BarFraction(9, 4)
-        ..contentShift = BarFraction(0, 4)
-        ..length = BarFraction(3, 4),
-      _clonePattern(src)
-        ..start = BarFraction(12, 4)
-        ..contentShift = BarFraction(12, 4)
-        ..length = BarFraction(3, 4),
-    ]));
+    History.perform(
+        PatternsCreationAction(this, true, [
+          _clonePattern(src)
+            ..start = BarFraction(6, 4)
+            ..contentShift = BarFraction(8, 4)
+            ..length = BarFraction(2, 4),
+          _clonePattern(src)
+            ..start = BarFraction(9, 4)
+            ..contentShift = BarFraction(0, 4)
+            ..length = BarFraction(3, 4),
+          _clonePattern(src)
+            ..start = BarFraction(12, 4)
+            ..contentShift = BarFraction(12, 4)
+            ..length = BarFraction(3, 4),
+        ]),
+        false);
 
     //calculateSongLength();
   }
@@ -192,7 +196,8 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
       comp.addNote(
           pitch: Note.octave(tone, 5),
           start: BarFraction(start, 1),
-          length: BarFraction(1, 1));
+          length: BarFraction(1, 1),
+          actionReversible: false);
 
   @override
   bool handleDelete() {

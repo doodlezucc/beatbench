@@ -151,6 +151,7 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
   static final DragSystem<Transform> _dragSystem = DragSystem();
   SpanElement span;
   final Note note;
+  int _oldPitch;
 
   PianoRollNote(PianoRoll window, this.note)
       : super(window.query('#notes').append(DivElement()..className = 'note'),
@@ -163,6 +164,7 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
     _dragSystem.register(draggable);
 
     itemPosition();
+    _oldPitch = pitch;
   }
 
   void _dispose() {
@@ -190,6 +192,7 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
   void onYSet() {
     el.style.top = cssCalc(PianoRoll.toVisual(pitch), PianoRoll.pixelsPerKey);
     span.text = CommonPitch(pitch).description;
+    _oldPitch = pitch;
   }
 
   @override

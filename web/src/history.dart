@@ -24,8 +24,8 @@ class History {
   static final List<Action> _stack = [];
   static int _actionsDone = 0;
 
-  static void perform(Action a, [bool undoable = true]) {
-    if (!undoable) {
+  static void perform(Action a, [bool reversible = true]) {
+    if (!reversible) {
       a._run();
     } else {
       _registerAction(a);
@@ -44,15 +44,15 @@ class History {
     }
     _stack.add(a);
     if (!a._isDone) {
+      print('Doing $a');
       a._run();
     }
     _actionsDone++;
-    print('im committing an $a');
   }
 
   static void undo() {
     if (_actionsDone > 0) {
-      print('Undoing');
+      print('Undoing ${_stack[_actionsDone - 1]}');
       _stack[_actionsDone - 1]._unrun();
       _actionsDone--;
     } else {

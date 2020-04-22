@@ -52,20 +52,20 @@ class BeatGrid {
     }
   }
 
-  void _setData(int x, int y, bool active, bool undoable) {
+  void _setData(int x, int y, bool active, bool reversible) {
     if (active) {
       History.perform(
           NotesComponentAction(_comp, true, [
             _quickNote(x, y),
           ]),
-          undoable);
+          reversible);
     } else {
       History.perform(
           NotesComponentAction(_comp, false, [
             _comp.notes.singleWhere(
                 (n) => n.start.numerator == x && n.y == Note.octave(y, 5)),
           ]),
-          undoable);
+          reversible);
     }
   }
 
@@ -78,18 +78,20 @@ class BeatGrid {
       Note(_comp, pitch: Note.octave(y, 5), start: BarFraction(x, 16));
 
   void swaggyBeat() {
-    History.perform(NotesComponentAction(_comp, true, <Note>[
-      // Kick
-      _quickNote(0, 0),
-      _quickNote(3, 0),
-      _quickNote(6, 0),
-      _quickNote(10, 0),
-      // Snare
-      _quickNote(4, 1),
-      _quickNote(12, 1),
-      //Hi-Hat
-      _quickNote(2, 2),
-      _quickNote(10, 2),
-    ]));
+    History.perform(
+        NotesComponentAction(_comp, true, <Note>[
+          // Kick
+          _quickNote(0, 0),
+          _quickNote(3, 0),
+          _quickNote(6, 0),
+          _quickNote(10, 0),
+          // Snare
+          _quickNote(4, 1),
+          _quickNote(12, 1),
+          //Hi-Hat
+          _quickNote(2, 2),
+          _quickNote(10, 2),
+        ]),
+        false);
   }
 }

@@ -31,12 +31,12 @@ class PatternNotesComponent extends PatternDataComponent {
     BarFraction start = const BarFraction.zero(),
     BarFraction length = const BarFraction(1, 16),
     @required int pitch,
-    bool reversibleAction = true,
+    bool actionReversible = true,
   }) {
     History.perform(
         NotesComponentAction(this, true,
             [Note(this, start: start, length: length, pitch: pitch)]),
-        reversibleAction);
+        actionReversible);
   }
 
   @override
