@@ -46,6 +46,7 @@ class PlaybackBox {
   AudioContext _ctx;
   bool _running = false;
   bool _shouldUpdateCache = true;
+  bool _newTempo = false;
 
   double _length = 1;
   double get length => _length;
@@ -138,10 +139,11 @@ class PlaybackBox {
       var position = (newLength / length) *
           ((_positionOnStart + _ctx.currentTime - _contextTimeOnStart) %
               _length);
-      _bufferedSeconds =
-          _bufferedSeconds - (_ctx.currentTime - _contextTimeOnStart);
+      _bufferedSeconds = (newLength / length) *
+          (_bufferedSeconds - (_ctx.currentTime - _contextTimeOnStart));
       _contextTimeOnStart = _ctx.currentTime;
       _positionOnStart = position % newLength;
+      _newTempo = true;
     }
 
     _length = newLength;
@@ -170,15 +172,20 @@ class PlaybackBox {
       (timerInstance) {
         if (_shouldUpdateCache) {
           _forceUpdateCache();
-          _correctPlayingNotes();
-          _bufferedSeconds = ctx.currentTime - _contextTimeOnStart;
-          _bufferTo(_bufferedSeconds, onlyOff: true);
+          if (_newTempo) {
+            _newTempo = false;
+          } else {
+            _correctPlayingNotes();
+            _bufferedSeconds = ctx.currentTime - _contextTimeOnStart;
+            _bufferTo(_bufferedSeconds, onlyOff: true);
+          }
         }
         _bufferTo(ctx.currentTime - _contextTimeOnStart + scheduleAhead);
       },
     );
     _bufferedSeconds = _smallValue;
     _positionOnStart = start;
+    _newTempo = false;
 
     _forceUpdateCache();
     _contextTimeOnStart = ctx.currentTime;

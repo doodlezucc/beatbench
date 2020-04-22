@@ -13,7 +13,9 @@ import 'windows/windows.dart';
 
 class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
-  final Timeline timeline = Timeline()..visible = true;
+  final Timeline timeline = Timeline()
+    ..visible = true
+    ..position = Point(0, 50);
 
   PianoRoll _pianoRoll;
   PianoRoll get pianoRoll => _pianoRoll;
@@ -23,6 +25,7 @@ class Project {
   set bpm(double bpm) {
     _bpm = min(max(bpm, 20), 420);
     timeline.onNewTempo();
+    patternView.onNewTempo();
   }
 
   final GeneratorList _generators = GeneratorList();
@@ -39,7 +42,7 @@ class Project {
 
     _pianoRoll = PianoRoll()
       ..position = Point(200, 100)
-      ..size = Point(700, 500)
+      ..size = Point(700, 600)
       ..visible = true;
   }
 
@@ -50,7 +53,7 @@ class Project {
     grid.swaggyBeat();
 
     timeline.demoFromBeatGrid(grid);
-    pianoRoll.focus();
+    timeline.focus();
   }
 
   void play() {
