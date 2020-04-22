@@ -50,7 +50,7 @@ class Project {
     grid.swaggyBeat();
 
     timeline.demoFromBeatGrid(grid);
-    timeline.focus();
+    pianoRoll.focus();
   }
 
   void play() {

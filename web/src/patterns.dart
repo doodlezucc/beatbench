@@ -21,6 +21,11 @@ abstract class PatternDataComponent {
 }
 
 class PatternNotesComponent extends PatternDataComponent {
+  PatternData _data;
+  PatternData get data => _data;
+  Generator _generator;
+  Generator get generator => _generator;
+
   final List<Note> _notes = [];
   final double _swing = 0.5;
   double get swing => _swing;
@@ -82,7 +87,13 @@ class PatternData {
   String name;
 
   PatternData(this.name, Map<Generator, PatternNotesComponent> genNotes) {
-    _genNotes.addAll(genNotes);
+    genNotes.forEach((g, comp) => addNotesComponent(g, comp));
+  }
+
+  void addNotesComponent(Generator g, PatternNotesComponent comp) {
+    _genNotes[g] = comp
+      .._data = this
+      .._generator = g;
   }
 
   PatternNotesComponent component(Generator gen) {

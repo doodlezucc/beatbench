@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:html';
 
 import '../bar_fraction.dart';
+import '../ctx.dart';
 import '../drag.dart';
 import '../history.dart';
 import '../notes.dart';
@@ -151,7 +153,7 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
   static final DragSystem<Transform> _dragSystem = DragSystem();
   SpanElement span;
   final Note note;
-  int _oldPitch;
+  StreamSubscription _docUpSub;
 
   PianoRollNote(PianoRoll window, this.note)
       : super(window.query('#notes').append(DivElement()..className = 'note'),
@@ -159,12 +161,27 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
     el
       ..append(span = SpanElement())
       ..append(stretchElem(false, _dragSystem))
-      ..append(stretchElem(true, _dragSystem));
+      ..append(stretchElem(true, _dragSystem))
+      ..onMouseDown.listen((e) {
+        sendNoteOn();
+        _docUpSub = document.onMouseUp.listen((e) {
+          _docUpSub.cancel();
+          sendNoteOff(note.y);
+        });
+      });
 
     _dragSystem.register(draggable);
 
     itemPosition();
-    _oldPitch = pitch;
+  }
+
+  void sendNoteOn() {
+    pianoRoll.component.generator
+        .noteStart(note.createInfo(), ctx.currentTime, false);
+  }
+
+  void sendNoteOff(int pitch) {
+    pianoRoll.component.generator.noteEnd(pitch, ctx.currentTime);
   }
 
   void _dispose() {
@@ -192,7 +209,12 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
   void onYSet() {
     el.style.top = cssCalc(PianoRoll.toVisual(pitch), PianoRoll.pixelsPerKey);
     span.text = CommonPitch(pitch).description;
-    _oldPitch = pitch;
+  }
+
+  @override
+  void onNewY(int a, int b) {
+    sendNoteOff(a);
+    sendNoteOn();
   }
 
   @override

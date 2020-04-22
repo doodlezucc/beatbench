@@ -201,6 +201,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
   }
 
   void onYSet();
+  void onNewY(int a, int b) {}
 
   bool _selected = false;
   bool get selected => _selected;
@@ -240,7 +241,14 @@ abstract class RollOrTimelineItem<T extends Transform> {
 
       window.selectedItems.forEach((p) {
         p.tr.start = p.draggable.savedVar.start + xDiff;
-        p.tr.y = p.draggable.savedVar.y + yDiff;
+        var newY = p.draggable.savedVar.y + yDiff;
+        if (p.tr.y != newY) {
+          var oldY = tr.y;
+          p.tr.y = p.draggable.savedVar.y + yDiff;
+          if (p == this) {
+            onNewY(oldY, newY);
+          }
+        }
       });
 
       if (ev.detail == 1) {
