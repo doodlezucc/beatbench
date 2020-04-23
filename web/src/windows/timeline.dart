@@ -316,7 +316,8 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
             timeline
                 .query('#patterns')
                 .append(DivElement()..className = 'pattern hidden'),
-            timeline) {
+            timeline,
+            false) {
     _input = InputElement(type: 'text')
       ..className = 'shy'
       ..value = data.name;

@@ -55,13 +55,13 @@ class BeatGrid {
   void _setData(int x, int y, bool active, bool reversible) {
     if (active) {
       History.perform(
-          NotesComponentAction(_comp, true, [
+          NotesComponentAction(_comp, reversible, true, [
             _quickNote(x, y),
           ]),
           reversible);
     } else {
       History.perform(
-          NotesComponentAction(_comp, false, [
+          NotesComponentAction(_comp, reversible, false, [
             _comp.notes.singleWhere(
                 (n) => n.start.numerator == x && n.y == Note.octave(y, 5)),
           ]),
@@ -79,7 +79,7 @@ class BeatGrid {
 
   void swaggyBeat() {
     History.perform(
-        NotesComponentAction(_comp, true, <Note>[
+        NotesComponentAction(_comp, false, true, <Note>[
           // Kick
           _quickNote(0, 0),
           _quickNote(3, 0),

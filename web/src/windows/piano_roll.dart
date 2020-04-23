@@ -92,7 +92,7 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
   void reloadData() {
     items.forEach((n) => n._dispose());
     items.clear();
-    items.addAll(_comp.notes.map((n) => PianoRollNote(this, n)));
+    items.addAll(_comp.notes.map((n) => PianoRollNote(this, n, false)));
   }
 
   @override
@@ -146,10 +146,10 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
     return items.map((i) => i.note);
   }
 
-  void onNoteAction(Note note, bool create) {
+  void onNoteAction(Note note, bool create, {bool dragNow = false}) {
     if (create) {
       var prn = _allRollNotes.firstWhere((pn) => pn.note == note,
-          orElse: () => PianoRollNote(this, note));
+          orElse: () => PianoRollNote(this, note, dragNow));
       items.add(prn);
       prn.selected = true;
     } else {
@@ -163,7 +163,7 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
   @override
   bool handleDelete() {
     if (selectedItems.isNotEmpty) {
-      History.perform(NotesComponentAction(component, false,
+      History.perform(NotesComponentAction(component, true, false,
           selectedItems.map((pn) => pn.note).toList(growable: false)));
     }
     return true;
@@ -195,22 +195,29 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
   final Note note;
   StreamSubscription _docUpSub;
 
-  PianoRollNote(PianoRoll window, this.note)
+  PianoRollNote(PianoRoll window, this.note, bool createdByUser)
       : super(window.query('#notes').append(DivElement()..className = 'note'),
-            window) {
+            window, createdByUser) {
+    void registerNoteOffOnMouseUp() {
+      sendNoteOn();
+      _docUpSub = document.onMouseUp.listen((e) {
+        _docUpSub.cancel();
+        sendNoteOff(note.y);
+      });
+    }
+
     el
       ..append(span = SpanElement())
       ..append(stretchElem(false, _dragSystem))
       ..append(stretchElem(true, _dragSystem))
       ..onMouseDown.listen((e) {
-        sendNoteOn();
-        _docUpSub = document.onMouseUp.listen((e) {
-          _docUpSub.cancel();
-          sendNoteOff(note.y);
-        });
+        registerNoteOffOnMouseUp();
       });
 
-    _dragSystem.register(draggable);
+    _dragSystem.register(draggable, dragNow: createdByUser);
+    if (createdByUser) {
+      registerNoteOffOnMouseUp();
+    }
 
     itemPosition();
   }

@@ -4,13 +4,13 @@ class DragSystem<T> {
   final List<Draggable<T>> _registered = [];
   Iterable<Draggable<T>> get registered => _registered;
 
-  void register(Draggable<T> d) {
+  void register(Draggable<T> d, {bool dragNow = false}) {
     _registered.add(d);
     d.e.onMouseDown.listen((ev) {
       d.e.classes.toggle('dragged', true);
       if (ev.target == d.e ||
           !Draggable._draggables.any((draggable) => draggable.e == ev.target)) {
-        Draggable._offset1 = ev.client;
+        Draggable.offset1 = ev.client;
         d._isDragged = true;
 
         registered.forEach((r) {
@@ -18,6 +18,12 @@ class DragSystem<T> {
         });
       }
     });
+
+    if (dragNow) {
+      d.e.classes.toggle('dragged', true);
+      d._isDragged = true;
+      d._saved = d.saveVariable();
+    }
   }
 }
 
@@ -27,7 +33,7 @@ class Draggable<T> {
       _draggables.where((d) => d._isDragged);
   static bool _isSetUp = false;
 
-  static Point<num> _offset1;
+  static Point<num> offset1;
 
   final HtmlElement e;
   final T Function() saveVariable;
@@ -57,7 +63,7 @@ class Draggable<T> {
 
   static void _passMovement(MouseEvent ev) {
     if (_dragged.isNotEmpty) {
-      var diff = ev.client - _offset1;
+      var diff = ev.client - offset1;
       _dragged.forEach((d) {
         d._apply(d._saved, diff, ev);
       });

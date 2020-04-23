@@ -39,7 +39,7 @@ class PatternNotesComponent extends PatternDataComponent {
     bool actionReversible = true,
   }) {
     History.perform(
-        NotesComponentAction(this, true,
+        NotesComponentAction(this, actionReversible, true,
             [Note(this, start: start, length: length, pitch: pitch)]),
         actionReversible);
   }
@@ -52,8 +52,10 @@ class PatternNotesComponent extends PatternDataComponent {
 
 class NotesComponentAction extends AddRemoveAction<Note> {
   final PatternNotesComponent component;
+  bool _userInput;
 
-  NotesComponentAction(this.component, bool forward, Iterable<Note> notes)
+  NotesComponentAction(
+      this.component, this._userInput, bool forward, Iterable<Note> notes)
       : super(forward, notes);
 
   PianoRoll get _pianoRoll => Project.instance.pianoRoll;
@@ -61,7 +63,7 @@ class NotesComponentAction extends AddRemoveAction<Note> {
   @override
   void doSingle(Note object) {
     if (_pianoRoll.component == component) {
-      _pianoRoll.onNoteAction(object, true);
+      _pianoRoll.onNoteAction(object, true, dragNow: _userInput);
     }
     component._notes.add(object);
   }
@@ -77,6 +79,7 @@ class NotesComponentAction extends AddRemoveAction<Note> {
   @override
   void onExecuted(bool didAdd) {
     component.streamController.add(didAdd);
+    _userInput = false;
   }
 }
 

@@ -79,6 +79,7 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
           if (selectedItems.isNotEmpty) {
             selectedItems.forEach((i) => i.selected = false);
           } else {
+            Draggable.offset1 = e.client;
             addItem(BarFraction.floor(e.offset.x / beatWidth.value, gridSize),
                 ((e.offset.y - railHeight.value) / cellHeight.value).floor());
           }
@@ -214,7 +215,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
 
   bool get invertVerticalDragging => false;
 
-  RollOrTimelineItem(this.el, this.window) {
+  RollOrTimelineItem(this.el, this.window, bool createdByUser) {
     el.onMouseDown.listen((e) {
       if (!selected) {
         if (!e.shiftKey) {
@@ -223,6 +224,9 @@ abstract class RollOrTimelineItem<T extends Transform> {
         selected = true;
       }
     });
+
+    var isFirstDrag = createdByUser;
+
     draggable = Draggable<T>(el, () => tr.transform, (srcTr, pixelOff, ev) {
       var xDiff = BarFraction.round(
           pixelOff.x / window.beatWidth.value, window.gridSize);
@@ -252,7 +256,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
       });
 
       if (ev.detail == 1) {
-        if (srcTr != tr.transform) {
+        if (srcTr != tr.transform && !isFirstDrag) {
           _registerTransformAction(tr.transform - srcTr);
         } else if (pixelOff.x == 0 && pixelOff.y == 0) {
           if (!ev.shiftKey) {
@@ -260,8 +264,14 @@ abstract class RollOrTimelineItem<T extends Transform> {
           }
           selected = true;
         }
+        isFirstDrag = false;
       }
     });
+
+    if (createdByUser) {
+      window.selectedItems.forEach((p) => p.selected = false);
+      selected = true;
+    }
   }
 
   void _registerTransformAction(Transform diff) {
