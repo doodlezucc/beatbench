@@ -12,7 +12,7 @@ class Oscillator extends Generator<_OscNoteNode> {
   @override
   _OscillatorInterface get visible => super.visible;
 
-  String _type = shapeTypes[0];
+  String _type = shapeTypes[3];
   String get type => _type;
   void setType(int typeIndex, [bool isUserInteraction = false]) {
     _type = shapeTypes[typeIndex];

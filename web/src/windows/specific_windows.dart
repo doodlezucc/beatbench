@@ -78,11 +78,11 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
         if (!(e.shiftKey || e.ctrlKey)) {
           if (selectedItems.isNotEmpty) {
             selectedItems.forEach((i) => i.selected = false);
-          } else {
-            Draggable.offset1 = e.client;
-            addItem(BarFraction.floor(e.offset.x / beatWidth.value, gridSize),
-                ((e.offset.y - railHeight.value) / cellHeight.value).floor());
           }
+
+          Draggable.offset1 = e.client;
+          addItem(BarFraction.floor(e.offset.x / beatWidth.value, gridSize),
+              ((e.offset.y - railHeight.value) / cellHeight.value).floor());
         }
       });
     canvasFg = query('#foreground');

@@ -140,7 +140,7 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
   PlaybackBoxWindow get bw => Project.instance.patternView;
 
   @override
-  BarFraction get gridSize => BarFraction(1, 4);
+  BarFraction get gridSize => BarFraction(1, 8);
 
   Iterable<Note> getNotes() {
     return items.map((i) => i.note);
@@ -171,8 +171,7 @@ class PianoRoll extends RollOrTimelineWindow<PianoRollNote> {
 
   @override
   void addItem(BarFraction start, int y) {
-    component.addNote(
-        start: start, length: BarFraction(1, 4), pitch: toPitch(y));
+    component.addNote(start: start, length: gridSize, pitch: toPitch(y));
   }
 
   static int toVisual(int pitch) => PianoRoll.pitchMax - pitch;

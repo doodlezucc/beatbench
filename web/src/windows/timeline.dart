@@ -231,7 +231,7 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   CssPxVar get cellHeight => pixelsPerTrack;
 
   @override
-  BarFraction get gridSize => BarFraction(1, 4);
+  BarFraction get gridSize => BarFraction(1, 8);
 
   @override
   BarFraction get renderedLength => length + BarFraction(16, 1);
