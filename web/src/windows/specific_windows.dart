@@ -8,6 +8,7 @@ import '../bar_fraction.dart';
 import '../drag.dart';
 import '../transformable.dart';
 import '../utils.dart';
+import 'piano_roll.dart';
 import 'windows.dart';
 import '../history.dart';
 
@@ -125,9 +126,12 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
   T extremeItem<T>(dynamic Function(Transform tr) variable,
       {@required bool max, bool onlyDragged = true, T ifNone}) {
     var list = onlyDragged ? selectedItems : items;
-    return extreme<I, T>(
-        list, (item) => variable(_getTransform(item, onlyDragged)),
-        max: max, ifNone: ifNone);
+    return extreme<I, T>(list, (item) {
+      if (_getTransform(item, onlyDragged) == null) {
+        print('Found null: ' + (item as PianoRollNote).pitch.toString());
+      }
+      return variable(_getTransform(item, onlyDragged));
+    }, max: max, ifNone: ifNone);
   }
 
   Transform _getTransform(I item, bool dragged) =>
@@ -225,8 +229,6 @@ abstract class RollOrTimelineItem<T extends Transform> {
       }
     });
 
-    var isFirstDrag = createdByUser;
-
     draggable = Draggable<T>(el, () => tr.transform, (srcTr, pixelOff, ev) {
       var xDiff = BarFraction.round(
           pixelOff.x / window.beatWidth.value, window.gridSize);
@@ -256,7 +258,7 @@ abstract class RollOrTimelineItem<T extends Transform> {
       });
 
       if (ev.detail == 1) {
-        if (srcTr != tr.transform && !isFirstDrag) {
+        if (srcTr != tr.transform) {
           _registerTransformAction(tr.transform - srcTr);
         } else if (pixelOff.x == 0 && pixelOff.y == 0) {
           if (!ev.shiftKey) {
@@ -264,7 +266,6 @@ abstract class RollOrTimelineItem<T extends Transform> {
           }
           selected = true;
         }
-        isFirstDrag = false;
       }
     });
 
@@ -279,33 +280,60 @@ abstract class RollOrTimelineItem<T extends Transform> {
         window.selectedItems.map((i) => i.tr).toList(growable: false), diff));
   }
 
-  DivElement stretchElem(bool right, DragSystem<T> dragSystem) {
+  DivElement stretchElem(bool right, DragSystem<T> dragSystem,
+      {bool dragNow = false}) {
     var out = DivElement()..className = 'stretch ${right ? 'right' : 'left'}';
-    dragSystem.register(Draggable<T>(
-      out,
-      () => tr.transform,
-      (srcTr, off, ev) {
-        var diff =
-            BarFraction.round(off.x / window.beatWidth.value, window.gridSize);
-        // diff maximum: lengthOld - 1
-        var maxDiff =
-            window.extremeItem((i) => i.length, max: false) - window.gridSize;
-        if (right) {
-          if (diff < maxDiff * -1) diff = maxDiff * -1;
+    var isFirstDrag = dragNow;
+    dragSystem.register(
+      Draggable<T>(
+        out,
+        () => tr.transform,
+        (srcTr, off, ev) {
+          var minYDiff = -window.extremeItem<num>((tr) => tr.y, max: false);
+          var yDiff = max(
+              minYDiff,
+              ((invertVerticalDragging ? -1 : 1) *
+                          off.y /
+                          window.cellHeight.value +
+                      0.5)
+                  .floor());
+
           window.selectedItems.forEach((p) {
-            p.tr.length = p.draggable.savedVar.length + diff;
+            var newY = p.draggable.savedVar.y + yDiff;
+            if (p.tr.y != newY) {
+              var oldY = tr.y;
+              p.tr.y = newY;
+              if (p == this) {
+                onNewY(oldY, newY);
+              }
+            }
           });
-        } else {
-          if (diff > maxDiff) diff = maxDiff;
-          diff = leftStretch(diff);
-        }
-        if (diff.numerator == 0) return;
-        if (ev.detail == 1) {
-          // register reversible action
-          _registerTransformAction(tr.transform - srcTr);
-        }
-      },
-    ));
+
+          var diff = BarFraction.round(
+              off.x / window.beatWidth.value, window.gridSize);
+          // diff maximum: lengthOld - 1
+          var maxDiff =
+              window.extremeItem((i) => i.length, max: false) - window.gridSize;
+          if (right) {
+            if (diff < maxDiff * -1) diff = maxDiff * -1;
+            window.selectedItems.forEach((p) {
+              p.tr.length = p.draggable.savedVar.length + diff;
+            });
+          } else {
+            if (diff > maxDiff) diff = maxDiff;
+            diff = leftStretch(diff);
+          }
+          if (ev.detail == 1) {
+            // register reversible action
+            if (srcTr != tr.transform && !isFirstDrag) {
+              _registerTransformAction(tr.transform - srcTr);
+            }
+            isFirstDrag = false;
+          }
+        },
+      ),
+      dragNow: dragNow,
+    );
     return out;
   }
 

@@ -205,15 +205,17 @@ class PianoRollNote extends RollOrTimelineItem<Transform> {
       });
     }
 
+    print(CommonPitch(note.y));
+
     el
       ..append(span = SpanElement())
       ..append(stretchElem(false, _dragSystem))
-      ..append(stretchElem(true, _dragSystem))
+      ..append(stretchElem(true, _dragSystem, dragNow: createdByUser))
       ..onMouseDown.listen((e) {
         registerNoteOffOnMouseUp();
       });
 
-    _dragSystem.register(draggable, dragNow: createdByUser);
+    _dragSystem.register(draggable);
     if (createdByUser) {
       registerNoteOffOnMouseUp();
     }

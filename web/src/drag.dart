@@ -22,8 +22,8 @@ class DragSystem<T> {
     if (dragNow) {
       d.e.classes.toggle('dragged', true);
       d._isDragged = true;
-      d._saved = d.saveVariable();
     }
+    d._saved = d.saveVariable();
   }
 }
 
