@@ -90,18 +90,21 @@ abstract class Window {
   }
 
   Window(HtmlElement element, String title) : _frame = _createFrame(title) {
+    var topbar = _frame.children.first;
     _element = _frame.append(element);
     visible = false;
     _frame.onMouseDown.listen((e) async {
       focus();
-      var mouseStart = e.screen;
-      var pos1 = position;
-      var isDragging = true;
-      document.onMouseMove.takeWhile((element) => isDragging).listen((event) {
-        position = pos1 + (event.screen - mouseStart);
-      });
-      await document.onMouseUp.first;
-      isDragging = false;
+      if (e.target == topbar) {
+        var mouseStart = e.screen;
+        var pos1 = position;
+        var isDragging = true;
+        document.onMouseMove.takeWhile((element) => isDragging).listen((event) {
+          position = pos1 + (event.screen - mouseStart);
+        });
+        await document.onMouseUp.first;
+        isDragging = false;
+      }
     });
   }
 

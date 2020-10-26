@@ -271,6 +271,11 @@ div.window.focused {
 div.topbar {
 	font-size: 14px;
 	display: flex;
+	background-color: transparent;
+}
+
+div.topbar .title {
+	pointer-events: none;
 }
 /* #endregion */
 
