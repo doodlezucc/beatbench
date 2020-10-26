@@ -44,6 +44,7 @@ abstract class Window {
       _stack.add(this);
       _reloadLayering();
       parent.append(_frame);
+      if (position == null) center();
     } else if (!v && visible) {
       _stack.remove(this);
       _reloadLayering();
@@ -51,8 +52,10 @@ abstract class Window {
     }
   }
 
-  Point<num> get position => _frame.getBoundingClientRect().topLeft;
+  Point<num> _position;
+  Point<num> get position => _position;
   set position(Point<num> position) {
+    _position = position;
     _frame.style.left = '${position.x}px';
     _frame.style.top = '${position.y}px';
   }
@@ -75,6 +78,15 @@ abstract class Window {
         ..append(SpanElement()
           ..className = 'title'
           ..text = title));
+  }
+
+  void center() {
+    if (visible) {
+      position =
+          (Point<num>(window.innerWidth, window.innerHeight) - size) * 0.5;
+    } else {
+      position = null;
+    }
   }
 
   Window(HtmlElement element, String title) : _frame = _createFrame(title) {

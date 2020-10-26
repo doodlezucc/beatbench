@@ -13,9 +13,7 @@ import 'windows/windows.dart';
 
 class Project {
   final AudioAssembler audioAssembler = AudioAssembler();
-  final Timeline timeline = Timeline()
-    ..visible = true
-    ..position = Point(0, 50);
+  final Timeline timeline = Timeline()..visible = true;
 
   PianoRoll _pianoRoll;
   PianoRoll get pianoRoll => _pianoRoll;
@@ -104,6 +102,9 @@ class Project {
           case 65: // a
             if (Window.focusedWindow.handleSelectAll()) e.preventDefault();
             return;
+          case 71: // g
+            generators.selected.interface.focus();
+            return e.preventDefault();
         }
       } else if (e.altKey) {
         switch (e.keyCode) {
