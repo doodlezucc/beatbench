@@ -99,7 +99,7 @@ abstract class GeneratorInterface<G extends Generator> extends Window {
 
 abstract class Generator<T extends NoteNodeChain> extends ContextDependent
     with NodeChain {
-  final GainNode _gain;
+  GainNode _gain;
   final List<T> _playingNodes = [];
   Iterable<T> get playingNodes => _playingNodes.toList(growable: false);
 
@@ -107,10 +107,31 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
   GeneratorInterface get interface => _interface;
   GeneratorInterface get visible => _interface.visible ? _interface : null;
 
+  bool _rendering = false;
+  bool get rendering => _rendering;
+  Generator<T> _renderGen;
+
+  Generator<T> cloneForRender(OfflineAudioContext ctx);
+
+  void initOffline(OfflineAudioContext ctx) {
+    _newContext(ctx, rendering: true);
+    _renderGen = cloneForRender(ctx);
+  }
+
+  void initOnline(AudioContext ctx) {
+    _newContext(ctx, rendering: false);
+  }
+
+  void _newContext(BaseAudioContext ctx, {bool rendering = false}) {
+    _rendering = rendering;
+    this.ctx = ctx;
+    _gain = ctx.createGain()..connectNode(ctx.destination);
+  }
+
   Generator(BaseAudioContext ctx, GeneratorInterface interface)
       : _interface = interface,
-        _gain = ctx.createGain()..connectNode(ctx.destination),
         super(ctx) {
+    _newContext(ctx);
     _interface?._init(this);
     chainEnd.connectNode(_gain);
   }
@@ -122,6 +143,9 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
   bool get _activeInPianoRoll => _pianoRoll.component.generator == this;
 
   void noteStart(NoteInfo note, double when, bool resume) {
+    if (rendering) {
+      return _renderGen.noteStart(note, when, resume);
+    }
     noteEnd(note.coarsePitch, when);
     var node = createNode(note, resume);
     if (node != null) {
@@ -135,6 +159,9 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
   }
 
   void noteEnd(int pitch, double when) {
+    if (rendering) {
+      return _renderGen.noteEnd(pitch, when);
+    }
     var playingNode = _getNode(pitch);
     if (playingNode != null) {
       playingNode.stop(when);
@@ -160,7 +187,7 @@ mixin NodeChain {
 }
 
 abstract class ContextDependent {
-  final BaseAudioContext ctx;
+  BaseAudioContext ctx;
   ContextDependent(this.ctx);
 }
 

@@ -2,6 +2,7 @@ import 'dart:html';
 import 'dart:math';
 
 import 'audio_assembler.dart';
+import 'audio_converter.dart';
 import 'beat_grid.dart';
 import 'generators/drums.dart';
 import 'history.dart';
@@ -63,6 +64,36 @@ class Project {
     }
   }
 
+  void renderToAudio() async {
+    void info(String s) {
+      print(s);
+      querySelector('#renderInfo').text = s;
+    }
+
+    info('Writing audio buffer...');
+
+    var assembler = AudioAssembler();
+
+    var buffer = await assembler.render(
+      timeline,
+      (ctx) => generators.list.forEach((element) => element.initOffline(ctx)),
+    );
+
+    info('Converting to WAV...');
+
+    var converter = AudioConverter(buffer, assembler.specs, buffer.length);
+    var blob = converter.convertToWav();
+    info('Rendered to file!');
+    var src = Url.createObjectUrlFromBlob(blob);
+    print(src);
+    (querySelector('audio') as AudioElement)
+      ..src = src
+      ..style.display = 'block';
+
+    generators.list
+        .forEach((element) => element.initOnline(audioAssembler.ctx));
+  }
+
   void pause() {
     audioAssembler.stopPlayback();
   }
@@ -85,9 +116,10 @@ class Project {
   void _init() {
     querySelector('#play').onClick.listen((e) => play());
     querySelector('#pause').onClick.listen((e) => pause());
-    querySelector('#abort').onClick.listen((e) => audioAssembler.ctx.suspend());
+    querySelector('#abort').onClick.listen((e) => audioAssembler.suspend());
     querySelector('#tempo').onInput.listen((e) => _parseTempoInput());
     _parseTempoInput();
+    querySelector('#render').onClick.listen((e) => renderToAudio());
 
     document.onKeyDown.listen((e) {
       if (e.target is InputElement) return;

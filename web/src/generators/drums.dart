@@ -31,6 +31,11 @@ class Drums extends Generator {
 
   @override
   List<AudioNode> get chain => [gain];
+
+  @override
+  Generator<NoteNodeChain> cloneForRender(OfflineAudioContext ctx) {
+    return Drums(drumSamples, ctx);
+  }
 }
 
 class _DrumPlayingNode extends NoteNodeChain {

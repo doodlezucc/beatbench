@@ -40,6 +40,11 @@ class Oscillator extends Generator<_OscNoteNode> {
   @override
   _OscNoteNode createNode(NoteInfo note, bool resume) =>
       _OscNoteNode(this, note, ctx);
+
+  @override
+  Generator<_OscNoteNode> cloneForRender(OfflineAudioContext ctx) {
+    return Oscillator(ctx).._type = _type;
+  }
 }
 
 class _OscNoteNode extends NoteNodeChain {

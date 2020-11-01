@@ -21,6 +21,17 @@ body {
 .hidden {
 	display: none !important;
 }
+
+.bottom-bar {
+	position: fixed;
+	bottom: 0;
+	padding: 0 5px;
+	background-color: #333;
+	border: 2px solid white;
+}
+.bottom-bar > * {
+	margin: 5px 0;
+}
 /* #endregion */
 
 /* #region INPUT*/

@@ -6,17 +6,23 @@ import 'package:meta/meta.dart';
 import 'generators/base.dart';
 import 'notes.dart';
 import 'project.dart';
+import 'windows/specific_windows.dart';
 
 class Specs {
   final int sampleRate = 44100;
   final int schedulingMs = 100;
   final int frameDuration = 20; // 50fps
+
+  const Specs();
 }
 
 class AudioAssembler {
-  var specs = Specs();
-  var ctx = AudioContext();
+  final Specs specs;
+  BaseAudioContext ctx = AudioContext();
   PlaybackBox _box;
+
+  AudioAssembler({this.specs = const Specs()});
+
   PlaybackBox get box => _box;
   bool get isRunning => _box != null;
 
@@ -25,6 +31,21 @@ class AudioAssembler {
     _box = box;
     await ctx.resume();
     _box._run(ctx, specs, start);
+  }
+
+  Future<AudioBuffer> render(PlaybackBoxWindow window,
+      void Function(OfflineAudioContext ctx) applyContext) async {
+    ctx = OfflineAudioContext(
+        2,
+        (specs.sampleRate * window.timeAt(window.length)).ceil(),
+        specs.sampleRate);
+    applyContext(ctx);
+    window.box._render(ctx, specs);
+    return await (ctx as OfflineAudioContext).startRendering();
+  }
+
+  Future<dynamic> suspend() async {
+    return await (ctx as AudioContext).suspend();
   }
 
   void stopPlayback() {
@@ -43,7 +64,7 @@ class PlaybackBox {
   double _positionOnStart = 0;
   Timer _audioTimer;
   Timer _videoTimer;
-  AudioContext _ctx;
+  BaseAudioContext _ctx;
   bool _running = false;
   bool _shouldUpdateCache = true;
   bool _newTempo = false;
@@ -154,6 +175,19 @@ class PlaybackBox {
   final void Function() onStop;
   final Iterable<PlaybackNote> Function() getNotes;
 
+  void _render(OfflineAudioContext ctx, Specs specs) {
+    _ctx = ctx;
+    _running = true;
+
+    _bufferedSeconds = 0;
+    _positionOnStart = 0;
+    _newTempo = false;
+
+    _forceUpdateCache();
+    _contextTimeOnStart = ctx.currentTime;
+    _bufferTo(ctx.length / ctx.sampleRate);
+  }
+
   void _run(AudioContext ctx, Specs specs, double start) {
     _ctx = ctx;
     _running = true;
@@ -238,7 +272,8 @@ class PlaybackBox {
       {bool isResumed = false}) {
     var common = CommonPitch(pitch);
     print('${gen.runtimeType}: ${common.description} / ${noteOn}' +
-        (isResumed ? ' (resumed)' : ''));
+        (isResumed ? ' (resumed)' : '') +
+        ' at $when');
   }
 
   bool _sendNoteOn(Generator gen, NoteInfo info, double when,
@@ -249,8 +284,7 @@ class PlaybackBox {
     return true;
   }
 
-  bool _sendNoteOff(Generator gen, int pitch, double when,
-      {bool isResumed = false}) {
+  bool _sendNoteOff(Generator gen, int pitch, double when) {
     _debugNoteEvent(gen, pitch, when, false);
     gen.noteEnd(pitch, when);
     //print('sent');
