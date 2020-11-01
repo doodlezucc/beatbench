@@ -70,7 +70,7 @@ class Project {
       querySelector('#renderInfo').text = s;
     }
 
-    info('Writing audio buffer...');
+    info('Converting to WAV...');
 
     var assembler = AudioAssembler();
 
@@ -78,8 +78,6 @@ class Project {
       timeline,
       (ctx) => generators.list.forEach((element) => element.initOffline(ctx)),
     );
-
-    info('Converting to WAV...');
 
     var converter = AudioConverter(buffer, assembler.specs, buffer.length);
     var blob = converter.convertToWav();
@@ -114,6 +112,8 @@ class Project {
   }
 
   void _init() {
+    Future.delayed(Duration(seconds: 1), renderToAudio);
+
     querySelector('#play').onClick.listen((e) => play());
     querySelector('#pause').onClick.listen((e) => pause());
     querySelector('#abort').onClick.listen((e) => audioAssembler.suspend());

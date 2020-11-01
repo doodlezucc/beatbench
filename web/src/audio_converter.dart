@@ -68,6 +68,9 @@ class AudioConverter {
         pos += 2;
       }
       offset++; // next source sample
+      if (offset % 10000 == 0) {
+        print((100 * pos / length).toStringAsFixed(1) + '%');
+      }
     }
 
     // create Blob

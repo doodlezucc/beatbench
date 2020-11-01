@@ -272,8 +272,7 @@ class PlaybackBox {
       {bool isResumed = false}) {
     var common = CommonPitch(pitch);
     print('${gen.runtimeType}: ${common.description} / ${noteOn}' +
-        (isResumed ? ' (resumed)' : '') +
-        ' at $when');
+        (isResumed ? ' (resumed)' : ''));
   }
 
   bool _sendNoteOn(Generator gen, NoteInfo info, double when,
