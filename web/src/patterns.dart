@@ -53,6 +53,7 @@ class PatternNotesComponent extends PatternDataComponent {
 }
 
 class NotesComponentAction extends AddRemoveAction<Note> {
+  static const String TYPE = 'creation';
   final PatternNotesComponent component;
   bool _userInput;
 
@@ -80,7 +81,7 @@ class NotesComponentAction extends AddRemoveAction<Note> {
 
   @override
   void onExecuted(bool didAdd) {
-    component.streamController.add(didAdd);
+    component.streamController.add(TYPE);
     _userInput = false;
   }
 }
@@ -120,7 +121,7 @@ class PatternData {
     });
   }
 
-  void listenToEdits(void Function(dynamic) handler) {
-    _ctrl.stream.listen(handler);
+  StreamSubscription listenToEdits(void Function(dynamic) handler) {
+    return _ctrl.stream.listen(handler);
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:html';
 
 import '../audio_assembler.dart';
@@ -15,13 +16,21 @@ class PatternView extends Window with PlaybackBoxWindow {
   @override
   PlaybackBox get box => _box;
 
+  StreamSubscription _patternEditSub;
+
   PatternData _patternData;
   PatternData get patternData => _patternData;
   set patternData(PatternData patternData) {
     if (_patternData != patternData) {
       _patternData = patternData;
-      Project.instance.pianoRoll.component =
-          _patternData.component(Project.instance.generators.selected);
+      var comp = _patternData.component(Project.instance.generators.selected);
+      Project.instance.pianoRoll.component = comp;
+      _patternEditSub?.cancel();
+      _patternEditSub = comp.data.listenToEdits((msg) {
+        if (msg == NotesComponentAction.TYPE) {
+          calculateLength();
+        }
+      });
       calculateLength();
     }
   }
