@@ -119,7 +119,10 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
 
   void _playheadFromPixels(MouseEvent e) {
     bw.headPosition = BarFraction.round(
-        (e.page.x - query('.rail').documentOffset.x) / beatWidth.value,
+        (e.page.x -
+                query('.rail').documentOffset.x +
+                query('.bottom > .right').scrollLeft) /
+            beatWidth.value,
         gridSize);
   }
 
