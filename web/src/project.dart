@@ -112,7 +112,7 @@ class Project {
   }
 
   void _init() {
-    Future.delayed(Duration(seconds: 1), renderToAudio);
+    //Future.delayed(Duration(seconds: 1), renderToAudio);
 
     querySelector('#play').onClick.listen((e) => play());
     querySelector('#pause').onClick.listen((e) => pause());

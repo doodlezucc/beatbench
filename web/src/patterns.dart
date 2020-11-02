@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:async/async.dart';
 import 'package:meta/meta.dart';
 
 import 'generators/base.dart';
@@ -46,7 +47,8 @@ class PatternNotesComponent extends PatternDataComponent {
 
   @override
   BarFraction length() {
-    return extreme<Note, BarFraction>(notes, (n) => n.end, max: true);
+    return extreme<Note, BarFraction>(notes, (n) => n.end,
+        max: true, ifNone: BarFraction.zero());
   }
 }
 
@@ -89,6 +91,8 @@ class PatternData {
       Map.unmodifiable(_genNotes);
   String name;
 
+  final _ctrl = StreamGroup.broadcast();
+
   PatternData(this.name, Map<Generator, PatternNotesComponent> genNotes) {
     genNotes.forEach((g, comp) => addNotesComponent(g, comp));
   }
@@ -97,9 +101,13 @@ class PatternData {
     _genNotes[g] = comp
       .._data = this
       .._generator = g;
+    _ctrl.add(comp.stream);
   }
 
   PatternNotesComponent component(Generator gen) {
+    if (!_genNotes.containsKey(gen)) {
+      addNotesComponent(gen, PatternNotesComponent());
+    }
     return _genNotes[gen];
   }
 
@@ -113,6 +121,6 @@ class PatternData {
   }
 
   void listenToEdits(void Function(dynamic) handler) {
-    _genNotes.values.forEach((comp) => comp.stream.listen(handler));
+    _ctrl.stream.listen(handler);
   }
 }

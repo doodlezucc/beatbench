@@ -219,8 +219,11 @@ abstract class RollOrTimelineItem<T extends Transform> {
 
   bool get invertVerticalDragging => false;
 
+  void onMouseDown() {}
+
   RollOrTimelineItem(this.el, this.window, bool createdByUser) {
     el.onMouseDown.listen((e) {
+      onMouseDown();
       if (!selected) {
         if (!e.shiftKey) {
           window.selectedItems.forEach((p) => p.selected = false);

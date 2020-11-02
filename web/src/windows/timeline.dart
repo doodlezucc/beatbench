@@ -345,6 +345,11 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
     setExistence(false);
   }
 
+  @override
+  void onMouseDown() {
+    Project.instance.patternView.patternData = data;
+  }
+
   void setExistence(bool v) {
     el.classes.toggle('hidden', !v);
   }
