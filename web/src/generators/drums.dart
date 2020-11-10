@@ -13,7 +13,7 @@ class Drums extends Generator {
 
   Drums(this.drumSamples, BaseAudioContext ctx)
       : gain = ctx.createGain()..gain.value = 0.5,
-        super(ctx, null);
+        super(ctx, null, 'fwd/drums');
 
   @override
   String get name => 'Fragile Drums';

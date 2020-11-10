@@ -107,6 +107,8 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
   GeneratorInterface get interface => _interface;
   GeneratorInterface get visible => _interface.visible ? _interface : null;
 
+  final String id;
+
   bool _rendering = false;
   bool get rendering => _rendering;
   Generator<T> _renderGen;
@@ -128,7 +130,7 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
     _gain = ctx.createGain()..connectNode(ctx.destination);
   }
 
-  Generator(BaseAudioContext ctx, GeneratorInterface interface)
+  Generator(BaseAudioContext ctx, GeneratorInterface interface, this.id)
       : _interface = interface,
         super(ctx) {
     _newContext(ctx);
@@ -141,6 +143,10 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
 
   PianoRoll get _pianoRoll => Project.instance.pianoRoll;
   bool get _activeInPianoRoll => _pianoRoll.component.generator == this;
+
+  Map<String, dynamic> toJson() => {
+        'type': id,
+      };
 
   void noteStart(NoteInfo note, double when, bool resume) {
     if (rendering) {

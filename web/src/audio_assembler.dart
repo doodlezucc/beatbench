@@ -141,7 +141,7 @@ class PlaybackBox {
     });
   }
 
-  Iterable<Generator> get generators => Project.instance.generators.list;
+  Iterable<Generator> get generators => Project.instance.generators.items;
 
   void _sendStopNotes() {
     generators.forEach((generator) {

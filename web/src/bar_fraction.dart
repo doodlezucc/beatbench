@@ -86,4 +86,7 @@ class BarFraction {
 
   @override
   String toString() => '$numerator/$denominator';
+
+  String toJson() =>
+      isWashy ? beats : (numerator == 0 ? '0' : '$numerator/$denominator');
 }

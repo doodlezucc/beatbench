@@ -253,6 +253,9 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
   void addItem(BarFraction start, int y) {
     // TODO: implement _addItem
   }
+
+  Map<String, dynamic> toJson() =>
+      {'items': items.map((e) => e.toJson()).toList()};
 }
 
 class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
@@ -435,6 +438,13 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
 
   @override
   Transformable<PatternTransform> get tr => this;
+
+  Map<String, dynamic> toJson() => {
+        'data': Project.instance.patterns.items.indexOf(data),
+        'start': start.toJson(),
+        'length': length.toJson(),
+        'shift': contentShift.toJson(),
+      };
 }
 
 class TimelinePlaybackNote extends PlaybackNote {

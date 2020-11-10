@@ -29,7 +29,7 @@ class Oscillator extends Generator<_OscNoteNode> {
 
   Oscillator(BaseAudioContext ctx)
       : gain = ctx.createGain()..gain.value = 0.1,
-        super(ctx, _OscillatorInterface());
+        super(ctx, _OscillatorInterface(), 'fwd/oscillator');
 
   @override
   String get name => 'My Little Cheap Oscillator';

@@ -96,6 +96,7 @@ class PatternData {
 
   PatternData(this.name, Map<Generator, PatternNotesComponent> genNotes) {
     genNotes.forEach((g, comp) => addNotesComponent(g, comp));
+    History.perform(_PatternCreationAction(true, [this]), false);
   }
 
   void addNotesComponent(Generator g, PatternNotesComponent comp) {
@@ -124,4 +125,29 @@ class PatternData {
   StreamSubscription listenToEdits(void Function(dynamic) handler) {
     return _ctrl.stream.listen(handler);
   }
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'notes': _genNotes.map((gen, notes) => MapEntry(
+            Project.instance.generators.items.indexOf(gen).toString(),
+            notes.notes.map((e) => e.toJson()).toList())),
+      };
+}
+
+class _PatternCreationAction extends AddRemoveAction<PatternData> {
+  _PatternCreationAction(bool forward, Iterable<PatternData> list)
+      : super(forward, list);
+
+  @override
+  void doSingle(PatternData object) {
+    Project.instance.patterns.items.add(object);
+  }
+
+  @override
+  void undoSingle(PatternData object) {
+    Project.instance.patterns.items.remove(object);
+  }
+
+  @override
+  void onExecuted(bool forward) {}
 }

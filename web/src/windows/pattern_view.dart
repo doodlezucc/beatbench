@@ -91,26 +91,18 @@ class PatternView extends Window with PlaybackBoxWindow {
   }
 }
 
-class GeneratorList {
-  final List<Generator> _list = [];
-  final int _selected = 1;
-  Generator get selected => _list[_selected];
-
-  Iterable<Generator> get list => _list;
-}
-
 class GeneratorCreationAction extends AddRemoveAction<Generator> {
   GeneratorCreationAction(bool forward, Iterable<Generator> list)
       : super(forward, list);
 
   @override
   void doSingle(Generator object) {
-    Project.instance.generators._list.add(object);
+    Project.instance.generators.items.add(object);
   }
 
   @override
   void undoSingle(Generator object) {
-    Project.instance.generators._list.remove(object);
+    Project.instance.generators.items.remove(object);
   }
 
   @override

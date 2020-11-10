@@ -8,7 +8,6 @@ import '../bar_fraction.dart';
 import '../drag.dart';
 import '../transformable.dart';
 import '../utils.dart';
-import 'piano_roll.dart';
 import 'windows.dart';
 import '../history.dart';
 
@@ -129,12 +128,9 @@ abstract class RollOrTimelineWindow<I extends RollOrTimelineItem>
   T extremeItem<T>(dynamic Function(Transform tr) variable,
       {@required bool max, bool onlyDragged = true, T ifNone}) {
     var list = onlyDragged ? selectedItems : items;
-    return extreme<I, T>(list, (item) {
-      if (_getTransform(item, onlyDragged) == null) {
-        print('Found null: ' + (item as PianoRollNote).pitch.toString());
-      }
-      return variable(_getTransform(item, onlyDragged));
-    }, max: max, ifNone: ifNone);
+    return extreme<I, T>(
+        list, (item) => variable(_getTransform(item, onlyDragged)),
+        max: max, ifNone: ifNone);
   }
 
   Transform _getTransform(I item, bool dragged) =>

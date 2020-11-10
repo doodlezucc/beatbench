@@ -68,6 +68,12 @@ class Note with Transformable {
     comp.streamController.add('transformed');
   }
 
+  Map<String, dynamic> toJson() => {
+        'pitch': y,
+        'start': start.toJson(),
+        'length': length.toJson(),
+      };
+
   PianoRollNote get _pianoRollRef => Project.instance.pianoRoll.items
       .firstWhere((pn) => pn.note == this, orElse: () => null);
 }

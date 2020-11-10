@@ -1,12 +1,16 @@
+import 'dart:convert';
 import 'dart:html';
 import 'dart:math';
 
 import 'audio_assembler.dart';
 import 'audio_converter.dart';
 import 'beat_grid.dart';
+import 'generators/base.dart';
 import 'generators/drums.dart';
 import 'history.dart';
+import 'list_with_pivot.dart';
 import 'midi_typing.dart';
+import 'patterns.dart';
 import 'windows/pattern_view.dart';
 import 'windows/piano_roll.dart';
 import 'windows/timeline.dart';
@@ -27,8 +31,8 @@ class Project {
     patternView.onNewTempo();
   }
 
-  final GeneratorList _generators = GeneratorList();
-  GeneratorList get generators => _generators;
+  final generators = ListWithPivot<Generator>();
+  final patterns = ListWithPivot<PatternData>();
 
   final PatternView patternView = PatternView();
 
@@ -44,6 +48,23 @@ class Project {
       ..size = Point(700, 600)
       ..visible = true;
   }
+
+  void save() {
+    var json = toJson();
+    var jsonString = JsonEncoder.withIndent('  ').convert(json);
+
+    print(jsonString);
+
+    window.localStorage['profile'] = jsonString;
+    print('Saved!');
+  }
+
+  Map<String, dynamic> toJson() => {
+        'bpm': bpm,
+        'generators': generators.toJson(),
+        'patterns': patterns.toJson(),
+        'timeline': timeline.toJson(),
+      };
 
   void createDemo() async {
     var grid = BeatGrid(querySelector('#grid'),
@@ -76,7 +97,7 @@ class Project {
 
     var buffer = await assembler.render(
       timeline,
-      (ctx) => generators.list.forEach((element) => element.initOffline(ctx)),
+      (ctx) => generators.items.forEach((element) => element.initOffline(ctx)),
     );
 
     var converter = AudioConverter(buffer, assembler.specs, buffer.length);
@@ -88,7 +109,7 @@ class Project {
       ..src = src
       ..style.display = 'block';
 
-    generators.list
+    generators.items
         .forEach((element) => element.initOnline(audioAssembler.ctx));
   }
 
@@ -136,6 +157,9 @@ class Project {
             return;
           case 71: // g
             generators.selected.interface.focus();
+            return e.preventDefault();
+          case 83: // g
+            save();
             return e.preventDefault();
         }
       } else if (e.altKey) {
