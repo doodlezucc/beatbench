@@ -179,10 +179,9 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
     if (playingNode != null) {
       playingNode.stop(when);
       _playingNodes.remove(playingNode);
-
-      if (_activeInPianoRoll) {
-        _pianoRoll.setKeyVisuallyPlaying(pitch, false);
-      }
+    }
+    if (_activeInPianoRoll) {
+      _pianoRoll.setKeyVisuallyPlaying(pitch, false);
     }
   }
 
