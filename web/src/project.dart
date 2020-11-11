@@ -96,7 +96,9 @@ class Project {
     await patterns.fromJson(json['patterns']);
     timeline.fromJson(json['timeline']);
 
-    pianoRoll.component = patterns.selected.component(generators.selected);
+    patternView.patternData = patterns.selected;
+
+    //pianoRoll.component = patterns.selected.component(generators.selected);
   }
 
   Map<String, dynamic> toJson() => {

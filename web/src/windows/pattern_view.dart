@@ -22,6 +22,7 @@ class PatternView extends Window with PlaybackBoxWindow {
   PatternData get patternData => _patternData;
   set patternData(PatternData patternData) {
     if (_patternData != patternData) {
+      Project.instance.patterns.selected = patternData;
       _patternData = patternData;
       var comp = _patternData.component(Project.instance.generators.selected);
       Project.instance.pianoRoll.component = comp;

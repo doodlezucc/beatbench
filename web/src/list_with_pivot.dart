@@ -11,6 +11,10 @@ class ListWithPivot<T extends Json> {
 
   ListWithPivot({@required this.itemFromJson});
 
+  set selected(T item) {
+    pivot = items.indexOf(item);
+  }
+
   Map<String, Object> toJson() => {
         'pivot': pivot,
         'items': items.map((e) => e.toJson()).toList(),
