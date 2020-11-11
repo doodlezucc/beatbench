@@ -21,6 +21,7 @@ class ListWithPivot<T extends Json> {
       };
 
   Future<void> fromJson(json) async {
+    items = [];
     pivot = json['pivot'];
 
     var doActually = true;

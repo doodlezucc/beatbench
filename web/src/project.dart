@@ -94,6 +94,7 @@ class Project {
   }
 
   Future<void> fromJson(dynamic json) async {
+    clearProject();
     bpm = json['bpm'];
     await generators.fromJson(json['generators']);
     await patterns.fromJson(json['patterns']);
@@ -172,6 +173,13 @@ class Project {
     } else {
       play();
     }
+  }
+
+  void clearProject() {
+    timeline.clear();
+    History.erase();
+
+    print('Cleared yo project, mate');
   }
 
   void _parseTempoInput() {

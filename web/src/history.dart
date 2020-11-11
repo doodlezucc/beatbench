@@ -69,6 +69,11 @@ class History {
       print('No actions to redo');
     }
   }
+
+  /// ♫ _In my brain I rearrange the letters on the page to spell your name._ ♫
+  static void erase() {
+    _actionsDone = 0;
+  }
 }
 
 abstract class MultipleAction<T> extends Action {

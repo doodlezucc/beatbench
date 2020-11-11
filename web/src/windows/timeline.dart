@@ -265,6 +265,10 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
         PatternsCreationAction(this, true, [PatternInstance.fromJson(j, this)]),
         false));
   }
+
+  void clear() {
+    PatternsCreationAction(this, false, List.from(items)).doAction();
+  }
 }
 
 class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
