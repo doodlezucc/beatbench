@@ -213,6 +213,11 @@ class Project {
           case 76: // l
             loadFromStorage();
             return e.preventDefault();
+          case 39: // right arrow
+            generators.pivot = (generators.pivot + 1) % generators.items.length;
+            pianoRoll.component =
+                patterns.selected.component(generators.selected);
+            return e.preventDefault();
         }
       } else if (e.altKey) {
         switch (e.keyCode) {
