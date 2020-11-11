@@ -9,9 +9,9 @@ import 'base.dart';
 
 class Drums extends Generator {
   final GainNode gain;
-  final Map<int, DrumSample> drumSamples;
+  Map<int, DrumSample> drumSamples = {};
 
-  Drums(this.drumSamples, BaseAudioContext ctx)
+  Drums(BaseAudioContext ctx)
       : gain = ctx.createGain()..gain.value = 0.5,
         super(ctx, null, 'fwd/drums');
 
@@ -34,7 +34,7 @@ class Drums extends Generator {
 
   @override
   Generator<NoteNodeChain> cloneForRender(OfflineAudioContext ctx) {
-    return Drums(drumSamples, ctx);
+    return Drums(ctx)..drumSamples = drumSamples;
   }
 }
 
@@ -65,20 +65,23 @@ class DrumSample {
 }
 
 class PresetDrums {
-  static Future<Drums> cymaticsLofiKit(AudioContext ctx) async => Drums({
-        Note.octave(Note.C, 5): await load(
-            name: 'Kick', path: 'Cymatics - Lofi Kick 4 - D#.wav', ctx: ctx),
-        Note.octave(Note.C + 1, 5): await load(
-            name: 'Snare', path: 'Cymatics - Lofi Snare 10 - A.wav', ctx: ctx),
-        Note.octave(Note.C + 2, 5): await load(
-            name: 'Closed Hihat',
-            path: 'Cymatics - Lofi Closed Hihat 1.wav',
-            ctx: ctx),
-        Note.octave(Note.C + 3, 5): await load(
-            name: 'Open Hihat',
-            path: 'Cymatics - Lofi Open Hihat 2.wav',
-            ctx: ctx),
-      }, ctx);
+  static Future<Drums> cymaticsLofiKit(AudioContext ctx) async {
+    var samples = {
+      Note.octave(Note.C, 5): await load(
+          name: 'Kick', path: 'Cymatics - Lofi Kick 4 - D#.wav', ctx: ctx),
+      Note.octave(Note.C + 1, 5): await load(
+          name: 'Snare', path: 'Cymatics - Lofi Snare 10 - A.wav', ctx: ctx),
+      Note.octave(Note.C + 2, 5): await load(
+          name: 'Closed Hihat',
+          path: 'Cymatics - Lofi Closed Hihat 1.wav',
+          ctx: ctx),
+      Note.octave(Note.C + 3, 5): await load(
+          name: 'Open Hihat',
+          path: 'Cymatics - Lofi Open Hihat 2.wav',
+          ctx: ctx),
+    };
+    return Drums(ctx)..drumSamples = samples;
+  }
 
   static Future<DrumSample> load(
       {@required AudioContext ctx, String name, @required String path}) async {

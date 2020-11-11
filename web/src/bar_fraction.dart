@@ -89,4 +89,15 @@ class BarFraction {
 
   String toJson() =>
       isWashy ? beats : (numerator == 0 ? '0' : '$numerator/$denominator');
+
+  static BarFraction parse(dynamic v) {
+    if (v is String) {
+      if (v.length == 1) return BarFraction.zero();
+
+      var divider = v.indexOf('/');
+      return BarFraction(int.parse(v.substring(0, divider)),
+          int.parse(v.substring(divider + 1)));
+    }
+    return BarFraction.washy(v);
+  }
 }

@@ -4,6 +4,7 @@ import 'dart:web_audio';
 import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart';
 
+import '../json.dart';
 import '../notes.dart';
 import '../project.dart';
 import '../windows/piano_roll.dart';
@@ -98,7 +99,7 @@ abstract class GeneratorInterface<G extends Generator> extends Window {
 }
 
 abstract class Generator<T extends NoteNodeChain> extends ContextDependent
-    with NodeChain {
+    with NodeChain, Json {
   GainNode _gain;
   final List<T> _playingNodes = [];
   Iterable<T> get playingNodes => _playingNodes.toList(growable: false);
@@ -144,9 +145,15 @@ abstract class Generator<T extends NoteNodeChain> extends ContextDependent
   PianoRoll get _pianoRoll => Project.instance.pianoRoll;
   bool get _activeInPianoRoll => _pianoRoll.component.generator == this;
 
+  @override
   Map<String, dynamic> toJson() => {
         'type': id,
       };
+
+  @override
+  void fromJson(json) {
+    print('load this bad boi');
+  }
 
   void noteStart(NoteInfo note, double when, bool resume) {
     if (rendering) {

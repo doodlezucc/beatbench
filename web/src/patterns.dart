@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 
 import 'generators/base.dart';
 import 'history.dart';
+import 'json.dart';
 import 'notes.dart';
 import 'bar_fraction.dart';
 import 'project.dart';
@@ -86,7 +87,7 @@ class NotesComponentAction extends AddRemoveAction<Note> {
   }
 }
 
-class PatternData {
+class PatternData with Json {
   final Map<Generator, PatternNotesComponent> _genNotes = {};
   Map<Generator, PatternNotesComponent> get genNotes =>
       Map.unmodifiable(_genNotes);
@@ -126,12 +127,34 @@ class PatternData {
     return _ctrl.stream.listen(handler);
   }
 
+  @override
   Map<String, dynamic> toJson() => {
         'name': name,
-        'notes': _genNotes.map((gen, notes) => MapEntry(
-            Project.instance.generators.items.indexOf(gen).toString(),
-            notes.notes.map((e) => e.toJson()).toList())),
+        'notes': _genNotes.map((gen, notes) {
+          return MapEntry(
+              Project.instance.generators.items.indexOf(gen).toString(),
+              notes.notes.map((e) => e.toJson()).toList());
+        })
+          ..removeWhere((key, value) => value.isEmpty),
       };
+
+  @override
+  void fromJson(json) {
+    name = json['name'];
+    json['notes'].forEach((key, value) {
+      var comp = PatternNotesComponent();
+      value
+          .map((e) => Note.fromJson(comp, e))
+          .toList()
+          .forEach((e) => comp._notes.add(e));
+      addNotesComponent(
+          Project.instance.generators.items[int.parse(key)], comp);
+    });
+  }
+
+  PatternData.fromJson(json) {
+    fromJson(json);
+  }
 }
 
 class _PatternCreationAction extends AddRemoveAction<PatternData> {

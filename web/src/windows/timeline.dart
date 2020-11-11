@@ -10,6 +10,7 @@ import '../drag.dart';
 import '../generators/base.dart';
 import '../generators/oscillator/oscillator.dart';
 import '../history.dart';
+import '../json.dart';
 import '../notes.dart';
 import '../patterns.dart';
 import '../project.dart';
@@ -19,7 +20,7 @@ import 'pattern_view.dart';
 import 'specific_windows.dart';
 
 class Timeline extends RollOrTimelineWindow<PatternInstance>
-    with PlaybackBoxWindow {
+    with PlaybackBoxWindow, Json {
   // UI stuff
   static final pixelsPerBeat = CssPxVar('timeline-ppb');
   static final pixelsPerTrack = CssPxVar('timeline-ppt');
@@ -254,8 +255,16 @@ class Timeline extends RollOrTimelineWindow<PatternInstance>
     // TODO: implement _addItem
   }
 
-  Map<String, dynamic> toJson() =>
+  @override
+  Map<String, Object> toJson() =>
       {'items': items.map((e) => e.toJson()).toList()};
+
+  @override
+  void fromJson(json) {
+    (json['items'] as List).forEach((j) => History.perform(
+        PatternsCreationAction(this, true, [PatternInstance.fromJson(j, this)]),
+        false));
+  }
 }
 
 class PatternsCreationAction extends AddRemoveAction<PatternInstance> {
@@ -314,7 +323,7 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
   static final DragSystem<PatternTransform> _dragSystem = DragSystem();
 
   PatternInstance(this.data, BarFraction start, BarFraction length, int track,
-      Timeline timeline)
+      Timeline timeline, {BarFraction shift})
       : super(
             timeline
                 .query('#patterns')
@@ -346,6 +355,10 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
     });
 
     setExistence(false);
+
+    if (shift != null) {
+      contentShift = shift;
+    }
   }
 
   @override
@@ -441,10 +454,21 @@ class PatternInstance extends RollOrTimelineItem<PatternTransform>
 
   Map<String, dynamic> toJson() => {
         'data': Project.instance.patterns.items.indexOf(data),
+        'track': y,
         'start': start.toJson(),
         'length': length.toJson(),
         'shift': contentShift.toJson(),
       };
+
+  PatternInstance.fromJson(json, Timeline tl)
+      : this(
+          Project.instance.patterns.items[json['data']],
+          BarFraction.parse(json['start']),
+          BarFraction.parse(json['length']),
+          json['track'],
+          tl,
+          shift: BarFraction.parse(json['shift']),
+        );
 }
 
 class TimelinePlaybackNote extends PlaybackNote {

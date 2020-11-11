@@ -7,6 +7,7 @@ import 'audio_converter.dart';
 import 'beat_grid.dart';
 import 'generators/base.dart';
 import 'generators/drums.dart';
+import 'generators/oscillator/oscillator.dart';
 import 'history.dart';
 import 'list_with_pivot.dart';
 import 'midi_typing.dart';
@@ -31,8 +32,32 @@ class Project {
     patternView.onNewTempo();
   }
 
-  final generators = ListWithPivot<Generator>();
-  final patterns = ListWithPivot<PatternData>();
+  static Future<Generator> createGenerator(String type, dynamic json) async {
+    var ctx = Project.instance.audioAssembler.ctx;
+    switch (type) {
+      case 'fwd/drums':
+        return await PresetDrums.cymaticsLofiKit(ctx);
+      case 'fwd/oscillator':
+        return Oscillator(ctx);
+    }
+    print('Could not load generator $type');
+    return null;
+  }
+
+  final generators = ListWithPivot<Generator>(
+    itemFromJson: (json) async {
+      History.perform(
+          GeneratorCreationAction(true, [
+            await createGenerator(json['type'], json)
+              ..fromJson(json)
+          ]),
+          false);
+      return null;
+    },
+  );
+  final patterns = ListWithPivot<PatternData>(
+    itemFromJson: (json) async => PatternData.fromJson(json),
+  );
 
   final PatternView patternView = PatternView();
 
@@ -49,14 +74,29 @@ class Project {
       ..visible = true;
   }
 
+  Future<void> loadFromStorage() async {
+    print(window.localStorage['beatbench']);
+    var json = jsonDecode(window.localStorage['beatbench']);
+    await fromJson(json);
+  }
+
   void save() {
     var json = toJson();
     var jsonString = JsonEncoder.withIndent('  ').convert(json);
 
     print(jsonString);
 
-    window.localStorage['profile'] = jsonString;
+    window.localStorage['beatbench'] = jsonString;
     print('Saved!');
+  }
+
+  Future<void> fromJson(dynamic json) async {
+    bpm = json['bpm'];
+    await generators.fromJson(json['generators']);
+    await patterns.fromJson(json['patterns']);
+    timeline.fromJson(json['timeline']);
+
+    pianoRoll.component = patterns.selected.component(generators.selected);
   }
 
   Map<String, dynamic> toJson() => {
@@ -74,6 +114,12 @@ class Project {
 
     timeline.demoFromBeatGrid(grid);
     timeline.focus();
+
+    generators.pivot = 1;
+    patterns.pivot = 2;
+    pianoRoll.component = patterns.selected.component(generators.selected);
+    pianoRoll.reloadData();
+    print(pianoRoll.component.data.name);
   }
 
   void play() {
@@ -158,8 +204,11 @@ class Project {
           case 71: // g
             generators.selected.interface.focus();
             return e.preventDefault();
-          case 83: // g
+          case 83: // s
             save();
+            return e.preventDefault();
+          case 76: // l
+            loadFromStorage();
             return e.preventDefault();
         }
       } else if (e.altKey) {

@@ -74,6 +74,14 @@ class Note with Transformable {
         'length': length.toJson(),
       };
 
+  Note.fromJson(PatternNotesComponent comp, json)
+      : this(
+          comp,
+          pitch: json['pitch'],
+          start: BarFraction.parse(json['start']),
+          length: BarFraction.parse(json['length']),
+        );
+
   PianoRollNote get _pianoRollRef => Project.instance.pianoRoll.items
       .firstWhere((pn) => pn.note == this, orElse: () => null);
 }

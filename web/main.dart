@@ -24,6 +24,7 @@ void initStuff() async {
 
   var project = Project();
   await project.createDemo();
+  //await project.loadFromStorage();
 
   print('init stuff done in ' +
       (DateTime.now().millisecondsSinceEpoch - time).toString() +
