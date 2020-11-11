@@ -74,10 +74,13 @@ class Project {
       ..visible = true;
   }
 
-  Future<void> loadFromStorage() async {
-    print(window.localStorage['beatbench']);
-    var json = jsonDecode(window.localStorage['beatbench']);
+  Future<bool> loadFromStorage() async {
+    var storage = window.localStorage['beatbench'];
+    if (storage == null) return false;
+    print(storage);
+    var json = jsonDecode(storage);
     await fromJson(json);
+    return true;
   }
 
   void save() {
@@ -120,8 +123,6 @@ class Project {
     generators.pivot = 1;
     patterns.pivot = 2;
     pianoRoll.component = patterns.selected.component(generators.selected);
-    pianoRoll.reloadData();
-    print(pianoRoll.component.data.name);
   }
 
   void play() {
